@@ -7,7 +7,7 @@ profile:
   reserve_bytes: 12000000000
   description: >
     A portable offline node that prioritizes Spanish knowledge, medicine,
-    local AI, maps/data, resilient communications and Android recovery apps.
+    local AI, maps, resilient communications and Android recovery apps.
 
 runtime:
   portal_port: 8080
@@ -74,7 +74,8 @@ artifacts:
     kind: github_release_asset
     required: true
     repo: permissionlesstech/bitchat-android
-    asset_regex: '.*\.apk$'
+    asset_regex: 'bitchat-android-universal\.apk'
+    checksum_asset_regex: 'BITCHAT_SHA256SUMS'
     destination: apps/android
     budget_bytes: 300000000
 
@@ -83,7 +84,7 @@ artifacts:
     kind: github_release_asset
     required: true
     repo: meshtastic/Meshtastic-Android
-    asset_regex: '.*\.apk$'
+    asset_regex: 'androidApp-fdroid-universal-release\.apk'
     destination: apps/android
     budget_bytes: 500000000
 
@@ -92,7 +93,8 @@ artifacts:
     kind: github_release_asset
     required: false
     repo: organicmaps/organicmaps
-    asset_regex: '.*\.apk$'
+    asset_regex: 'OrganicMaps-.*-web-release\.apk'
+    checksum_asset_regex: 'OrganicMaps-.*-web-release\.apk\.sha256sum'
     destination: apps/android
     budget_bytes: 500000000
 
@@ -101,7 +103,7 @@ artifacts:
     kind: github_release_asset
     required: false
     repo: meshtastic/firmware
-    asset_regex: '.*(zip|tar\.gz)$'
+    asset_regex: 'firmware-esp32-[0-9A-Za-z._-]+\.zip'
     destination: firmware/meshtastic
     budget_bytes: 1000000000
 
@@ -113,6 +115,7 @@ artifacts:
     ref: latest-release
     destination: source/comms
     budget_bytes: 500000000
+    license_review: upstream-reticulum-license
 
   - id: project-nomad-source
     family: core
@@ -128,6 +131,7 @@ artifacts:
     kind: url
     required: true
     url: https://github.com/onthegomap/planetiler/releases/download/v0.10.2/planetiler.jar
+    checksum_url: https://github.com/onthegomap/planetiler/releases/download/v0.10.2/planetiler.jar.sha256
     filename: planetiler.jar
     destination: tools/planetiler
     budget_bytes: 120000000
@@ -173,3 +177,4 @@ policy:
   skip_optional_if_over_budget: true
   preserve_previous_lock: true
   no_execute_downloaded_artifacts: true
+  immutable_field_node: true
