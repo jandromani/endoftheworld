@@ -120,7 +120,11 @@ install -m 0644 "$REPO/config/nano.env" "$ROOTFS/etc/endworld/nano.env"
 rsync -aH --info=progress2 "$VAULT/" "$ROOTFS/srv/endworld/"
 
 chmod +x "$ROOTFS"/opt/endworld/runtime/*.sh "$ROOTFS"/opt/endworld/runtime/network/*.sh "$ROOTFS"/opt/endworld/scripts/*.sh 2>/dev/null || true
-ln -sf /opt/endworld/scripts/endworld.py "$ROOTFS/usr/local/bin/endworld"
+cat > "$ROOTFS/usr/local/bin/endworld" <<'EOF'
+#!/bin/sh
+exec python3 /opt/endworld/scripts/endworld.py "$@"
+EOF
+chmod 0755 "$ROOTFS/usr/local/bin/endworld"
 
 RETICULUM_TAR="$(find "$ROOTFS/srv/endworld/source/comms" -maxdepth 1 -type f -name 'reticulum-source-*.tar.gz' | head -1 || true)"
 if [[ -n "$RETICULUM_TAR" ]]; then
