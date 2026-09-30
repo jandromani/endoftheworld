@@ -42,11 +42,9 @@ load_image(){
   rel="$(lock_field containers "$id" path)"
   [[ -n "$image" && -n "$rel" ]] || return 1
   tar="$VAULT/$rel"
-  if ! docker image inspect "$image" >/dev/null 2>&1; then
-    [[ -f "$tar" ]] || { echo "Frozen container missing: $tar" >&2; return 1; }
-    echo "Loading $id"
-    docker load -i "$tar" >/dev/null
-  fi
+  [[ -f "$tar" ]] || { echo "Frozen container missing: $tar" >&2; return 1; }
+  echo "Loading frozen container $id" >&2
+  docker load -i "$tar" >/dev/null
   printf '%s\n' "$image"
 }
 
@@ -77,14 +75,14 @@ docker run -d --name endworld-whisper --restart unless-stopped --network host   
 if [[ "${ENDWORLD_ENABLE_SYNCTHING:-0}" == "1" ]]; then
   SYN_IMAGE="$(load_image syncthing)" || { echo "Syncthing container unavailable" >&2; exit 2; }
   mkdir -p "$VAULT/state/syncthing"
-  chown -R 1000:1000 "$VAULT/state/syncthing" 2>/dev/null || true
+  chown 1000:1000 "$VAULT/state/syncthing" 2>/dev/null || true
   docker run -d --name endworld-syncthing --restart unless-stopped     -p 8384:8384 -p 22000:22000/tcp -p 22000:22000/udp -p 21027:21027/udp     -v "$VAULT/state/syncthing:/var/syncthing" "$SYN_IMAGE" >/dev/null
 fi
 
 if [[ "${ENDWORLD_ENABLE_FORGEJO:-0}" == "1" ]]; then
   FORGEJO_IMAGE="$(load_image forgejo)" || { echo "Forgejo container unavailable" >&2; exit 2; }
   mkdir -p "$VAULT/state/forgejo"
-  chown -R 1000:1000 "$VAULT/state/forgejo" 2>/dev/null || true
+  chown 1000:1000 "$VAULT/state/forgejo" 2>/dev/null || true
   docker run -d --name endworld-forgejo --restart unless-stopped     -e USER_UID=1000 -e USER_GID=1000     -p 3000:3000 -p 2222:22     -v "$VAULT/state/forgejo:/data" "$FORGEJO_IMAGE" >/dev/null
 fi
 
