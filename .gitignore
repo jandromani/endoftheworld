@@ -4,3 +4,6 @@ vault/
 __pycache__/
 *.pyc
 .env
+
+dist/
+.venv/
