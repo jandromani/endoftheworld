@@ -17,7 +17,7 @@ if [[ ! -f "$VAULT/.state/containers-loaded" ]]; then
   date -u +%FT%TZ > "$VAULT/.state/containers-loaded"
 fi
 
-docker rm -f endworld-kiwix endworld-ai >/dev/null 2>&1 || true
+docker rm -f endworld-kiwix endworld-ai endworld-whisper >/dev/null 2>&1 || true
 
 mapfile -t ZIMS < <(find "$VAULT/knowledge/zim" -maxdepth 1 -type f -name '*.zim' -printf '%f\n' | sort)
 if (( ${#ZIMS[@]} == 0 )); then echo "No ZIM files found" >&2; exit 2; fi
@@ -31,4 +31,8 @@ if [[ ! -f "$MODEL" ]]; then echo "AI model missing: $MODEL" >&2; exit 2; fi
 THREADS="${ENDWORLD_AI_THREADS:-$(nproc)}"
 docker run -d --name endworld-ai --restart unless-stopped --network host   -v "$VAULT/ai/models:/models:ro"   ghcr.io/ggml-org/llama.cpp:server   -m /models/Qwen3-4B-Q4_K_M.gguf --host 0.0.0.0 --port 8082 -c 4096 --threads "$THREADS" >/dev/null
 
-echo "Kiwix :8081 and local AI :8082 started."
+WHISPER_MODEL="$VAULT/ai/models/ggml-small.bin"
+if [[ ! -f "$WHISPER_MODEL" ]]; then echo "Whisper model missing: $WHISPER_MODEL" >&2; exit 2; fi
+docker run -d --name endworld-whisper --restart unless-stopped --network host   -v "$VAULT/ai/models:/models:ro"   ghcr.io/ggml-org/whisper.cpp:main   "whisper-server --host 0.0.0.0 --port 8083 -m /models/ggml-small.bin" >/dev/null
+
+echo "Kiwix :8081, local AI :8082 and Whisper :8083 started."
