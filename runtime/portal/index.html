@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0d0b">
+<title>ENDWORLD NANO</title>
+<style>
+:root{color-scheme:dark;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box} body{margin:0;background:#080b09;color:#e8f3eb;min-height:100vh}
+main{max-width:1000px;margin:auto;padding:48px 20px}
+header{border-bottom:1px solid #344039;padding-bottom:24px;margin-bottom:30px}
+.eyebrow{letter-spacing:.18em;color:#93a89a;font-size:12px}
+h1{font-size:clamp(40px,8vw,82px);line-height:.9;margin:12px 0}.online{color:#8cffad}
+.sub{max-width:700px;color:#aab9af;line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+a{display:block;border:1px solid #344039;border-radius:10px;padding:20px;color:#e8f3eb;text-decoration:none;background:#0d1210}
+a:hover{border-color:#8cffad;background:#101914}
+.k{font-size:12px;color:#8cffad;letter-spacing:.08em}.v{font-size:22px;margin-top:8px}
+footer{color:#708078;font-size:12px;margin-top:36px;border-top:1px solid #202923;padding-top:18px}
+</style>
+</head>
+<body><main>
+<header>
+<div class="eyebrow">CIVILIZATION-IN-A-BOX / OFFLINE NODE</div>
+<h1>ENDWORLD<br><span class="online">NANO</span></h1>
+<p class="sub">This node is designed to remain useful without the public Internet. Knowledge, local AI, maps/data, communication software and recovery artifacts are served from the local vault.</p>
+</header>
+<section class="grid">
+<a href="http://HOST:8081" data-port="8081"><div class="k">KNOWLEDGE</div><div class="v">Kiwix Library →</div></a>
+<a href="http://HOST:8082" data-port="8082"><div class="k">LOCAL AI</div><div class="v">Qwen / llama.cpp →</div></a>
+<a href="/files/apps/android/"><div class="k">COMMUNICATION</div><div class="v">Android APK Vault →</div></a>
+<a href="/files/maps/"><div class="k">MAPS</div><div class="v">Spain OSM Data →</div></a>
+<a href="/files/firmware/"><div class="k">RADIO / MESH</div><div class="v">Firmware Vault →</div></a>
+<a href="/files/source/"><div class="k">SOURCE</div><div class="v">NOMAD + Reticulum →</div></a>
+<a href="/files/lock/nano.lock.json"><div class="k">INTEGRITY</div><div class="v">Frozen Manifest →</div></a>
+</section>
+<footer>Internet is a build-time dependency, not a run-time dependency. · ENDWORLD NANO</footer>
+</main>
+<script>
+document.querySelectorAll("[data-port]").forEach(a=>{
+  const u=new URL(a.href);u.hostname=location.hostname;a.href=u.toString();
+});
+</script>
+</body></html>
