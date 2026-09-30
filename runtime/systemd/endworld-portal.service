@@ -1,5 +1,5 @@
 [Unit]
-Description=ENDWORLD NANO local portal
+Description=ENDWORLD local portal
 After=local-fs.target
 RequiresMountsFor=/srv/endworld
 
@@ -9,7 +9,8 @@ User=endworld
 Group=endworld
 WorkingDirectory=/opt/endworld/runtime
 Environment=ENDWORLD_VAULT=/srv/endworld
-ExecStart=/usr/bin/python3 /opt/endworld/runtime/server.py --bind 0.0.0.0 --port 80 --portal /opt/endworld/runtime/portal --vault /srv/endworld
+EnvironmentFile=-/etc/endworld/profile.env
+ExecStart=/usr/bin/python3 /opt/endworld/runtime/server.py --profile ${ENDWORLD_PROFILE} --bind 0.0.0.0 --port 80 --portal /opt/endworld/runtime/portal --vault /srv/endworld
 Restart=always
 RestartSec=2
 AmbientCapabilities=CAP_NET_BIND_SERVICE
