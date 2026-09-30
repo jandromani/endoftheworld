@@ -78,7 +78,7 @@ def describe_capability(rec: dict, vault: pathlib.Path, reticulum_available: boo
     elif rid=="project-nomad-source":
         item.update(state="PRESERVED",
                     action={"kind":"link","href":"/vault/"+rel,"label":"Open frozen source"} if rel else None,
-                    note="Project NOMAD is preserved in NANO; its full multi-container Command Center belongs in larger profiles.")
+                    note="Project NOMAD source is preserved here; the full multi-container Command Center belongs in the dedicated NOMAD profile.")
     elif rid=="spain-osm" and rel:
         item.update(state="SOURCE",action={"kind":"link","href":"/vault/"+rel,"label":"Open OSM source"})
     elif rel and rel.startswith("source/"):
