@@ -63,10 +63,10 @@ artifacts:
 
   - id: spain-osm
     family: maps
-    kind: url
+    kind: index_latest
     required: true
-    url: https://download.geofabrik.de/europe/spain-latest.osm.pbf
-    filename: spain-latest.osm.pbf
+    index_url: https://download.geofabrik.de/europe/spain.html
+    href_regex: 'spain-[0-9]{6}\.osm\.pbf'
     destination: maps/raw
     budget_bytes: 6000000000
 
