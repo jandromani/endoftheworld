@@ -134,6 +134,17 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         require((ROOT/"config/nomad.env").is_file(),"NOMAD runtime env missing")
         require((ROOT/"runtime/switch-ai.sh").is_file(),"NOMAD AI switcher missing")
         require({m["id"] for m in (data.get("prepare") or {}).get("maps",[])}=={"spain-pmtiles","portugal-pmtiles","france-pmtiles"},"NOMAD map contract changed")
+    elif pid == "civilization":
+        expected={"wikipedia-en-nopic","stackoverflow-en","qwen3-8b-q4","qwen3-30b-a3b-q4","qwen3-coder-30b-a3b-q4s","europe-osm","freecad-source","kicad-source","openscad-source","jupyterlab-source","numpy-source","scipy-source","sympy-source","opencv-source","gdal-source","qgis-source","registry-source","pypiserver-source","syncthing","forgejo","qdrant","code-server","project-nomad-admin","project-nomad-mysql","project-nomad-redis"}
+        require(expected.issubset(ids), f"CIVILIZATION wiring missing ids: {sorted(expected-ids)}")
+        require(target==4_000_000_000_000,"CIVILIZATION target must stay exactly 4 TB decimal")
+        require(reserve==700_000_000_000,"CIVILIZATION reserve contract changed")
+        require(headroom==400_000_000_000,"CIVILIZATION acquisition headroom changed")
+        require(root_mib==65536,"CIVILIZATION root boundary must stay 65536 MiB")
+        require((ROOT/"config/civilization.env").is_file(),"CIVILIZATION runtime env missing")
+        require((ROOT/"manifests/civilization-packages.yml").is_file(),"CIVILIZATION package snapshot manifest missing")
+        require((ROOT/"scripts/snapshot_packages.py").is_file(),"CIVILIZATION package snapshot engine missing")
+        require("europe-pmtiles" in {m["id"] for m in (data.get("prepare") or {}).get("maps",[])},"CIVILIZATION Europe map contract missing")
 
     require(ceiling > 0, f"{pid}: acquisition ceiling invalid")
     return {"id": pid, "target": target, "reserve": reserve, "headroom": headroom, "ceiling": ceiling}

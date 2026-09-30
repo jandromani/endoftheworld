@@ -114,9 +114,13 @@ export DEBIAN_FRONTEND=noninteractive
 chroot "$ROOTFS" apt-get update
 chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub2-common efibootmgr   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros
 
-if [[ "$PROFILE" == "nomad" ]]; then
-  echo "Installing NOMAD offline developer toolchain..."
+if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
+  echo "Installing rebuild-and-create developer toolchain..."
   chroot "$ROOTFS" apt-get install -y --no-install-recommends git build-essential cmake ninja-build pkg-config clang gdb python3-dev python3-venv nodejs npm default-jdk-headless maven rustc cargo golang-go sqlite3 ripgrep tmux vim
+fi
+if [[ "$PROFILE" == "civilization" ]]; then
+  echo "Installing CIVILIZATION science/reconstruction baseline..."
+  chroot "$ROOTFS" apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-pandas python3-matplotlib python3-sympy ffmpeg imagemagick graphviz pandoc
 fi
 
 HOSTNAME="endworld-$PROFILE"

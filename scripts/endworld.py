@@ -29,6 +29,8 @@ def main() -> int:
     for name in ("plan", "acquire", "prepare", "verify", "run", "stop", "status", "doctor", "scout", "selftest"):
         sub.add_parser(name)
     ai=sub.add_parser("ai-mode"); ai.add_argument("mode",choices=["lite","general","coder"])
+    sp = sub.add_parser("snapshot-packages")
+    sp.add_argument("--manifest")
     b = sub.add_parser("build-image")
     b.add_argument("--output")
     fl = sub.add_parser("flash")
@@ -68,6 +70,9 @@ def main() -> int:
         return run(*cmd)
     if args.command == "ai-mode":
         return run("bash","runtime/switch-ai.sh",args.mode)
+    if args.command == "snapshot-packages":
+        manifest = args.manifest or f"manifests/{args.profile}-packages.yml"
+        return run(py, "scripts/snapshot_packages.py", "--profile", str(profile_path), "--vault", vault, "--manifest", manifest)
     if args.command == "build-image":
         output = args.output or f"dist/endworld-{args.profile}-amd64.img"
         return run("bash", "scripts/build_disk_image.sh", args.profile, output, sudo=True)
