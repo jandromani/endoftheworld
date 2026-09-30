@@ -48,6 +48,33 @@ The scheduled GitHub job updates lightweight metadata only. Multi-GB/TB acquisit
 
 See `manifests/capabilities.yml`.
 
+
+## ENDWORLD NANO — implemented
+
+The first runnable profile is now in the repository.
+
+**Target:** 64 GB class  
+**Payload policy:** up to 56 GB frozen payload + 8 GB runtime/filesystem reserve.
+
+```bash
+git clone https://github.com/jandromani/endoftheworld.git
+cd endoftheworld
+
+make setup
+make nano-plan       # resolve sources, download nothing
+make nano-acquire    # acquire + hash + freeze
+make nano-verify     # re-hash the vault
+
+# disconnect Internet here
+make nano-run
+```
+
+Open `http://NODE-IP:8080` from any device on the LAN.
+
+NANO currently provides a local portal, Kiwix knowledge service, llama.cpp local AI service, an Android APK vault, OSM Spain data, Meshtastic firmware, and frozen source for critical communication/core components.
+
+See [docs/NANO.md](docs/NANO.md).
+
 ## Commands (target design)
 
 ```bash
