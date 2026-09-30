@@ -1,0 +1,24 @@
+[Unit]
+Description=ENDWORLD NANO local portal
+After=local-fs.target
+RequiresMountsFor=/srv/endworld
+
+[Service]
+Type=simple
+User=endworld
+Group=endworld
+WorkingDirectory=/opt/endworld/runtime
+Environment=ENDWORLD_VAULT=/srv/endworld
+ExecStart=/usr/bin/python3 /opt/endworld/runtime/server.py --bind 0.0.0.0 --port 80 --portal /opt/endworld/runtime/portal --vault /srv/endworld
+Restart=always
+RestartSec=2
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/srv/endworld
+ReadWritePaths=/run
+
+[Install]
+WantedBy=multi-user.target
