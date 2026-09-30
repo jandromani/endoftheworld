@@ -172,6 +172,10 @@ containers:
     image: ghcr.io/ggml-org/llama.cpp:server
     required: true
 
+  - id: whisper-server
+    image: ghcr.io/ggml-org/whisper.cpp:main
+    required: true
+
 policy:
   fail_if_required_missing: true
   skip_optional_if_over_budget: true
