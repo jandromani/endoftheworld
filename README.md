@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/the-ark.svg" alt="THE ARK — offline knowledge, AI, communications and reconstruction appliances" width="100%" />
+<img src="docs/assets/the-ark-generated.jpg" alt="THE ARK — offline knowledge, AI, communications and reconstruction appliances" width="100%" />
 
 # THE ARK
 
@@ -11,6 +11,7 @@
 [![NANO CI](https://github.com/jandromani/endoftheworld/actions/workflows/nano-validate.yml/badge.svg)](https://github.com/jandromani/endoftheworld/actions/workflows/nano-validate.yml)
 [![FAMILY CI](https://github.com/jandromani/endoftheworld/actions/workflows/family-validate.yml/badge.svg)](https://github.com/jandromani/endoftheworld/actions/workflows/family-validate.yml)
 [![NOMAD CI](https://github.com/jandromani/endoftheworld/actions/workflows/nomad-validate.yml/badge.svg)](https://github.com/jandromani/endoftheworld/actions/workflows/nomad-validate.yml)
+[![CIVILIZATION CI](https://github.com/jandromani/endoftheworld/actions/workflows/civilization-validate.yml/badge.svg)](https://github.com/jandromani/endoftheworld/actions/workflows/civilization-validate.yml)
 ![Stars](https://img.shields.io/github/stars/jandromani/endoftheworld?style=flat-square)
 ![Forks](https://img.shields.io/github/forks/jandromani/endoftheworld?style=flat-square)
 ![Issues](https://img.shields.io/github/issues/jandromani/endoftheworld?style=flat-square)
@@ -75,7 +76,7 @@ Each profile is a larger “deck” of the same Ark. The engine is shared; capab
 | 🛟 **NANO** | 64 GB | Survive & reference | Qwen3 4B | — | ✅ Software/CI implemented |
 | 🏠 **FAMILY** | 256 GB | Live, share & preserve | Qwen3 8B | Syncthing, Forgejo | ✅ Software/CI implemented |
 | 🧭 **NOMAD** | 1 TB | Rebuild & create | 8B + 30B general + 30B coder | Qdrant, code-server, Project NOMAD | ✅ Software/CI implemented |
-| 🏛️ **CIVILIZATION** | multi-TB | Reconstruct systems | planned | package mirrors, CAD, science, infra | 🚧 Planned |
+| 🏛️ **CIVILIZATION** | 4 TB | Reconstruct systems | 8B + 30B general + 30B coder | package snapshots, CAD, science, GIS | ✅ Software/CI implemented |
 | 🛶 **ARK** | maximum | Preservation seed | planned | maximum curated preservation | 🚧 Planned |
 
 Detailed product sheets:
@@ -268,7 +269,7 @@ Project NOMAD's updater sidecar is deliberately excluded from the ENDWORLD NOMAD
 NANO          64 GB      SURVIVE             ✅
 FAMILY       256 GB      LIVE + SHARE        ✅
 NOMAD          1 TB      REBUILD + CREATE    ✅
-CIVILIZATION  multi-TB   RECONSTRUCT         🚧
+CIVILIZATION    4 TB     RECONSTRUCT         ✅
 ARK           maximum    PRESERVE            🚧
 ```
 

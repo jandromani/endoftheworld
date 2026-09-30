@@ -4,7 +4,7 @@ PIP := $(VENV)/bin/pip
 PY := $(VENV)/bin/python
 DEVICE ?=
 
-.PHONY: setup builder-deps doctor scout 	nano-plan nano-acquire nano-prepare nano-verify nano-selftest nano-all nano-run nano-stop nano-status nano-image nano-flash 	family-plan family-acquire family-prepare family-verify family-selftest family-all family-run family-stop family-status family-image family-flash 	nomad-plan nomad-acquire nomad-prepare nomad-verify nomad-selftest nomad-all nomad-run nomad-stop nomad-status nomad-image nomad-flash nomad-ai-lite nomad-ai-general nomad-ai-coder
+.PHONY: setup builder-deps doctor scout 	nano-plan nano-acquire nano-prepare nano-verify nano-selftest nano-all nano-run nano-stop nano-status nano-image nano-flash 	family-plan family-acquire family-prepare family-verify family-selftest family-all family-run family-stop family-status family-image family-flash 	nomad-plan nomad-acquire nomad-prepare nomad-verify nomad-selftest nomad-all nomad-run nomad-stop nomad-status nomad-image nomad-flash nomad-ai-lite nomad-ai-general nomad-ai-coder 	civilization-plan civilization-acquire civilization-snapshot-packages civilization-prepare civilization-verify civilization-selftest civilization-all civilization-run civilization-stop civilization-status civilization-image civilization-flash civilization-ai-lite civilization-ai-general civilization-ai-coder
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -94,3 +94,34 @@ nomad-ai-general:
 	$(PY) scripts/endworld.py --profile nomad ai-mode general
 nomad-ai-coder:
 	$(PY) scripts/endworld.py --profile nomad ai-mode coder
+
+civilization-plan:
+	$(PY) scripts/endworld.py --profile civilization plan
+civilization-acquire:
+	$(PY) scripts/endworld.py --profile civilization acquire
+civilization-snapshot-packages:
+	$(PY) scripts/endworld.py --profile civilization snapshot-packages
+civilization-prepare:
+	$(PY) scripts/endworld.py --profile civilization prepare
+civilization-verify:
+	$(PY) scripts/endworld.py --profile civilization verify
+civilization-selftest:
+	$(PY) scripts/endworld.py --profile civilization selftest
+civilization-all: civilization-plan civilization-acquire civilization-snapshot-packages civilization-prepare civilization-verify civilization-selftest
+civilization-run:
+	$(PY) scripts/endworld.py --profile civilization run
+civilization-stop:
+	$(PY) scripts/endworld.py --profile civilization stop
+civilization-status:
+	$(PY) scripts/endworld.py --profile civilization status
+civilization-image:
+	$(PY) scripts/endworld.py --profile civilization build-image
+civilization-flash:
+	@test -n "$(DEVICE)" || (echo "Usage: make civilization-flash DEVICE=/dev/sdX" && exit 2)
+	$(PY) scripts/endworld.py --profile civilization flash "$(DEVICE)"
+civilization-ai-lite:
+	$(PY) scripts/endworld.py --profile civilization ai-mode lite
+civilization-ai-general:
+	$(PY) scripts/endworld.py --profile civilization ai-mode general
+civilization-ai-coder:
+	$(PY) scripts/endworld.py --profile civilization ai-mode coder

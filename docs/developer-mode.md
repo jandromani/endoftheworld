@@ -78,3 +78,10 @@ Preserved source is not the same as dependency closure. A future CIVILIZATION pr
 4. Use coder AI for code assistance.
 5. Store embeddings/search indexes in Qdrant when an ingestion workflow is available.
 6. Replicate important source through Syncthing or cold-storage export.
+
+
+## CIVILIZATION dependency closure
+
+CIVILIZATION adds a build-time package snapshot stage. APT dependencies, PyPI wheels and npm dependency caches are materialized while connected, packed as immutable TARs and inserted into the normal profile lock before BOM generation.
+
+This is distinct from preserving package-manager source: it preserves a usable dependency payload for the selected reconstruction seed set.

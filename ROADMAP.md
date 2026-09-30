@@ -49,21 +49,21 @@ Adds:
 - Spain + Portugal + France maps;
 - expanded source preservation.
 
-## 🚧 CIVILIZATION — multi-TB — RECONSTRUCT
+## ✅ CIVILIZATION — 4 TB — RECONSTRUCT
 
-Candidate capability groups:
+Implemented foundation:
 
-- Debian/Ubuntu package cache or curated mirror;
-- PyPI, npm, Maven, crates.io and Go module preservation strategies;
-- OCI image registry/cache;
-- KiCad, FreeCAD, OpenSCAD and manufacturing references;
+- immutable APT package snapshot seeded from reconstruction toolchains;
+- immutable PyPI wheel and npm cache snapshots;
+- OCI Distribution registry source plus existing frozen container TARs;
+- KiCad, FreeCAD, OpenSCAD and Blender source preservation;
 - electronics datasheets and component knowledge;
-- scientific computing;
-- civil/mechanical/electrical engineering references;
+- NumPy, SciPy, SymPy, scikit-learn and JupyterLab source preservation;
+- engineering and OpenFOAM source preservation;
 - agriculture and food systems;
 - water, sanitation and energy;
 - medical/clinical reference expansion;
-- continental maps;
+- full Europe OSM → PMTiles continental map;
 - offline education curricula;
 - larger multimodal local models;
 - local OCR/vision;
@@ -100,3 +100,14 @@ Candidate goals:
 ## Definition of “done”
 
 No profile is considered physically field-proven until a real full-size payload has been acquired, built, flashed and repeatedly operated with WAN removed.
+
+
+### CIVILIZATION storage contract
+
+- 4 TB decimal raw image
+- 700 GB protected reserve
+- 400 GB acquisition/derived headroom
+- 64 GiB root boundary
+- package snapshots are generated before prepare/BOM and become normal hashed lock artifacts
+
+The package layer deliberately snapshots **downloaded dependency closure**, not merely mirror software source.

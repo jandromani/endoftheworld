@@ -11,6 +11,7 @@ Current targets:
 | NANO | 64 GB | 12 GB | 4 GB |
 | FAMILY | 256 GB | 24 GB | 20 GB |
 | NOMAD | 1 TB | 150 GB | 100 GB |
+| CIVILIZATION | 4 TB | 700 GB | 400 GB |
 
 ## Terms
 
