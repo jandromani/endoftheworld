@@ -4,6 +4,14 @@ Notable changes to THE ARK / ENDWORLD are documented here.
 
 ## Unreleased
 
+### CIVILIZATION
+- Added the 4 TB CIVILIZATION reconstruction profile.
+- Added full-Europe PMTiles preparation.
+- Added build-time APT, PyPI and npm dependency snapshotting.
+- Added CAD/PCB, scientific-computing, GIS/vision and engineering source preservation.
+- Promoted CIVILIZATION from roadmap concept to software/CI implementation.
+- Switched the README hero to the actual generated Ark illustration.
+
 ### Documentation
 - Introduced **THE ARK** as the public project identity.
 - Added project-wide documentation, governance, profile sheets and operating guides.

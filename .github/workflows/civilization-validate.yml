@@ -1,0 +1,49 @@
+name: Validate THE ARK CIVILIZATION
+on:
+  push:
+    paths: ["profiles/**","scripts/**","runtime/**","config/**","manifests/**","requirements.txt","Makefile",".github/workflows/civilization-validate.yml"]
+  pull_request:
+    paths: ["profiles/**","scripts/**","runtime/**","config/**","manifests/**","Makefile",".github/workflows/civilization-validate.yml"]
+permissions: {contents: read}
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements.txt
+      - name: Compile Python
+        run: python -m py_compile scripts/*.py runtime/server.py
+      - name: Parse shell
+        run: for f in scripts/*.sh runtime/*.sh runtime/network/*.sh; do bash -n "$f"; done
+      - name: All profile self-tests
+        run: |
+          python scripts/endworld.py --profile nano selftest
+          python scripts/endworld.py --profile family selftest
+          python scripts/endworld.py --profile nomad selftest
+          python scripts/endworld.py --profile civilization selftest
+      - name: Validate CIVILIZATION contract
+        run: |
+          python - <<'PY'
+          import pathlib,yaml
+          p=yaml.safe_load(pathlib.Path("profiles/civilization.yml").read_text()); m=p["profile"]
+          assert m["id"]=="civilization"
+          assert int(m["target_bytes"])==4_000_000_000_000
+          assert int(m["reserve_bytes"])==700_000_000_000
+          assert int(m["acquisition_headroom_bytes"])==400_000_000_000
+          assert int(m["root_partition_mib"])==65536
+          ids={x["id"] for x in p["artifacts"]}|{x["id"] for x in p["containers"]}
+          req={"europe-osm","freecad-source","kicad-source","openscad-source","jupyterlab-source","numpy-source","scipy-source","sympy-source","opencv-source","gdal-source","qgis-source","registry-source","pypiserver-source"}
+          assert req.issubset(ids), req-ids
+          assert "europe-pmtiles" in {x["id"] for x in p["prepare"]["maps"]}
+          PY
+      - name: Validate package snapshot manifest
+        run: python scripts/snapshot_packages.py --profile profiles/civilization.yml --vault vault/civilization --manifest manifests/civilization-packages.yml --dry-run
+      - name: Resolve live CIVILIZATION sources
+        env: {GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"}
+        run: python scripts/acquire.py plan --profile profiles/civilization.yml --vault vault/civilization
+      - name: CLI smoke
+        run: |
+          python scripts/endworld.py --profile civilization --help >/dev/null
+          python scripts/endworld.py --profile civilization ai-mode --help >/dev/null

@@ -1,33 +1,61 @@
 # 🏛️ THE ARK · CIVILIZATION
 
-**multi-TB · RECONSTRUCT · planned**
+**4 TB · RECONSTRUCT**
 
-CIVILIZATION is the next tier after NOMAD.
+CIVILIZATION takes NOMAD's “rebuild and create” workstation and adds the beginnings of dependency closure for rebuilding larger technical systems.
 
-## Mission
+## What it adds
 
-Move from one capable technical workstation toward enough local ecosystems to rebuild practical infrastructure.
+- full Europe OpenStreetMap snapshot → PMTiles;
+- immutable APT dependency snapshot;
+- immutable PyPI wheel snapshot;
+- immutable npm cache + lock snapshot;
+- FreeCAD, KiCad, OpenSCAD and Blender source preservation;
+- NumPy, SciPy, SymPy, scikit-learn and JupyterLab source preservation;
+- OpenCV, GDAL and QGIS source preservation;
+- OpenFOAM source preservation;
+- OCI Distribution registry and PyPI server source preservation;
+- all NOMAD AI, developer, survival, communications and command-center capabilities.
 
-## Candidate capability groups
+## Storage contract
 
-- Debian/Ubuntu package preservation
-- PyPI, npm, Maven, crates.io and Go modules
-- OCI registry/cache
-- KiCad, FreeCAD and OpenSCAD
-- electronics datasheets
-- mechanical/civil/electrical engineering references
-- fabrication and 3D printing
-- mathematics, physics, chemistry, biology and geoscience
-- agriculture, water, sanitation and energy
-- continental maps
-- larger multimodal AI
-- OCR/vision
-- RAG over documentation and code
+- Target: **4,000,000,000,000 bytes**
+- Reserve: **700 GB**
+- Acquisition headroom: **400 GB**
+- Artifact acquisition ceiling: **2.9 TB**
+- Root boundary: **65,536 MiB**
 
-## Constraint
+The large free/mutable envelope is intentional: rebuilding systems needs working storage for repositories, package extraction, indexes, datasets and generated artifacts.
 
-CIVILIZATION must remain curated. The objective is reconstruction value, not “download the Internet”.
+## Package closure
 
-## Status
+After Internet acquisition:
 
-Planned; this document defines product direction, not shipped behavior.
+```bash
+make civilization-acquire
+make civilization-snapshot-packages
+make civilization-prepare
+make civilization-verify
+```
+
+`snapshot-packages` downloads without executing package code and freezes three deterministic TARs into the normal vault lock:
+
+- `packages/apt.snapshot.tar`
+- `packages/pypi.snapshot.tar`
+- `packages/npm.snapshot.tar`
+
+The snapshots are then covered by normal SHA-256 verification and the BOM.
+
+This is deliberately stronger than merely preserving Bandersnatch/Verdaccio source: **the dependencies themselves are materialized while the network exists.**
+
+## AI and runtime
+
+CIVILIZATION reuses NOMAD's lite/general/coder model switching and services: Kiwix, llama.cpp, Whisper, Syncthing, Forgejo, Qdrant, code-server and Project NOMAD.
+
+## Hardware
+
+This tier is intended for a workstation/server with at least 64 GB RAM and multi-terabyte SSD/NVMe storage. Larger memory and GPU acceleration improve the 30B modes but are not required by the control plane.
+
+## Acceptance
+
+Repository/CI completeness is distinct from physical proof. A real 4 TB payload still needs acquisition, package snapshotting, image build, flash and repeated offline hardware boots before it can be called field-proven.
