@@ -1,0 +1,7 @@
+[Unit]
+Description=ENDWORLD NANO health check
+After=endworld-portal.service endworld-stack.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/endworld/scripts/healthcheck.py --vault /srv/endworld
