@@ -1,0 +1,51 @@
+name: Validate ENDWORLD NANO
+
+on:
+  push:
+    paths:
+      - "profiles/**"
+      - "scripts/**"
+      - "runtime/**"
+      - "requirements.txt"
+      - "Makefile"
+      - ".github/workflows/nano-validate.yml"
+  pull_request:
+    paths:
+      - "profiles/**"
+      - "scripts/**"
+      - "runtime/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Compile Python
+        run: python -m py_compile scripts/build_nano.py scripts/verify_vault.py
+
+      - name: Validate NANO manifest
+        run: |
+          python - <<'PY'
+          import pathlib, yaml
+          p = yaml.safe_load(pathlib.Path("profiles/nano.yml").read_text())
+          assert p["schema"] == 1
+          meta = p["profile"]
+          assert meta["id"] == "nano"
+          assert int(meta["target_bytes"]) == 64_000_000_000
+          assert 0 < int(meta["reserve_bytes"]) < int(meta["target_bytes"])
+          ids = [x["id"] for x in p["artifacts"]]
+          assert len(ids) == len(set(ids)), "duplicate artifact ids"
+          assert any(x["id"] == "wikipedia-es" for x in p["artifacts"])
+          assert any(x["id"] == "qwen3-4b-q4" for x in p["artifacts"])
+          print("NANO manifest OK")
+          PY
