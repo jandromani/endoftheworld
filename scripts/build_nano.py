@@ -369,8 +369,14 @@ def main() -> int:
     target = int(pmeta["target_bytes"])
     reserve = int(pmeta.get("reserve_bytes", 0))
     usable = target - reserve
+    acquisition_headroom = int(pmeta.get("acquisition_headroom_bytes", 0))
+    artifact_limit = usable - acquisition_headroom
+    if artifact_limit <= 0:
+        raise BuildError("Profile acquisition headroom leaves no artifact budget")
 
     print(f"{pmeta['title']} — target {human(target)}, usable {human(usable)}")
+    print(f"Artifact acquisition ceiling: {human(artifact_limit)}; "
+          f"reserved for containers/derived outputs: {human(acquisition_headroom)}")
     print("Resolving sources...")
 
     resolved = []
@@ -387,8 +393,8 @@ def main() -> int:
                     raise BuildError(msg)
                 print(f"SKIP optional: {msg}")
                 continue
-            if size and estimated + size > usable and not spec.get("required"):
-                print(f"SKIP optional: {spec['id']} would exceed NANO usable budget")
+            if size and estimated + size > artifact_limit and not spec.get("required"):
+                print(f"SKIP optional: {spec['id']} would exceed NANO acquisition ceiling")
                 continue
             estimated += int(size or 0)
             resolved.append(item)
@@ -398,7 +404,11 @@ def main() -> int:
             print(f"  FAIL {spec['id']}: {exc}")
 
     required_failures = [f for f in failures if f["required"]]
-    print(f"Resolved estimate: {human(estimated)} before container images.")
+    if estimated > artifact_limit:
+        raise BuildError(
+            f"Required artifact estimate {human(estimated)} exceeds acquisition ceiling {human(artifact_limit)}"
+        )
+    print(f"Resolved estimate: {human(estimated)} before container images/derived artifacts.")
 
     if args.command == "plan":
         if required_failures:
@@ -415,16 +425,17 @@ def main() -> int:
     current = 0
     for item in resolved:
         size = item.get("expected_bytes")
-        if size and current + size > usable and not item["required"]:
+        if size and current + size > artifact_limit and not item["required"]:
             print(f"SKIP optional at acquire time: {item['id']}")
             continue
         print(f"Acquiring {item['id']}...")
         rec = download(item, vault)
         records.append(rec)
         current += int(rec["bytes"])
-        if current > usable:
+        if current > artifact_limit:
             raise BuildError(
-                f"NANO payload exceeded usable budget after {item['id']}: {human(current)} > {human(usable)}"
+                f"NANO artifacts exceeded acquisition ceiling after {item['id']}: "
+                f"{human(current)} > {human(artifact_limit)}"
             )
 
     containers = []
