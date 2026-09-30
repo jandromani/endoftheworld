@@ -1,0 +1,17 @@
+[Unit]
+Description=ENDWORLD NANO knowledge and AI stack
+After=docker.service local-fs.target
+Requires=docker.service
+RequiresMountsFor=/srv/endworld
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=ENDWORLD_VAULT=/srv/endworld
+EnvironmentFile=-/etc/endworld/nano.env
+ExecStart=/opt/endworld/runtime/start-stack.sh
+ExecStop=/opt/endworld/runtime/stop-stack.sh
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
