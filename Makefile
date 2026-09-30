@@ -2,31 +2,50 @@ PYTHON ?= python3
 VENV ?= .venv
 PIP := $(VENV)/bin/pip
 PY := $(VENV)/bin/python
+DEVICE ?=
 
-.PHONY: setup nano-plan nano-acquire nano-verify nano-run nano-stop nano-status
+.PHONY: setup builder-deps doctor nano-plan nano-acquire nano-prepare nano-verify nano-all nano-run nano-stop nano-status nano-image nano-flash scout
 
 setup:
 	$(PYTHON) -m venv $(VENV)
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.txt
 
+builder-deps:
+	sudo bash scripts/install_builder_deps.sh
+
+doctor:
+	$(PY) scripts/endworld.py doctor
+
 nano-plan:
-	$(PY) scripts/build_nano.py plan
+	$(PY) scripts/endworld.py plan
 
 nano-acquire:
-	$(PY) scripts/build_nano.py acquire
+	$(PY) scripts/endworld.py acquire
+
+nano-prepare:
+	$(PY) scripts/endworld.py prepare
 
 nano-verify:
-	$(PY) scripts/verify_vault.py --vault vault/nano
+	$(PY) scripts/endworld.py verify
+
+nano-all: nano-plan nano-acquire nano-prepare nano-verify
 
 nano-run:
-	bash runtime/start-nano.sh
+	$(PY) scripts/endworld.py run
 
 nano-stop:
-	bash runtime/stop-nano.sh
+	$(PY) scripts/endworld.py stop
 
 nano-status:
-	@echo "Vault:"
-	@du -sh vault/nano 2>/dev/null || echo "  not acquired"
-	@echo "Lock:"
-	@test -f vault/nano/lock/nano.lock.json && $(PY) -c 'import json;d=json.load(open("vault/nano/lock/nano.lock.json"));print("  payload:",round(d["payload_bytes"]/1e9,2),"GB");print("  generated:",d["generated_at"])' || echo "  no lock"
+	$(PY) scripts/endworld.py status
+
+nano-image:
+	$(PY) scripts/endworld.py build-image
+
+nano-flash:
+	@test -n "$(DEVICE)" || (echo "Usage: make nano-flash DEVICE=/dev/sdX" && exit 2)
+	$(PY) scripts/endworld.py flash "$(DEVICE)"
+
+scout:
+	$(PY) scripts/scout.py
