@@ -1,0 +1,40 @@
+name: Monthly capability scout
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 1 * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Discover upstream changes and candidate capabilities
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/scout.py
+      - name: Publish report as a review PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet -- reports/ && [ -z "$(git status --porcelain reports/)" ]; then
+            echo "No report changes."
+            exit 0
+          fi
+          BRANCH="bot/scout-$(date -u +%Y-%m-%d)"
+          git config user.name "endworld-scout[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add reports/
+          git commit -m "Scout ENDWORLD capabilities $(date -u +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+          gh pr create             --base "${{ github.event.repository.default_branch }}"             --head "$BRANCH"             --title "ENDWORLD capability scout $(date -u +%Y-%m-%d)"             --body "Discovery metadata only. No candidate has been downloaded into the vault, executed, trusted, or promoted."
