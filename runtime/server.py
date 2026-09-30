@@ -45,6 +45,50 @@ def service_alive(url: str) -> bool:
         with urllib.request.urlopen(url, timeout=1.2) as r: return 200 <= r.status < 500
     except Exception: return False
 
+def describe_capability(rec: dict, vault: pathlib.Path, reticulum_available: bool = False) -> dict:
+    rid=str(rec.get("id") or "unknown")
+    family=str(rec.get("family") or "runtime")
+    rel=rec.get("path")
+    suffix=pathlib.PurePosixPath(rel).suffix.lower() if rel else ""
+    present=(vault/rel).is_file() if rel else True
+    item={"id":rid,"family":family,"kind":rec.get("kind") or ("container" if rec.get("image") else "artifact"),
+          "required":bool(rec.get("required",False)),"bytes":rec.get("bytes"),"path":rel,
+          "state":"FROZEN" if present else "MISSING","action":None,"note":""}
+
+    if rid=="kiwix" or (family in ("knowledge","medical") and suffix==".zim"):
+        item.update(state="SERVICE",action={"kind":"service","port":8081,"label":"Open library"})
+    elif rid in ("llama-server","qwen3-4b-q4"):
+        item.update(state="SERVICE",action={"kind":"anchor","href":"#local-ai","label":"Open local AI"})
+    elif rid in ("whisper-server","whisper-small"):
+        item.update(state="SERVICE",action={"kind":"anchor","href":"#voice","label":"Open transcription"})
+    elif rid=="spain-pmtiles":
+        item.update(state="READY",action={"kind":"link","href":"/map.html","label":"Open map"})
+    elif suffix==".apk" and rel:
+        item.update(state="READY",action={"kind":"link","href":"/vault/"+rel,"label":"Download APK"})
+    elif rel and rel.startswith("firmware/"):
+        item.update(state="READY",action={"kind":"link","href":"/vault/"+rel,"label":"Download firmware"})
+    elif rid=="reticulum-source":
+        item.update(state="INSTALLED" if reticulum_available else "PRESERVED",
+                    action={"kind":"link","href":"/vault/"+rel,"label":"Open frozen source"} if rel else None,
+                    note="Reticulum CLI is installed in the appliance image when this source archive is present.")
+    elif rid=="project-nomad-source":
+        item.update(state="PRESERVED",
+                    action={"kind":"link","href":"/vault/"+rel,"label":"Open frozen source"} if rel else None,
+                    note="Project NOMAD is preserved in NANO; its full multi-container Command Center belongs in larger profiles.")
+    elif rid=="spain-osm" and rel:
+        item.update(state="SOURCE",action={"kind":"link","href":"/vault/"+rel,"label":"Open OSM source"})
+    elif rel and rel.startswith("source/"):
+        item.update(state="PRESERVED",action={"kind":"link","href":"/vault/"+rel,"label":"Open frozen source"})
+    elif rid in ("planetiler","maplibre-js","maplibre-css","pmtiles-js"):
+        item.update(state="RUNTIME",note="Internal frozen runtime/build dependency.")
+    elif rel:
+        item["action"]={"kind":"link","href":"/vault/"+rel,"label":"Open artifact"}
+
+    if not present and rel:
+        item["state"]="MISSING"
+        item["action"]=None
+    return item
+
 class App:
     def __init__(self, portal:pathlib.Path, vault:pathlib.Path):
         self.portal=portal.resolve(); self.vault=vault.resolve(); self.started=time.time()
@@ -58,6 +102,14 @@ class App:
         appdir=self.vault/"apps/android"
         if not appdir.exists(): return []
         return [{"name":p.name,"bytes":p.stat().st_size,"url":"/vault/apps/android/"+p.name} for p in sorted(appdir.glob("*.apk"))]
+    def capabilities(self)->list[dict]:
+        lock_path=self.vault/"lock/nano.lock.json"
+        if not lock_path.exists(): return []
+        try: lock=json.loads(lock_path.read_text(encoding="utf-8"))
+        except Exception: return []
+        records=list(lock.get("artifacts",[]))+list(lock.get("containers",[]))
+        installed=shutil.which("rnstatus") is not None
+        return [describe_capability(rec,self.vault,installed) for rec in records]
 
 class Handler(BaseHTTPRequestHandler):
     server_version="ENDWORLD/0.1"
@@ -84,6 +136,7 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/health","/api/health"): return self.send_json({"ok":True,"profile":"nano"})
         if path=="/api/status": return self.send_json(self.app.status())
         if path=="/api/apps": return self.send_json(self.app.apps())
+        if path=="/api/capabilities": return self.send_json(self.app.capabilities())
         if path=="/api/lock":
             lock=self.app.vault/"lock/nano.lock.json"
             if not lock.exists(): return self.send_json({"error":"lock missing"},404)
