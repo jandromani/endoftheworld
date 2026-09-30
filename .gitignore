@@ -1,0 +1,6 @@
+# ENDWORLD vaults are intentionally not committed to Git.
+vault/
+*.part
+__pycache__/
+*.pyc
+.env
