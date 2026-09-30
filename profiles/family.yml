@@ -205,10 +205,10 @@ artifacts:
 
   - id: forgejo-source
     family: software-vault
-    kind: github_snapshot
+    kind: url
     required: true
-    repo: forgejo/forgejo
-    ref: latest-release
+    url: https://codeberg.org/forgejo/forgejo/archive/v15.0.9.tar.gz
+    filename: forgejo-source-v15.0.9.tar.gz
     destination: source/software
     budget_bytes: 2000000000
 
