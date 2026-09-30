@@ -24,7 +24,7 @@ def run(*cmd: str, sudo: bool = False) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(prog="endworld")
-    ap.add_argument("--profile", default="nano", choices=["nano"])
+    ap.add_argument("--profile", default="nano", help="profile id from profiles/<id>.yml")
     sub = ap.add_subparsers(dest="command", required=True)
     for name in ("plan", "acquire", "prepare", "verify", "run", "stop", "status", "doctor", "scout"):
         sub.add_parser(name)
@@ -35,20 +35,25 @@ def main() -> int:
     f.add_argument("--image", default="dist/endworld-nano-amd64.img")
     args = ap.parse_args()
 
-    if args.profile != "nano":
-        raise SystemExit("Only NANO is implemented in v0.1")
+    profile_path = ROOT / "profiles" / f"{args.profile}.yml"
+    if not profile_path.exists():
+        raise SystemExit(f"Unknown profile: {args.profile}")
+    vault = f"vault/{args.profile}"
 
     py = sys.executable
     if args.command in ("plan", "acquire"):
-        return run(py, "scripts/build_nano.py", args.command)
+        return run(py, "scripts/acquire.py", args.command, "--profile", str(profile_path), "--vault", vault)
     if args.command == "prepare":
-        rc = run(py, "scripts/prepare_nano.py")
+        if args.profile != "nano":
+            raise SystemExit(f"No prepare pipeline registered yet for profile {args.profile}")
+        rc = run(py, "scripts/prepare_nano.py", "--vault", vault)
         if rc:
             return rc
-        return run(py, "scripts/generate_bom.py", "--vault", "vault/nano")
+        return run(py, "scripts/generate_bom.py", "--vault", vault, "--profile-id", args.profile)
     if args.command == "verify":
-        return run(py, "scripts/verify_vault.py", "--vault", "vault/nano")
+        return run(py, "scripts/verify_vault.py", "--vault", vault, "--profile-id", args.profile)
     if args.command == "run":
+        if args.profile != "nano": raise SystemExit("Runtime image is currently implemented for NANO")
         return run("bash", "runtime/start-nano.sh")
     if args.command == "stop":
         return run("bash", "runtime/stop-nano.sh")
@@ -59,6 +64,7 @@ def main() -> int:
     if args.command == "scout":
         return run(py, "scripts/scout.py")
     if args.command == "build-image":
+        if args.profile != "nano": raise SystemExit("Bootable image target is currently implemented for NANO")
         return run("bash", "scripts/build_disk_image.sh", args.output, sudo=True)
     if args.command == "flash":
         return run("bash", "scripts/flash_image.sh", args.image, args.device, sudo=True)
