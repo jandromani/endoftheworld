@@ -4,7 +4,7 @@ PIP := $(VENV)/bin/pip
 PY := $(VENV)/bin/python
 DEVICE ?=
 
-.PHONY: setup builder-deps doctor nano-plan nano-acquire nano-prepare nano-verify nano-all nano-run nano-stop nano-status nano-image nano-flash scout
+.PHONY: setup builder-deps doctor nano-plan nano-acquire nano-prepare nano-verify nano-selftest nano-all nano-run nano-stop nano-status nano-image nano-flash scout
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -29,7 +29,10 @@ nano-prepare:
 nano-verify:
 	$(PY) scripts/endworld.py verify
 
-nano-all: nano-plan nano-acquire nano-prepare nano-verify
+nano-selftest:
+	$(PY) scripts/endworld.py selftest
+
+nano-all: nano-plan nano-acquire nano-prepare nano-verify nano-selftest
 
 nano-run:
 	$(PY) scripts/endworld.py run

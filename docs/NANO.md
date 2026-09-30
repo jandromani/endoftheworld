@@ -174,9 +174,15 @@ The portal exposes:
 - health/storage/battery state;
 - Kiwix library;
 - local AI chat;
+- local Whisper transcription;
 - static Spain PMTiles map;
-- downloadable Android APK vault;
+- downloadable Android APK and firmware vault;
+- a capability plane at `/api/capabilities` that distinguishes live services, ready artifacts, preserved source and internal runtime components;
 - frozen manifest/integrity metadata.
+
+### Project NOMAD inside NANO
+
+NANO preserves a frozen Project NOMAD source snapshot and exposes it through the capability plane, but deliberately does not run the full NOMAD management stack. NOMAD's Command Center adds its own multi-container control plane and storage overhead; duplicating Kiwix, AI and map orchestration inside the 64 GB reference image would spend scarce space on two control planes. The larger `nomad` profile is the correct place to activate that complete stack. NANO remains the minimal mold while still retaining NOMAD for offline reconstruction and replication.
 
 ## Local development runtime
 

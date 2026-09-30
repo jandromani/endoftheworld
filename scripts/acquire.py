@@ -55,19 +55,36 @@ def get_text(url: str) -> str:
         return r.read().decode("utf-8", "replace")
 
 
+def response_size(response) -> int | None:
+    content_range = response.headers.get("Content-Range", "")
+    m = re.search(r"/(\d+)$", content_range)
+    if m:
+        return int(m.group(1))
+    length = response.headers.get("Content-Length")
+    if length and length.isdigit():
+        return int(length)
+    return None
+
+
 def resolve_final_url(url: str) -> tuple[str, int | None]:
-    # GET with Range is more reliable than HEAD across mirrors/CDNs.
-    request = req(url, headers={"Range": "bytes=0-0"})
+    # Prefer HEAD: modern mirrors increasingly implement "latest" as a
+    # redirect, and probing those aliases with Range can trigger broken
+    # redirect/cache behaviour. Fall back to a one-byte GET for hosts that do
+    # not implement HEAD or omit a useful Content-Length.
+    head_final = None
+    try:
+        with urllib.request.urlopen(req(url, method="HEAD"), timeout=45) as r:
+            head_final = r.geturl()
+            size = response_size(r)
+            if size is not None:
+                return head_final, size
+    except Exception:
+        pass
+
+    probe_url = head_final or url
+    request = req(probe_url, headers={"Range": "bytes=0-0"})
     with urllib.request.urlopen(request, timeout=45) as r:
-        final = r.geturl()
-        content_range = r.headers.get("Content-Range", "")
-        total = None
-        m = re.search(r"/(\d+)$", content_range)
-        if m:
-            total = int(m.group(1))
-        elif r.headers.get("Content-Length"):
-            total = int(r.headers["Content-Length"])
-        return final, total
+        return r.geturl(), response_size(r)
 
 
 def latest_from_index(index_url: str, href_regex: str) -> tuple[str, str]:
@@ -265,7 +282,8 @@ def download(resolved: dict, vault: pathlib.Path) -> dict:
 
     start = part.stat().st_size if part.exists() else 0
     headers = {"Range": f"bytes={start}-"} if start else {}
-    request = req(resolved["url"], headers=headers)
+    source_url = resolved.get("resolved_url") or resolved["url"]
+    request = req(source_url, headers=headers)
 
     try:
         response = urllib.request.urlopen(request, timeout=90)
@@ -274,7 +292,7 @@ def download(resolved: dict, vault: pathlib.Path) -> dict:
         if start:
             part.unlink(missing_ok=True)
             start = 0
-            response = urllib.request.urlopen(req(resolved["url"]), timeout=90)
+            response = urllib.request.urlopen(req(source_url), timeout=90)
         else:
             raise
 
@@ -283,7 +301,7 @@ def download(resolved: dict, vault: pathlib.Path) -> dict:
         response.close()
         part.unlink(missing_ok=True)
         start = 0
-        response = urllib.request.urlopen(req(resolved["url"]), timeout=90)
+        response = urllib.request.urlopen(req(source_url), timeout=90)
 
     mode = "ab" if start else "wb"
     written = start
@@ -379,9 +397,8 @@ def main() -> int:
           f"reserved for containers/derived outputs: {human(acquisition_headroom)}")
     print("Resolving sources...")
 
-    resolved = []
+    candidates = []
     failures = []
-    estimated = 0
     for spec in profile.get("artifacts", []):
         try:
             item = resolve_artifact(spec)
@@ -393,22 +410,43 @@ def main() -> int:
                     raise BuildError(msg)
                 print(f"SKIP optional: {msg}")
                 continue
-            if size and estimated + size > artifact_limit and not spec.get("required"):
-                print(f"SKIP optional: {spec['id']} would exceed profile acquisition ceiling")
+            planning_bytes = int(size if size is not None else (budget or 0))
+            if planning_bytes <= 0 and not spec.get("required"):
+                print(f"SKIP optional: {spec['id']} has unknown size and no budget")
                 continue
-            estimated += int(size or 0)
-            resolved.append(item)
-            print(f"  OK {item['id']:<28} {human(size):>12}  {item['filename']}")
+            candidates.append((item, planning_bytes))
+            shown = size if size is not None else planning_bytes
+            suffix = "" if size is not None else " budget-reserved"
+            print(f"  OK {item['id']:<28} {human(shown):>12}{suffix}  {item['filename']}")
         except Exception as exc:
             failures.append({"id": spec["id"], "required": bool(spec.get("required")), "error": str(exc)})
             print(f"  FAIL {spec['id']}: {exc}")
 
     required_failures = [f for f in failures if f["required"]]
-    if estimated > artifact_limit:
+    required_estimate = sum(plan for item, plan in candidates if item["required"])
+    if required_estimate > artifact_limit:
         raise BuildError(
-            f"Required artifact estimate {human(estimated)} exceeds acquisition ceiling {human(artifact_limit)}"
+            f"Required artifact envelope {human(required_estimate)} exceeds acquisition ceiling {human(artifact_limit)}"
         )
-    print(f"Resolved estimate: {human(estimated)} before container images/derived artifacts.")
+
+    # Optionals are selected only after reserving space for every required
+    # artifact, including the declared budget for required sources whose
+    # remote size is unknown. This makes selection independent of manifest
+    # ordering and prevents an early optional from crowding out a later
+    # required capability.
+    resolved = []
+    estimated = required_estimate
+    for item, planning_bytes in candidates:
+        if item["required"]:
+            resolved.append(item)
+            continue
+        if estimated + planning_bytes > artifact_limit:
+            print(f"SKIP optional: {item['id']} would exceed profile acquisition ceiling")
+            continue
+        resolved.append(item)
+        estimated += planning_bytes
+
+    print(f"Planned artifact envelope: {human(estimated)} before container images/derived artifacts.")
 
     if args.command == "plan":
         if required_failures:
@@ -472,7 +510,7 @@ def main() -> int:
         "containers": containers,
         "failures": failures,
     }
-    lock_path = lock_dir / f"{profile_id}.lock.json"
+    lock_path = lock_dir / f"{pmeta['id']}.lock.json"
     tmp = lock_path.with_suffix(".tmp")
     tmp.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     os.replace(tmp, lock_path)

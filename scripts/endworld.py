@@ -26,7 +26,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(prog="endworld")
     ap.add_argument("--profile", default="nano", help="profile id from profiles/<id>.yml")
     sub = ap.add_subparsers(dest="command", required=True)
-    for name in ("plan", "acquire", "prepare", "verify", "run", "stop", "status", "doctor", "scout"):
+    for name in ("plan", "acquire", "prepare", "verify", "run", "stop", "status", "doctor", "scout", "selftest"):
         sub.add_parser(name)
     b = sub.add_parser("build-image")
     b.add_argument("--output", default="dist/endworld-nano-amd64.img")
@@ -63,6 +63,11 @@ def main() -> int:
         return run("bash", "scripts/doctor.sh")
     if args.command == "scout":
         return run(py, "scripts/scout.py")
+    if args.command == "selftest":
+        cmd=[py, "scripts/selftest.py", "--profile", str(profile_path)]
+        if (ROOT / vault / "lock" / f"{args.profile}.lock.json").exists():
+            cmd += ["--vault", vault]
+        return run(*cmd)
     if args.command == "build-image":
         if args.profile != "nano": raise SystemExit("Bootable image target is currently implemented for NANO")
         return run("bash", "scripts/build_disk_image.sh", args.output, sudo=True)
