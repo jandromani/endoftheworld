@@ -42,7 +42,10 @@ def main() -> int:
     if args.command in ("plan", "acquire"):
         return run(py, "scripts/build_nano.py", args.command)
     if args.command == "prepare":
-        return run(py, "scripts/prepare_nano.py")
+        rc = run(py, "scripts/prepare_nano.py")
+        if rc:
+            return rc
+        return run(py, "scripts/generate_bom.py", "--vault", "vault/nano")
     if args.command == "verify":
         return run(py, "scripts/verify_vault.py", "--vault", "vault/nano")
     if args.command == "run":
