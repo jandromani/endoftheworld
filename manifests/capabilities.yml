@@ -128,3 +128,45 @@ capabilities:
     track: release
     priority: high
     auto_promote: false
+
+  - id: freecad
+    family: cad
+    repo: FreeCAD/FreeCAD
+    track: release
+    priority: high
+    auto_promote: false
+
+  - id: kicad
+    family: electronics
+    repo: KiCad/kicad-source-mirror
+    track: release
+    priority: high
+    auto_promote: false
+
+  - id: openscad
+    family: cad
+    repo: openscad/openscad
+    track: release
+    priority: high
+    auto_promote: false
+
+  - id: jupyterlab
+    family: science
+    repo: jupyterlab/jupyterlab
+    track: release
+    priority: high
+    auto_promote: false
+
+  - id: oci-distribution
+    family: software-vault
+    repo: distribution/distribution
+    track: release
+    priority: high
+    auto_promote: false
+
+  - id: pypiserver
+    family: software-vault
+    repo: pypiserver/pypiserver
+    track: release
+    priority: high
+    auto_promote: false

@@ -55,7 +55,7 @@ def pypi_snapshot(pkgs,dest):
 def npm_snapshot(pkgs,dest):
     if not shutil.which("npm"): raise SnapshotError("npm missing")
     cache=dest/"cache"; work=dest/"work"; work.mkdir(parents=True,exist_ok=True)
-    subprocess.run(["npm","install","--ignore-scripts","--package-lock-only","--cache",str(cache),"--prefix",str(work),*pkgs],check=True)
+    subprocess.run(["npm","install","--ignore-scripts","--no-audit","--no-fund","--cache",str(cache),"--prefix",str(work),*pkgs],check=True)
     lock=work/"package-lock.json"
     if lock.exists(): shutil.copy2(lock,dest/"package-lock.json")
     shutil.rmtree(work,ignore_errors=True)

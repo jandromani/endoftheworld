@@ -2,17 +2,17 @@
 
 The service set depends on profile.
 
-| Service | NANO | FAMILY | NOMAD | Default port |
+| Service | NANO | FAMILY | NOMAD | CIVILIZATION | Default port |
 |---|:---:|:---:|:---:|---:|
-| Portal | ✅ | ✅ | ✅ | 8080 |
-| Kiwix | ✅ | ✅ | ✅ | 8081 |
-| llama.cpp | ✅ | ✅ | ✅ | 8082 |
-| whisper.cpp | ✅ | ✅ | ✅ | 8083 |
-| Forgejo | — | ✅ | ✅ | 3000 |
-| Syncthing | — | ✅ | ✅ | 8384 |
-| Qdrant | — | — | ✅ | 6333/6334 |
-| code-server | — | — | ✅ | 8443 |
-| Project NOMAD | — | — | ✅ | 8090 |
+| Portal | ✅ | ✅ | ✅ | ✅ | 8080 |
+| Kiwix | ✅ | ✅ | ✅ | ✅ | 8081 |
+| llama.cpp | ✅ | ✅ | ✅ | ✅ | 8082 |
+| whisper.cpp | ✅ | ✅ | ✅ | ✅ | 8083 |
+| Forgejo | — | ✅ | ✅ | ✅ | 3000 |
+| Syncthing | — | ✅ | ✅ | ✅ | 8384 |
+| Qdrant | — | — | ✅ | ✅ | 6333/6334 |
+| code-server | — | — | ✅ | ✅ | 8443 |
+| Project NOMAD | — | — | ✅ | ✅ | 8090 |
 
 ## Portal
 
@@ -64,3 +64,8 @@ NOMAD freezes and starts:
 - Redis.
 
 The upstream updater sidecar is intentionally absent. Project NOMAD admin receives Docker-socket access because its application-management architecture requires it; this is documented as a high-trust boundary.
+
+
+## CIVILIZATION package vault
+
+CIVILIZATION adds immutable APT, PyPI and npm snapshot TARs. These are not daemon services: the portal exposes them as frozen vault artifacts and they are covered by the same lock/BOM integrity model.

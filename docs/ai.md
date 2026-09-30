@@ -63,3 +63,8 @@ GPU acceleration can materially improve throughput, but the portability baseline
 ## RAG direction
 
 Qdrant exists in NOMAD as the vector layer. Full automatic RAG ingestion over the Ark's document/code corpus remains a roadmap item; Kiwix knowledge and llama.cpp are currently separate operational capabilities.
+
+
+## CIVILIZATION
+
+CIVILIZATION deliberately reuses NOMAD's three-model policy. Its storage increase is spent primarily on dependency closure, maps and reconstruction corpora rather than loading ever-larger models by default. The same `lite/general/coder` switch is supported.
