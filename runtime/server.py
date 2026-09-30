@@ -65,6 +65,14 @@ def describe_capability(rec: dict, vault: pathlib.Path, reticulum_available: boo
         item.update(state="SERVICE",action={"kind":"service","port":8384,"label":"Open Syncthing"})
     elif rid=="forgejo":
         item.update(state="SERVICE",action={"kind":"service","port":3000,"label":"Open Forgejo"})
+    elif rid=="qdrant":
+        item.update(state="SERVICE",action={"kind":"service","port":6333,"label":"Open Qdrant"})
+    elif rid=="code-server":
+        item.update(state="SERVICE",action={"kind":"service","port":8443,"label":"Open IDE"})
+    elif rid=="project-nomad-admin":
+        item.update(state="SERVICE",action={"kind":"service","port":8090,"label":"Open Project NOMAD"})
+    elif rid in ("project-nomad-mysql","project-nomad-redis"):
+        item.update(state="RUNTIME",note="Frozen internal dependency for Project NOMAD.")
     elif rid.endswith("-pmtiles"):
         item.update(state="READY",action={"kind":"link","href":"/map.html","label":"Open map"})
     elif suffix==".apk" and rel:
@@ -108,10 +116,12 @@ class App:
         except Exception:return f"ENDWORLD {self.profile.upper()}"
     def status(self)->dict:
         usage=shutil.disk_usage(self.vault if self.vault.exists() else "/")
+        mode_path=self.vault/"state/runtime/ai-mode"
+        try: ai_mode=mode_path.read_text(encoding="utf-8").strip()
+        except Exception: ai_mode="default"
         return {"node":socket.gethostname(),"profile":self.profile,"title":self.title(),"uptime_seconds":int(time.time()-self.started),
-        "internet":internet_online(),"storage":{"total":usage.total,"used":usage.used,"free":usage.free},
-        "battery":battery_status(),"services":{"portal":True,"knowledge":service_alive("http://127.0.0.1:8081/"),
-        "ai":service_alive("http://127.0.0.1:8082/health"),"voice":service_alive("http://127.0.0.1:8083/"),"syncthing":service_alive("http://127.0.0.1:8384/"),"forgejo":service_alive("http://127.0.0.1:3000/")},"map_ready":any((self.vault/"maps/tiles").glob("*.pmtiles")) if (self.vault/"maps/tiles").exists() else False}
+        "internet":internet_online(),"storage":{"total":usage.total,"used":usage.used,"free":usage.free},"battery":battery_status(),"ai_mode":ai_mode,
+        "services":{"portal":True,"knowledge":service_alive("http://127.0.0.1:8081/"),"ai":service_alive("http://127.0.0.1:8082/health"),"voice":service_alive("http://127.0.0.1:8083/"),"syncthing":service_alive("http://127.0.0.1:8384/"),"forgejo":service_alive("http://127.0.0.1:3000/"),"qdrant":service_alive("http://127.0.0.1:6333/healthz"),"code_server":service_alive("http://127.0.0.1:8443/"),"project_nomad":service_alive("http://127.0.0.1:8090/api/health")},"map_ready":any((self.vault/"maps/tiles").glob("*.pmtiles")) if (self.vault/"maps/tiles").exists() else False}
     def apps(self)->list[dict]:
         appdir=self.vault/"apps/android"
         if not appdir.exists(): return []

@@ -127,6 +127,13 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         require(expected.issubset(ids), f"FAMILY wiring missing ids: {sorted(expected - ids)}")
         require(target == 256_000_000_000, "FAMILY target must stay exactly 256,000,000,000 bytes")
         require((ROOT / "config" / "family.env").is_file(), "FAMILY runtime env missing")
+    elif pid == "nomad":
+        expected={"wikipedia-en-nopic","wikipedia-medicine-en","wikibooks-en","stackoverflow-en","qwen3-8b-q4","qwen3-30b-a3b-q4","qwen3-coder-30b-a3b-q4s","whisper-medium","france-osm","ifixit-en","ifixit-es","appropriate-tech-cd3wd","electronics-stackexchange","arduino-stackexchange","raspberrypi-stackexchange","project-nomad-source","llama-cpp-source","qdrant-source","code-server-source","platformio-source","arduino-cli-source","esp32-source","satdump-source","syncthing","forgejo","qdrant","code-server","project-nomad-admin","project-nomad-mysql","project-nomad-redis"}
+        require(expected.issubset(ids), f"NOMAD wiring missing ids: {sorted(expected-ids)}")
+        require(target==1_000_000_000_000,"NOMAD target must stay exactly 1 TB decimal")
+        require((ROOT/"config/nomad.env").is_file(),"NOMAD runtime env missing")
+        require((ROOT/"runtime/switch-ai.sh").is_file(),"NOMAD AI switcher missing")
+        require({m["id"] for m in (data.get("prepare") or {}).get("maps",[])}=={"spain-pmtiles","portugal-pmtiles","france-pmtiles"},"NOMAD map contract changed")
 
     require(ceiling > 0, f"{pid}: acquisition ceiling invalid")
     return {"id": pid, "target": target, "reserve": reserve, "headroom": headroom, "ceiling": ceiling}
@@ -149,6 +156,9 @@ def validate_runtime(profile: dict) -> None:
         "project-nomad-source": ("core", "source/core/nomad.tar.gz", "link"),
         "syncthing": ("replication", "containers/syncthing.tar", "service"),
         "forgejo": ("software-vault", "containers/forgejo.tar", "service"),
+        "qdrant": ("ai", "containers/qdrant.tar", "service"),
+        "code-server": ("developer", "containers/code-server.tar", "service"),
+        "project-nomad-admin": ("core", "containers/project-nomad-admin.tar", "service"),
     }
     for rid, (family, path, action_kind) in samples.items():
         f = base / path

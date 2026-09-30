@@ -4,7 +4,7 @@ PIP := $(VENV)/bin/pip
 PY := $(VENV)/bin/python
 DEVICE ?=
 
-.PHONY: setup builder-deps doctor scout 	nano-plan nano-acquire nano-prepare nano-verify nano-selftest nano-all nano-run nano-stop nano-status nano-image nano-flash 	family-plan family-acquire family-prepare family-verify family-selftest family-all family-run family-stop family-status family-image family-flash
+.PHONY: setup builder-deps doctor scout 	nano-plan nano-acquire nano-prepare nano-verify nano-selftest nano-all nano-run nano-stop nano-status nano-image nano-flash 	family-plan family-acquire family-prepare family-verify family-selftest family-all family-run family-stop family-status family-image family-flash 	nomad-plan nomad-acquire nomad-prepare nomad-verify nomad-selftest nomad-all nomad-run nomad-stop nomad-status nomad-image nomad-flash nomad-ai-lite nomad-ai-general nomad-ai-coder
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -65,3 +65,32 @@ family-flash:
 
 scout:
 	$(PY) scripts/scout.py
+
+nomad-plan:
+	$(PY) scripts/endworld.py --profile nomad plan
+nomad-acquire:
+	$(PY) scripts/endworld.py --profile nomad acquire
+nomad-prepare:
+	$(PY) scripts/endworld.py --profile nomad prepare
+nomad-verify:
+	$(PY) scripts/endworld.py --profile nomad verify
+nomad-selftest:
+	$(PY) scripts/endworld.py --profile nomad selftest
+nomad-all: nomad-plan nomad-acquire nomad-prepare nomad-verify nomad-selftest
+nomad-run:
+	$(PY) scripts/endworld.py --profile nomad run
+nomad-stop:
+	$(PY) scripts/endworld.py --profile nomad stop
+nomad-status:
+	$(PY) scripts/endworld.py --profile nomad status
+nomad-image:
+	$(PY) scripts/endworld.py --profile nomad build-image
+nomad-flash:
+	@test -n "$(DEVICE)" || (echo "Usage: make nomad-flash DEVICE=/dev/sdX" && exit 2)
+	$(PY) scripts/endworld.py --profile nomad flash "$(DEVICE)"
+nomad-ai-lite:
+	$(PY) scripts/endworld.py --profile nomad ai-mode lite
+nomad-ai-general:
+	$(PY) scripts/endworld.py --profile nomad ai-mode general
+nomad-ai-coder:
+	$(PY) scripts/endworld.py --profile nomad ai-mode coder
