@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """ENDWORLD command-line entrypoint.
 
-The CLI is deliberately profile-oriented so NANO becomes the template for
-larger profiles without changing the operator workflow.
+Every profile follows the same operator lifecycle:
+plan -> acquire -> prepare -> verify -> selftest -> run/build-image -> flash.
 """
 from __future__ import annotations
 
@@ -29,50 +29,48 @@ def main() -> int:
     for name in ("plan", "acquire", "prepare", "verify", "run", "stop", "status", "doctor", "scout", "selftest"):
         sub.add_parser(name)
     b = sub.add_parser("build-image")
-    b.add_argument("--output", default="dist/endworld-nano-amd64.img")
-    f = sub.add_parser("flash")
-    f.add_argument("device")
-    f.add_argument("--image", default="dist/endworld-nano-amd64.img")
+    b.add_argument("--output")
+    fl = sub.add_parser("flash")
+    fl.add_argument("device")
+    fl.add_argument("--image")
     args = ap.parse_args()
 
     profile_path = ROOT / "profiles" / f"{args.profile}.yml"
     if not profile_path.exists():
         raise SystemExit(f"Unknown profile: {args.profile}")
     vault = f"vault/{args.profile}"
-
     py = sys.executable
+
     if args.command in ("plan", "acquire"):
         return run(py, "scripts/acquire.py", args.command, "--profile", str(profile_path), "--vault", vault)
     if args.command == "prepare":
-        if args.profile != "nano":
-            raise SystemExit(f"No prepare pipeline registered yet for profile {args.profile}")
-        rc = run(py, "scripts/prepare_nano.py", "--vault", vault)
+        rc = run(py, "scripts/prepare_profile.py", "--profile", str(profile_path), "--vault", vault)
         if rc:
             return rc
         return run(py, "scripts/generate_bom.py", "--vault", vault, "--profile-id", args.profile)
     if args.command == "verify":
         return run(py, "scripts/verify_vault.py", "--vault", vault, "--profile-id", args.profile)
     if args.command == "run":
-        if args.profile != "nano": raise SystemExit("Runtime image is currently implemented for NANO")
-        return run("bash", "runtime/start-nano.sh")
+        return run("bash", "runtime/start-profile.sh", args.profile)
     if args.command == "stop":
-        return run("bash", "runtime/stop-nano.sh")
+        return run("bash", "runtime/stop-profile.sh", args.profile)
     if args.command == "status":
-        return run(py, "scripts/healthcheck.py", "--local")
+        return run(py, "scripts/healthcheck.py", "--local", "--profile-id", args.profile)
     if args.command == "doctor":
         return run("bash", "scripts/doctor.sh")
     if args.command == "scout":
         return run(py, "scripts/scout.py")
     if args.command == "selftest":
-        cmd=[py, "scripts/selftest.py", "--profile", str(profile_path)]
+        cmd = [py, "scripts/selftest.py", "--profile", str(profile_path)]
         if (ROOT / vault / "lock" / f"{args.profile}.lock.json").exists():
             cmd += ["--vault", vault]
         return run(*cmd)
     if args.command == "build-image":
-        if args.profile != "nano": raise SystemExit("Bootable image target is currently implemented for NANO")
-        return run("bash", "scripts/build_disk_image.sh", args.output, sudo=True)
+        output = args.output or f"dist/endworld-{args.profile}-amd64.img"
+        return run("bash", "scripts/build_disk_image.sh", args.profile, output, sudo=True)
     if args.command == "flash":
-        return run("bash", "scripts/flash_image.sh", args.image, args.device, sudo=True)
+        image = args.image or f"dist/endworld-{args.profile}-amd64.img"
+        return run("bash", "scripts/flash_image.sh", image, args.device, sudo=True)
     return 2
 
 
