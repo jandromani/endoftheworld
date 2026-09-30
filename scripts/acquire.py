@@ -238,7 +238,7 @@ def upstream_sha256(url: str | None, filename: str) -> str | None:
     text = get_text(url)
     hashes = []
     for line in text.splitlines():
-        m = re.search(r"(?i)\\b([0-9a-f]{64})\\b", line)
+        m = re.search(r"(?i)\b([0-9a-f]{64})\b", line)
         if not m:
             continue
         hashes.append(m.group(1).lower())
