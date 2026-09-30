@@ -54,24 +54,27 @@ See `manifests/capabilities.yml`.
 The first runnable profile is now in the repository.
 
 **Target:** 64 GB class  
-**Payload policy:** up to 56 GB frozen payload + 8 GB runtime/filesystem reserve.
+**Payload policy:** ~48 GB acquisition ceiling + 4 GB derived/container headroom + 12 GB OS/filesystem/runtime reserve.
 
 ```bash
 git clone https://github.com/jandromani/endoftheworld.git
 cd endoftheworld
 
+make builder-deps
 make setup
 make nano-plan       # resolve sources, download nothing
 make nano-acquire    # acquire + hash + freeze
+make nano-prepare    # build PMTiles + CycloneDX BOM
 make nano-verify     # re-hash the vault
+make nano-image      # build 64 GB BIOS+UEFI appliance image
 
-# disconnect Internet here
+# or test the prepared vault locally:
 make nano-run
 ```
 
 Open `http://NODE-IP:8080` from any device on the LAN.
 
-NANO currently provides a local portal, Kiwix knowledge service, llama.cpp local AI service, an Android APK vault, OSM Spain data, Meshtastic firmware, and frozen source for critical communication/core components.
+NANO now wires a local portal, Kiwix, llama.cpp, whisper.cpp transcription, a PMTiles Spain map, Android APK vault, Meshtastic firmware, installed Reticulum tools, frozen Project NOMAD source, local Wi-Fi/DNS, health checks, and a guarded bootable-image/flash pipeline.
 
 See [docs/NANO.md](docs/NANO.md).
 
