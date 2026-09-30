@@ -14,15 +14,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - run: pip install -r requirements.txt
+
+      - name: Verify required NANO sources still resolve
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/build_nano.py plan
+
       - name: Discover upstream changes and candidate capabilities
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/scout.py
-      - name: Publish report as a review PR
+
+      - name: Publish discovery report as review PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -30,11 +39,15 @@ jobs:
             echo "No report changes."
             exit 0
           fi
-          BRANCH="bot/scout-$(date -u +%Y-%m-%d)"
+
+          BRANCH="bot/scout-$(date -u +%Y-%m-%d)-${GITHUB_RUN_ID}"
+
           git config user.name "endworld-scout[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git checkout -b "$BRANCH"
           git add reports/
           git commit -m "Scout ENDWORLD capabilities $(date -u +%Y-%m-%d)"
           git push -u origin "$BRANCH"
-          gh pr create             --base "${{ github.event.repository.default_branch }}"             --head "$BRANCH"             --title "ENDWORLD capability scout $(date -u +%Y-%m-%d)"             --body "Discovery metadata only. No candidate has been downloaded into the vault, executed, trusted, or promoted."
+
+          gh pr create             --base "${{ github.event.repository.default_branch }}"             --head "$BRANCH"             --title "ENDWORLD capability scout $(date -u +%Y-%m-%d)"             --body "Discovery metadata only. No candidate has been downloaded into the vault, executed, trusted, or promoted. The required NANO source-resolution plan passed before this report was created."
