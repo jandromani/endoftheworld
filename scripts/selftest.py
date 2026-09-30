@@ -125,19 +125,19 @@ def validate_runtime(profile: dict) -> None:
         return
 
     samples = {
-        "wikipedia-es": ("knowledge/zim/wiki.zim", "service"),
-        "qwen3-4b-q4": ("ai/models/model.gguf", "anchor"),
-        "whisper-small": ("ai/models/whisper.bin", "anchor"),
-        "bitchat-android": ("apps/android/bitchat.apk", "link"),
-        "meshtastic-firmware": ("firmware/meshtastic/fw.zip", "link"),
-        "reticulum-source": ("source/comms/reticulum.tar.gz", "link"),
-        "project-nomad-source": ("source/core/nomad.tar.gz", "link"),
+        "wikipedia-es": ("knowledge", "knowledge/zim/wiki.zim", "service"),
+        "qwen3-4b-q4": ("ai", "ai/models/model.gguf", "anchor"),
+        "whisper-small": ("ai", "ai/models/whisper.bin", "anchor"),
+        "bitchat-android": ("comms", "apps/android/bitchat.apk", "link"),
+        "meshtastic-firmware": ("comms", "firmware/meshtastic/fw.zip", "link"),
+        "reticulum-source": ("comms", "source/comms/reticulum.tar.gz", "link"),
+        "project-nomad-source": ("core", "source/core/nomad.tar.gz", "link"),
     }
-    for rid, (path, action_kind) in samples.items():
+    for rid, (family, path, action_kind) in samples.items():
         f = base / path
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_bytes(b"x")
-        rec = {"id": rid, "family": "test", "path": path, "required": True, "bytes": 1}
+        rec = {"id": rid, "family": family, "path": path, "required": True, "bytes": 1}
         item = server.describe_capability(rec, base, reticulum_available=False)
         require(item.get("action") and item["action"].get("kind") == action_kind,
                 f"{rid}: no operator action wired")
