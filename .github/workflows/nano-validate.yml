@@ -47,6 +47,9 @@ jobs:
           sudo apt-get install -y -qq shellcheck
           shellcheck -x scripts/*.sh runtime/*.sh runtime/network/*.sh || true
 
+      - name: ENDWORLD source self-test
+        run: python scripts/endworld.py --profile nano selftest
+
       - name: Validate NANO manifest and budget
         run: |
           python - <<'PY'
