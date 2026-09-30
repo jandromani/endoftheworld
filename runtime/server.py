@@ -238,7 +238,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"path":str(directory.relative_to(self.app.vault)),"items":rows})
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument("--bind",default="0.0.0.0");ap.add_argument("--port",type=int,default=8080)\n    ap.add_argument("--profile",default=os.getenv("ENDWORLD_PROFILE"))\n    ap.add_argument("--portal",default=str(pathlib.Path(__file__).parent/"portal"))
+    ap=argparse.ArgumentParser();ap.add_argument("--bind",default="0.0.0.0");ap.add_argument("--port",type=int,default=8080)
+    ap.add_argument("--profile",default=os.getenv("ENDWORLD_PROFILE"))
+    ap.add_argument("--portal",default=str(pathlib.Path(__file__).parent/"portal"))
     ap.add_argument("--vault",default=os.getenv("ENDWORLD_VAULT","/srv/endworld"));args=ap.parse_args()
     httpd=ThreadingHTTPServer((args.bind,args.port),Handler);httpd.app=App(pathlib.Path(args.portal),pathlib.Path(args.vault),args.profile)
     print(f"ENDWORLD portal on http://{args.bind}:{args.port}",flush=True);httpd.serve_forever()
