@@ -1,7 +1,8 @@
 [Unit]
-Description=ENDWORLD NANO health check
+Description=ENDWORLD health check
 After=endworld-portal.service endworld-stack.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 /opt/endworld/scripts/healthcheck.py --vault /srv/endworld
+EnvironmentFile=-/etc/endworld/profile.env
+ExecStart=/usr/bin/python3 /opt/endworld/scripts/healthcheck.py --vault /srv/endworld --profile-id ${ENDWORLD_PROFILE}

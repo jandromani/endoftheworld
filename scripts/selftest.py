@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Deterministic source/vault self-test for ENDWORLD profiles.
 
-This test performs no network access and downloads nothing. It checks the
-profile contract, path safety, NANO operator wiring, portal routing helpers and
-(when supplied) the frozen lock envelope.
+No network access and no downloads. Validates profile contracts, path safety,
+profile-specific wiring, generic runtime routing and (optionally) a frozen vault.
 """
 from __future__ import annotations
 
@@ -54,12 +53,15 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
     target = int(meta.get("target_bytes") or 0)
     reserve = int(meta.get("reserve_bytes") or 0)
     headroom = int(meta.get("acquisition_headroom_bytes") or 0)
+    root_mib = int(meta.get("root_partition_mib") or 8192)
     require(target > 0, "target_bytes must be positive")
     require(0 <= reserve < target, "reserve_bytes must fit target")
     require(0 <= headroom < target - reserve, "acquisition headroom must fit usable payload")
+    require(4096 <= root_mib <= 65536, "root_partition_mib outside supported envelope")
     ceiling = target - reserve - headroom
 
     ids: set[str] = set()
+    artifact_ids: set[str] = set()
     artifacts = data.get("artifacts") or []
     require(isinstance(artifacts, list) and artifacts, "profile has no artifacts")
     kind_fields = {
@@ -73,6 +75,7 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         rid = str(rec.get("id") or "")
         require(rid and rid not in ids, f"duplicate or missing artifact id: {rid!r}")
         ids.add(rid)
+        artifact_ids.add(rid)
         kind = str(rec.get("kind") or "")
         require(kind in kind_fields, f"{rid}: unsupported artifact kind {kind!r}")
         for field in kind_fields[kind]:
@@ -82,35 +85,50 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         require(budget > 0, f"{rid}: budget_bytes must be positive")
         require(budget <= target - reserve, f"{rid}: item budget exceeds usable profile")
 
-    containers = data.get("containers") or []
-    for rec in containers:
+    for rec in data.get("containers") or []:
         rid = str(rec.get("id") or "")
         require(rid and rid not in ids, f"duplicate or missing component id: {rid!r}")
         ids.add(rid)
         image = str(rec.get("image") or "")
         require("/" in image and ":" in image, f"{rid}: container image must include repository and tag")
 
+    for spec in (data.get("prepare") or {}).get("maps", []):
+        require(spec.get("id"), "prepare map id missing")
+        require(spec.get("source_artifact") in artifact_ids,
+                f"{spec.get('id')}: source artifact not declared")
+        require(str(spec.get("filename") or "").endswith(".pmtiles"),
+                f"{spec.get('id')}: PMTiles filename required")
+
     for rel in (
-        "runtime/server.py",
-        "runtime/start-stack.sh",
-        "runtime/portal/index.html",
-        "scripts/acquire.py",
-        "scripts/verify_vault.py",
-        "scripts/build_disk_image.sh",
+        "runtime/server.py", "runtime/start-stack.sh", "runtime/start-profile.sh",
+        "runtime/portal/index.html", "scripts/acquire.py", "scripts/verify_vault.py",
+        "scripts/prepare_profile.py", "scripts/build_disk_image.sh",
     ):
         require((ROOT / rel).is_file(), f"missing wired runtime file: {rel}")
 
+    expected_common = {
+        "wikipedia-es", "wikipedia-medicine-es", "spain-osm", "planetiler",
+        "maplibre-js", "maplibre-css", "pmtiles-js", "bitchat-android",
+        "meshtastic-android", "reticulum-source", "project-nomad-source",
+        "kiwix", "llama-server", "whisper-server",
+    }
+    require(expected_common.issubset(ids), f"{pid}: common wiring missing {sorted(expected_common - ids)}")
+
     if pid == "nano":
-        expected = {
-            "wikipedia-es", "wikipedia-medicine-es", "qwen3-4b-q4", "whisper-small",
-            "spain-osm", "bitchat-android", "meshtastic-android", "reticulum-source",
-            "project-nomad-source", "planetiler", "maplibre-js", "maplibre-css", "pmtiles-js",
-            "kiwix", "llama-server", "whisper-server",
-        }
+        expected = {"qwen3-4b-q4", "whisper-small"}
         require(expected.issubset(ids), f"NANO wiring missing ids: {sorted(expected - ids)}")
         require(target == 64_000_000_000, "NANO target must stay exactly 64,000,000,000 bytes")
-        require(ceiling > 0, "NANO acquisition ceiling invalid")
+    elif pid == "family":
+        expected = {
+            "wikipedia-en-nopic", "wikisource-es", "qwen3-8b-q4", "whisper-medium",
+            "portugal-osm", "organicmaps-android", "meshtastic-firmware",
+            "syncthing-source", "forgejo-source", "syncthing", "forgejo",
+        }
+        require(expected.issubset(ids), f"FAMILY wiring missing ids: {sorted(expected - ids)}")
+        require(target == 256_000_000_000, "FAMILY target must stay exactly 256,000,000,000 bytes")
+        require((ROOT / "config" / "family.env").is_file(), "FAMILY runtime env missing")
 
+    require(ceiling > 0, f"{pid}: acquisition ceiling invalid")
     return {"id": pid, "target": target, "reserve": reserve, "headroom": headroom, "ceiling": ceiling}
 
 
@@ -121,17 +139,16 @@ def validate_runtime(profile: dict) -> None:
     require(server.safe_join(base, "../escape") is None, "safe_join allowed parent traversal")
     require(server.safe_join(base, "%2e%2e/escape") is None, "safe_join allowed encoded traversal")
 
-    if profile["id"] != "nano":
-        return
-
     samples = {
         "wikipedia-es": ("knowledge", "knowledge/zim/wiki.zim", "service"),
-        "qwen3-4b-q4": ("ai", "ai/models/model.gguf", "anchor"),
-        "whisper-small": ("ai", "ai/models/whisper.bin", "anchor"),
+        "qwen3-8b-q4": ("ai", "ai/models/model.gguf", "anchor"),
+        "whisper-medium": ("ai", "ai/models/whisper.bin", "anchor"),
         "bitchat-android": ("comms", "apps/android/bitchat.apk", "link"),
         "meshtastic-firmware": ("comms", "firmware/meshtastic/fw.zip", "link"),
         "reticulum-source": ("comms", "source/comms/reticulum.tar.gz", "link"),
         "project-nomad-source": ("core", "source/core/nomad.tar.gz", "link"),
+        "syncthing": ("replication", "containers/syncthing.tar", "service"),
+        "forgejo": ("software-vault", "containers/forgejo.tar", "service"),
     }
     for rid, (family, path, action_kind) in samples.items():
         f = base / path
@@ -174,9 +191,7 @@ def main() -> int:
         profile = validate_profile(pathlib.Path(args.profile).resolve())
         validate_runtime(profile)
         result = {
-            "profile": profile["id"],
-            "source": "OK",
-            "target_bytes": profile["target"],
+            "profile": profile["id"], "source": "OK", "target_bytes": profile["target"],
             "acquisition_ceiling_bytes": profile["ceiling"],
         }
         if args.vault:

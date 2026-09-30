@@ -197,9 +197,12 @@ def resolve_artifact(spec: dict) -> dict:
 
     if kind == "github_snapshot":
         repo = spec["repo"]
-        ref = spec.get("ref", "default")
+        ref = spec.get("ref")
         release_url = None
-        if ref == "latest-release":
+        if not ref or ref == "default":
+            info = get_json(f"https://api.github.com/repos/{repo}")
+            ref = info["default_branch"]
+        elif ref == "latest-release":
             rel = github_latest_release(repo)
             if rel:
                 ref = rel["tag_name"]
@@ -238,7 +241,7 @@ def upstream_sha256(url: str | None, filename: str) -> str | None:
     text = get_text(url)
     hashes = []
     for line in text.splitlines():
-        m = re.search(r"(?i)\\b([0-9a-f]{64})\\b", line)
+        m = re.search(r"(?i)\b([0-9a-f]{64})\b", line)
         if not m:
             continue
         hashes.append(m.group(1).lower())

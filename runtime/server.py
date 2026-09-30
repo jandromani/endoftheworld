@@ -57,11 +57,15 @@ def describe_capability(rec: dict, vault: pathlib.Path, reticulum_available: boo
 
     if rid=="kiwix" or (family in ("knowledge","medical") and suffix==".zim"):
         item.update(state="SERVICE",action={"kind":"service","port":8081,"label":"Open library"})
-    elif rid in ("llama-server","qwen3-4b-q4"):
+    elif rid=="llama-server" or rid.startswith("qwen"):
         item.update(state="SERVICE",action={"kind":"anchor","href":"#local-ai","label":"Open local AI"})
-    elif rid in ("whisper-server","whisper-small"):
+    elif rid=="whisper-server" or rid.startswith("whisper-"):
         item.update(state="SERVICE",action={"kind":"anchor","href":"#voice","label":"Open transcription"})
-    elif rid=="spain-pmtiles":
+    elif rid=="syncthing":
+        item.update(state="SERVICE",action={"kind":"service","port":8384,"label":"Open Syncthing"})
+    elif rid=="forgejo":
+        item.update(state="SERVICE",action={"kind":"service","port":3000,"label":"Open Forgejo"})
+    elif rid.endswith("-pmtiles"):
         item.update(state="READY",action={"kind":"link","href":"/map.html","label":"Open map"})
     elif suffix==".apk" and rel:
         item.update(state="READY",action={"kind":"link","href":"/vault/"+rel,"label":"Download APK"})
@@ -74,7 +78,7 @@ def describe_capability(rec: dict, vault: pathlib.Path, reticulum_available: boo
     elif rid=="project-nomad-source":
         item.update(state="PRESERVED",
                     action={"kind":"link","href":"/vault/"+rel,"label":"Open frozen source"} if rel else None,
-                    note="Project NOMAD is preserved in NANO; its full multi-container Command Center belongs in larger profiles.")
+                    note="Project NOMAD source is preserved here; the full multi-container Command Center belongs in the dedicated NOMAD profile.")
     elif rid=="spain-osm" and rel:
         item.update(state="SOURCE",action={"kind":"link","href":"/vault/"+rel,"label":"Open OSM source"})
     elif rel and rel.startswith("source/"):
@@ -90,20 +94,35 @@ def describe_capability(rec: dict, vault: pathlib.Path, reticulum_available: boo
     return item
 
 class App:
-    def __init__(self, portal:pathlib.Path, vault:pathlib.Path):
+    def __init__(self, portal:pathlib.Path, vault:pathlib.Path, profile:str|None=None):
         self.portal=portal.resolve(); self.vault=vault.resolve(); self.started=time.time()
+        self.profile=profile or os.getenv("ENDWORLD_PROFILE") or self.detect_profile()
+    def detect_profile(self)->str:
+        lockdir=self.vault/"lock"
+        locks=sorted(lockdir.glob("*.lock.json")) if lockdir.exists() else []
+        return locks[0].name.split(".lock.json",1)[0] if len(locks)==1 else "nano"
+    def lock_path(self)->pathlib.Path:
+        return self.vault/"lock"/f"{self.profile}.lock.json"
+    def title(self)->str:
+        try:return str(json.loads(self.lock_path().read_text(encoding="utf-8")).get("title") or f"ENDWORLD {self.profile.upper()}")
+        except Exception:return f"ENDWORLD {self.profile.upper()}"
     def status(self)->dict:
         usage=shutil.disk_usage(self.vault if self.vault.exists() else "/")
-        return {"node":socket.gethostname(),"profile":"nano","uptime_seconds":int(time.time()-self.started),
+        return {"node":socket.gethostname(),"profile":self.profile,"title":self.title(),"uptime_seconds":int(time.time()-self.started),
         "internet":internet_online(),"storage":{"total":usage.total,"used":usage.used,"free":usage.free},
         "battery":battery_status(),"services":{"portal":True,"knowledge":service_alive("http://127.0.0.1:8081/"),
-        "ai":service_alive("http://127.0.0.1:8082/health"),"voice":service_alive("http://127.0.0.1:8083/")},"map_ready":(self.vault/"maps/tiles/spain.pmtiles").exists()}
+        "ai":service_alive("http://127.0.0.1:8082/health"),"voice":service_alive("http://127.0.0.1:8083/"),"syncthing":service_alive("http://127.0.0.1:8384/"),"forgejo":service_alive("http://127.0.0.1:3000/")},"map_ready":any((self.vault/"maps/tiles").glob("*.pmtiles")) if (self.vault/"maps/tiles").exists() else False}
     def apps(self)->list[dict]:
         appdir=self.vault/"apps/android"
         if not appdir.exists(): return []
         return [{"name":p.name,"bytes":p.stat().st_size,"url":"/vault/apps/android/"+p.name} for p in sorted(appdir.glob("*.apk"))]
+    def maps(self)->list[dict]:
+        root=self.vault/"maps/tiles"
+        if not root.exists(): return []
+        return [{"id":p.stem,"name":p.stem.replace("-"," ").title(),"bytes":p.stat().st_size,"url":"/maps/"+p.name}
+                for p in sorted(root.glob("*.pmtiles"))]
     def capabilities(self)->list[dict]:
-        lock_path=self.vault/"lock/nano.lock.json"
+        lock_path=self.lock_path()
         if not lock_path.exists(): return []
         try: lock=json.loads(lock_path.read_text(encoding="utf-8"))
         except Exception: return []
@@ -133,12 +152,13 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length",str(len(data))); self.end_headers()
             if send_body:self.wfile.write(data)
             return
-        if path in ("/health","/api/health"): return self.send_json({"ok":True,"profile":"nano"})
+        if path in ("/health","/api/health"): return self.send_json({"ok":True,"profile":self.app.profile})
         if path=="/api/status": return self.send_json(self.app.status())
         if path=="/api/apps": return self.send_json(self.app.apps())
+        if path=="/api/maps": return self.send_json(self.app.maps())
         if path=="/api/capabilities": return self.send_json(self.app.capabilities())
         if path=="/api/lock":
-            lock=self.app.vault/"lock/nano.lock.json"
+            lock=self.app.lock_path()
             if not lock.exists(): return self.send_json({"error":"lock missing"},404)
             try:return self.send_json(json.loads(lock.read_text(encoding="utf-8")))
             except Exception as exc:return self.send_json({"error":str(exc)},500)
@@ -219,8 +239,9 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     ap=argparse.ArgumentParser();ap.add_argument("--bind",default="0.0.0.0");ap.add_argument("--port",type=int,default=8080)
+    ap.add_argument("--profile",default=os.getenv("ENDWORLD_PROFILE"))
     ap.add_argument("--portal",default=str(pathlib.Path(__file__).parent/"portal"))
     ap.add_argument("--vault",default=os.getenv("ENDWORLD_VAULT","/srv/endworld"));args=ap.parse_args()
-    httpd=ThreadingHTTPServer((args.bind,args.port),Handler);httpd.app=App(pathlib.Path(args.portal),pathlib.Path(args.vault))
+    httpd=ThreadingHTTPServer((args.bind,args.port),Handler);httpd.app=App(pathlib.Path(args.portal),pathlib.Path(args.vault),args.profile)
     print(f"ENDWORLD portal on http://{args.bind}:{args.port}",flush=True);httpd.serve_forever()
 if __name__=="__main__":main()

@@ -4,7 +4,7 @@ ACTION="${1:-start}"
 RUN=/run/endworld
 ETC=/etc/endworld
 mkdir -p "$RUN"
-[[ -f "$ETC/nano.env" ]] && source "$ETC/nano.env"
+[[ -f "$ETC/profile.env" ]] && source "$ETC/profile.env"
 SSID="${ENDWORLD_WIFI_SSID:-ENDWORLD-NANO}"
 PASS="${ENDWORLD_WIFI_PASSWORD:-endworld-nano}"
 ADDR="${ENDWORLD_WIFI_ADDRESS:-10.42.0.1/24}"
@@ -72,6 +72,8 @@ address=/wiki.end.world/$IP
 address=/ai.end.world/$IP
 address=/maps.end.world/$IP
 address=/apps.end.world/$IP
+address=/sync.end.world/$IP
+address=/git.end.world/$IP
 address=/#/$IP
 no-resolv
 domain-needed

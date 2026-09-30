@@ -1,5 +1,5 @@
 [Unit]
-Description=ENDWORLD NANO offline Wi-Fi access point
+Description=ENDWORLD offline Wi-Fi access point
 After=network-pre.target
 Before=endworld-portal.service
 Wants=network-pre.target
@@ -7,7 +7,7 @@ Wants=network-pre.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-EnvironmentFile=-/etc/endworld/nano.env
+EnvironmentFile=-/etc/endworld/profile.env
 ExecStart=/opt/endworld/runtime/network/setup-ap.sh start
 ExecStop=/opt/endworld/runtime/network/setup-ap.sh stop
 

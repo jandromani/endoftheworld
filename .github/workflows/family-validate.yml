@@ -1,0 +1,176 @@
+name: Validate ENDWORLD FAMILY
+
+on:
+  push:
+    paths:
+      - "profiles/**"
+      - "scripts/**"
+      - "runtime/**"
+      - "config/**"
+      - "requirements.txt"
+      - "Makefile"
+      - ".github/workflows/family-validate.yml"
+  pull_request:
+    paths:
+      - "profiles/**"
+      - "scripts/**"
+      - "runtime/**"
+      - "config/**"
+      - ".github/workflows/family-validate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Compile every Python entrypoint
+        run: python -m py_compile scripts/*.py runtime/server.py
+
+      - name: Parse every shell entrypoint
+        run: |
+          for f in scripts/*.sh runtime/*.sh runtime/network/*.sh; do
+            bash -n "$f"
+          done
+
+      - name: ShellCheck appliance scripts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+          shellcheck -x scripts/*.sh runtime/*.sh runtime/network/*.sh || true
+
+      - name: Source self-tests
+        run: |
+          python scripts/endworld.py --profile nano selftest
+          python scripts/endworld.py --profile family selftest
+
+      - name: Validate FAMILY manifest and envelope
+        run: |
+          python - <<'PY'
+          import pathlib, yaml
+          p=yaml.safe_load(pathlib.Path("profiles/family.yml").read_text())
+          meta=p["profile"]
+          assert meta["id"]=="family"
+          assert int(meta["target_bytes"])==256_000_000_000
+          assert int(meta["reserve_bytes"])==24_000_000_000
+          assert int(meta["acquisition_headroom_bytes"])==20_000_000_000
+          assert int(meta["root_partition_mib"])==12288
+          ids={x["id"] for x in p["artifacts"]}|{x["id"] for x in p["containers"]}
+          required={"wikipedia-es","wikipedia-en-nopic","wikipedia-medicine-es","wikisource-es",
+                    "qwen3-8b-q4","whisper-medium","spain-osm","portugal-osm",
+                    "bitchat-android","meshtastic-android","organicmaps-android","meshtastic-firmware",
+                    "reticulum-source","project-nomad-source","syncthing-source","forgejo-source",
+                    "planetiler","maplibre-js","maplibre-css","pmtiles-js",
+                    "kiwix","llama-server","whisper-server","syncthing","forgejo"}
+          assert required.issubset(ids), required-ids
+          assert {m["id"] for m in p["prepare"]["maps"]}=={"spain-pmtiles","portugal-pmtiles"}
+          print("FAMILY manifest OK")
+          PY
+
+      - name: Test profile-aware HTTP server, maps and ranges
+        run: |
+          tmp="$(mktemp -d)"
+          mkdir -p "$tmp/portal" "$tmp/vault/maps/tiles" "$tmp/vault/lock" "$tmp/vault/apps/android" "$tmp/vault/containers"
+          printf '<h1>ENDWORLD FAMILY TEST</h1>' > "$tmp/portal/index.html"
+          python - <<PY
+          import json
+          from pathlib import Path
+          v=Path("$tmp/vault")
+          (v/"maps/tiles/spain.pmtiles").write_bytes(bytes(range(256))*4096)
+          (v/"maps/tiles/portugal.pmtiles").write_bytes(bytes(range(128))*4096)
+          (v/"containers/syncthing.tar").write_bytes(b"x")
+          (v/"containers/forgejo.tar").write_bytes(b"x")
+          lock={"schema":1,"profile":"family","title":"ENDWORLD FAMILY",
+                "artifacts":[{"id":"spain-pmtiles","family":"maps","kind":"derived","path":"maps/tiles/spain.pmtiles","bytes":1048576}],
+                "containers":[
+                  {"id":"syncthing","image":"ghcr.io/syncthing/syncthing:2.1.5","path":"containers/syncthing.tar","bytes":1},
+                  {"id":"forgejo","image":"codeberg.org/forgejo/forgejo:15.0.9","path":"containers/forgejo.tar","bytes":1}]}
+          (v/"lock/family.lock.json").write_text(json.dumps(lock))
+          PY
+          python runtime/server.py --profile family --bind 127.0.0.1 --port 18080 --portal "$tmp/portal" --vault "$tmp/vault" >"$tmp/server.log" 2>&1 &
+          pid=$!
+          trap 'kill $pid 2>/dev/null || true' EXIT
+          for i in {1..30}; do curl -fsS http://127.0.0.1:18080/health && break || sleep .2; done
+          test "$(curl -fsS http://127.0.0.1:18080/api/status | python -c 'import json,sys; print(json.load(sys.stdin)["profile"])')" = "family"
+          test "$(curl -fsS http://127.0.0.1:18080/api/maps | python -c 'import json,sys; print(len(json.load(sys.stdin)))')" = "2"
+          test "$(curl -fsS http://127.0.0.1:18080/api/capabilities | python -c 'import json,sys; d=json.load(sys.stdin); print(any(x["id"]=="syncthing" and x["action"]["port"]==8384 for x in d))')" = "True"
+          code="$(curl -sS -o "$tmp/range.bin" -w '%{http_code}' -H 'Range: bytes=100-199' http://127.0.0.1:18080/maps/spain.pmtiles)"
+          test "$code" = "206"
+          test "$(stat -c %s "$tmp/range.bin")" = "100"
+
+      - name: Exercise full acquisition codepath with local fixture
+        run: |
+          tmp="$(mktemp -d)"
+          mkdir -p "$tmp/www" "$tmp/vault"
+          python - <<PY
+          from pathlib import Path
+          root=Path("$tmp/www")
+          root.joinpath("required.bin").write_bytes(bytes(range(256))*512)
+          root.joinpath("optional.bin").write_bytes(b"ENDWORLD-FAMILY-FIXTURE"*2048)
+          PY
+          (cd "$tmp/www" && python -m http.server 18765 --bind 127.0.0.1 >"$tmp/http.log" 2>&1) &
+          pid=$!
+          trap 'kill $pid 2>/dev/null || true' EXIT
+          for i in {1..30}; do curl -fsSI http://127.0.0.1:18765/required.bin >/dev/null && break || sleep .2; done
+          (cd "$tmp/www" && sha256sum required.bin > required.sha256)
+          cat > "$tmp/profile.yml" <<'YAML'
+          schema: 1
+          profile:
+            id: fixture
+            title: ENDWORLD FIXTURE
+            target_bytes: 10000000
+            reserve_bytes: 1000000
+            acquisition_headroom_bytes: 1000000
+          artifacts:
+            - id: required
+              family: test
+              kind: url
+              required: true
+              url: http://127.0.0.1:18765/required.bin
+              checksum_url: http://127.0.0.1:18765/required.sha256
+              filename: required.bin
+              destination: payload
+              budget_bytes: 1000000
+            - id: optional
+              family: test
+              kind: url
+              required: false
+              url: http://127.0.0.1:18765/optional.bin
+              filename: optional.bin
+              destination: payload
+              budget_bytes: 1000000
+          containers: []
+          YAML
+          python scripts/acquire.py acquire --profile "$tmp/profile.yml" --vault "$tmp/vault"
+          python scripts/verify_vault.py --vault "$tmp/vault" --profile-id fixture
+          python - <<PY
+          import json
+          from pathlib import Path
+          lock=json.loads(Path("$tmp/vault/lock/fixture.lock.json").read_text())
+          assert lock["profile"]=="fixture"
+          assert {x["id"] for x in lock["artifacts"]}=={"required","optional"}
+          required=next(x for x in lock["artifacts"] if x["id"]=="required")
+          assert required["upstream_checksum_verified"] is True
+          assert required["status"]=="downloaded"
+          print("full acquire fixture OK")
+          PY
+
+      - name: Required FAMILY source resolution smoke test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/acquire.py plan --profile profiles/family.yml --vault vault/family
+
+      - name: CLI smoke test
+        run: |
+          python scripts/endworld.py --profile family --help >/dev/null
+          python scripts/endworld.py --profile family build-image --help >/dev/null
+          python scripts/endworld.py --profile family flash --help >/dev/null

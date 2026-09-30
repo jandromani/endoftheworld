@@ -1,5 +1,5 @@
 [Unit]
-Description=Periodic ENDWORLD NANO health check
+Description=Periodic ENDWORLD health check
 
 [Timer]
 OnBootSec=2min

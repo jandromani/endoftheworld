@@ -1,27 +1,33 @@
 schema: 1
 
 profile:
-  id: nano
-  title: ENDWORLD NANO
-  target_bytes: 64000000000
-  reserve_bytes: 12000000000
-  acquisition_headroom_bytes: 4000000000
-  root_partition_mib: 8192
+  id: family
+  title: ENDWORLD FAMILY
+  target_bytes: 256000000000
+  reserve_bytes: 24000000000
+  acquisition_headroom_bytes: 20000000000
+  root_partition_mib: 12288
   description: >
-    A portable offline node that prioritizes Spanish knowledge, medicine,
-    local AI, maps, resilient communications and Android recovery apps.
+    A household-scale offline node for months of disconnected operation:
+    bilingual knowledge, medical references, stronger local AI, Iberian maps,
+    resilient communications, family replication and a local software forge.
 
 runtime:
   portal_port: 8080
   kiwix_port: 8081
   ai_port: 8082
   whisper_port: 8083
+  forgejo_port: 3000
+  syncthing_port: 8384
 
 prepare:
   maps:
     - id: spain-pmtiles
       source_artifact: spain-osm
       filename: spain.pmtiles
+    - id: portugal-pmtiles
+      source_artifact: portugal-osm
+      filename: portugal.pmtiles
 
 artifacts:
   - id: wikipedia-es
@@ -31,7 +37,16 @@ artifacts:
     index_url: https://download.kiwix.org/zim/wikipedia/
     href_regex: 'wikipedia_es_all_maxi_[0-9]{4}-[0-9]{2}\.zim'
     destination: knowledge/zim
-    budget_bytes: 42000000000
+    budget_bytes: 45000000000
+
+  - id: wikipedia-en-nopic
+    family: knowledge
+    kind: index_latest
+    required: true
+    index_url: https://download.kiwix.org/zim/wikipedia/
+    href_regex: 'wikipedia_en_all_nopic_[0-9]{4}-[0-9]{2}\.zim'
+    destination: knowledge/zim
+    budget_bytes: 70000000000
 
   - id: wikipedia-medicine-es
     family: medical
@@ -40,34 +55,70 @@ artifacts:
     index_url: https://download.kiwix.org/zim/wikipedia/
     href_regex: 'wikipedia_es_medicine_maxi_[0-9]{4}-[0-9]{2}\.zim'
     destination: knowledge/zim
-    budget_bytes: 1000000000
+    budget_bytes: 1500000000
 
   - id: wikisource-es
     family: knowledge
     kind: index_latest
-    required: false
+    required: true
     index_url: https://download.kiwix.org/zim/wikisource/
     href_regex: 'wikisource_es_all_nopic_[0-9]{4}-[0-9]{2}\.zim'
     destination: knowledge/zim
-    budget_bytes: 1200000000
+    budget_bytes: 2000000000
 
-  - id: qwen3-4b-q4
-    family: ai
-    kind: url
-    required: true
-    url: https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf?download=true
-    filename: Qwen3-4B-Q4_K_M.gguf
-    destination: ai/models
+  - id: wikivoyage-es
+    family: knowledge
+    kind: index_latest
+    required: false
+    index_url: https://download.kiwix.org/zim/wikivoyage/
+    href_regex: 'wikivoyage_es_all_maxi_[0-9]{4}-[0-9]{2}\.zim'
+    destination: knowledge/zim
+    budget_bytes: 2000000000
+
+  - id: wikibooks-es
+    family: knowledge
+    kind: index_latest
+    required: false
+    index_url: https://download.kiwix.org/zim/wikibooks/
+    href_regex: 'wikibooks_es_all_maxi_[0-9]{4}-[0-9]{2}\.zim'
+    destination: knowledge/zim
     budget_bytes: 3000000000
 
-  - id: whisper-small
+  - id: gutenberg-es
+    family: knowledge
+    kind: index_latest
+    required: false
+    index_url: https://download.kiwix.org/zim/gutenberg/
+    href_regex: 'gutenberg_es_all_[0-9]{4}-[0-9]{2}\.zim'
+    destination: knowledge/zim
+    budget_bytes: 6000000000
+
+  - id: stackoverflow-en
+    family: technical
+    kind: index_latest
+    required: false
+    index_url: https://download.kiwix.org/zim/stack_exchange/
+    href_regex: 'stackoverflow.com_en_all_[0-9]{4}-[0-9]{2}\.zim'
+    destination: knowledge/zim
+    budget_bytes: 85000000000
+
+  - id: qwen3-8b-q4
     family: ai
     kind: url
     required: true
-    url: https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin?download=true
-    filename: ggml-small.bin
+    url: https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf?download=true
+    filename: Qwen3-8B-Q4_K_M.gguf
     destination: ai/models
-    budget_bytes: 700000000
+    budget_bytes: 6000000000
+
+  - id: whisper-medium
+    family: ai
+    kind: url
+    required: true
+    url: https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin?download=true
+    filename: ggml-medium.bin
+    destination: ai/models
+    budget_bytes: 2000000000
 
   - id: spain-osm
     family: maps
@@ -77,6 +128,15 @@ artifacts:
     href_regex: 'spain-[0-9]{6}\.osm\.pbf'
     destination: maps/raw
     budget_bytes: 6000000000
+
+  - id: portugal-osm
+    family: maps
+    kind: index_latest
+    required: true
+    index_url: https://download.geofabrik.de/europe/portugal.html
+    href_regex: 'portugal-[0-9]{6}\.osm\.pbf'
+    destination: maps/raw
+    budget_bytes: 3000000000
 
   - id: bitchat-android
     family: comms
@@ -100,7 +160,7 @@ artifacts:
   - id: organicmaps-android
     family: maps
     kind: github_release_asset
-    required: false
+    required: true
     repo: organicmaps/organicmaps
     asset_regex: 'OrganicMaps-.*-web-release\.apk'
     checksum_asset_regex: 'OrganicMaps-.*-web-release\.apk\.sha256sum'
@@ -110,7 +170,7 @@ artifacts:
   - id: meshtastic-firmware
     family: comms
     kind: github_release_asset
-    required: false
+    required: true
     repo: meshtastic/firmware
     asset_regex: 'firmware-esp32-[0-9A-Za-z._-]+\.zip'
     destination: firmware/meshtastic
@@ -124,7 +184,6 @@ artifacts:
     ref: latest-release
     destination: source/comms
     budget_bytes: 500000000
-    license_review: upstream-reticulum-license
 
   - id: project-nomad-source
     family: core
@@ -133,6 +192,33 @@ artifacts:
     repo: Crosstalk-Solutions/project-nomad
     ref: latest-release
     destination: source/core
+    budget_bytes: 1000000000
+
+  - id: syncthing-source
+    family: replication
+    kind: github_snapshot
+    required: true
+    repo: syncthing/syncthing
+    ref: latest-release
+    destination: source/replication
+    budget_bytes: 1000000000
+
+  - id: forgejo-source
+    family: software-vault
+    kind: url
+    required: true
+    url: https://codeberg.org/forgejo/forgejo/archive/v15.0.9.tar.gz
+    filename: forgejo-source-v15.0.9.tar.gz
+    destination: source/software
+    budget_bytes: 2000000000
+
+  - id: free-programming-books-source
+    family: technical
+    kind: github_snapshot
+    required: false
+    repo: EbookFoundation/free-programming-books
+    ref: default
+    destination: source/knowledge
     budget_bytes: 1000000000
 
   - id: planetiler
@@ -176,13 +262,17 @@ containers:
   - id: kiwix
     image: ghcr.io/kiwix/kiwix-serve:3.8.2
     required: true
-
   - id: llama-server
     image: ghcr.io/ggml-org/llama.cpp:server
     required: true
-
   - id: whisper-server
     image: ghcr.io/ggml-org/whisper.cpp:main
+    required: true
+  - id: syncthing
+    image: ghcr.io/syncthing/syncthing:2.1.5
+    required: true
+  - id: forgejo
+    image: codeberg.org/forgejo/forgejo:15.0.9
     required: true
 
 policy:
