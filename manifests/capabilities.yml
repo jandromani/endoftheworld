@@ -97,3 +97,34 @@ capabilities:
     track: release
     priority: medium
     auto_promote: false
+
+  - id: qdrant
+    family: ai
+    repo: qdrant/qdrant
+    track: release
+    priority: critical
+    auto_promote: false
+  - id: code-server
+    family: developer
+    repo: coder/code-server
+    track: release
+    priority: critical
+    auto_promote: false
+  - id: cyberchef
+    family: developer
+    repo: gchq/CyberChef
+    track: release
+    priority: high
+    auto_promote: false
+  - id: platformio
+    family: electronics
+    repo: platformio/platformio-core
+    track: release
+    priority: high
+    auto_promote: false
+  - id: arduino-cli
+    family: electronics
+    repo: arduino/arduino-cli
+    track: release
+    priority: high
+    auto_promote: false

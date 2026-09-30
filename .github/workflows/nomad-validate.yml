@@ -1,0 +1,78 @@
+name: Validate ENDWORLD NOMAD
+on:
+  push:
+    paths: ["profiles/**","scripts/**","runtime/**","config/**","manifests/**","requirements.txt","Makefile",".github/workflows/nomad-validate.yml"]
+  pull_request:
+    paths: ["profiles/**","scripts/**","runtime/**","config/**","manifests/**",".github/workflows/nomad-validate.yml"]
+permissions: {contents: read}
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements.txt
+      - name: Compile Python
+        run: python -m py_compile scripts/*.py runtime/server.py
+      - name: Parse shell
+        run: for f in scripts/*.sh runtime/*.sh runtime/network/*.sh; do bash -n "$f"; done
+      - name: Source self-tests
+        run: |
+          python scripts/endworld.py --profile nano selftest
+          python scripts/endworld.py --profile family selftest
+          python scripts/endworld.py --profile nomad selftest
+      - name: Validate NOMAD envelope
+        run: |
+          python - <<'PY'
+          import pathlib,yaml
+          p=yaml.safe_load(pathlib.Path("profiles/nomad.yml").read_text());m=p["profile"]
+          assert m["id"]=="nomad" and int(m["target_bytes"])==1_000_000_000_000
+          assert int(m["reserve_bytes"])==150_000_000_000 and int(m["acquisition_headroom_bytes"])==100_000_000_000 and int(m["root_partition_mib"])==32768
+          ids={x["id"] for x in p["artifacts"]}|{x["id"] for x in p["containers"]}
+          req={"stackoverflow-en","qwen3-8b-q4","qwen3-30b-a3b-q4","qwen3-coder-30b-a3b-q4s","ifixit-en","ifixit-es","appropriate-tech-cd3wd","electronics-stackexchange","project-nomad-source","qdrant","code-server","project-nomad-admin","project-nomad-mysql","project-nomad-redis"}
+          assert req.issubset(ids),req-ids
+          assert {x["id"] for x in p["prepare"]["maps"]}=={"spain-pmtiles","portugal-pmtiles","france-pmtiles"}
+          assert p["policy"]["project_nomad_updater_disabled"] is True
+          PY
+      - name: Test NOMAD HTTP capability routing
+        run: |
+          tmp="$(mktemp -d)"; mkdir -p "$tmp/portal" "$tmp/vault/lock" "$tmp/vault/containers" "$tmp/vault/maps/tiles" "$tmp/vault/state/runtime"
+          echo '<h1>NOMAD</h1>' > "$tmp/portal/index.html"; echo general > "$tmp/vault/state/runtime/ai-mode"
+          python - <<PY
+          import json
+          from pathlib import Path
+          v=Path("$tmp/vault");(v/"maps/tiles/spain.pmtiles").write_bytes(b"x")
+          cs=[]
+          for i,img in [("qdrant","qdrant/qdrant:v1.19.1"),("code-server","ghcr.io/coder/code-server:4.139.1"),("project-nomad-admin","ghcr.io/crosstalk-solutions/project-nomad:v1.35.0")]:
+              p=f"containers/{i}.tar";(v/p).write_bytes(b"x");cs.append({"id":i,"image":img,"path":p,"bytes":1})
+          (v/"lock/nomad.lock.json").write_text(json.dumps({"schema":1,"profile":"nomad","title":"ENDWORLD NOMAD","artifacts":[],"containers":cs}))
+          PY
+          python runtime/server.py --profile nomad --bind 127.0.0.1 --port 18080 --portal "$tmp/portal" --vault "$tmp/vault" >/tmp/nomad-server.log 2>&1 &
+          pid=$!; trap 'kill $pid 2>/dev/null || true' EXIT
+          for i in {1..30}; do curl -fsS http://127.0.0.1:18080/health && break || sleep .2; done
+          python - <<'PY'
+          import json,urllib.request
+          s=json.load(urllib.request.urlopen("http://127.0.0.1:18080/api/status"));assert s["ai_mode"]=="general"
+          r=json.load(urllib.request.urlopen("http://127.0.0.1:18080/api/capabilities"));p={x["id"]:x["action"]["port"] for x in r if x.get("action") and x["action"].get("kind")=="service"}
+          assert p["qdrant"]==6333 and p["code-server"]==8443 and p["project-nomad-admin"]==8090
+          PY
+      - name: Acquisition fixture
+        run: |
+          tmp="$(mktemp -d)";mkdir -p "$tmp/www" "$tmp/vault";echo NOMAD > "$tmp/www/required.bin";(cd "$tmp/www" && sha256sum required.bin > required.sha256);(cd "$tmp/www" && python -m http.server 18765 --bind 127.0.0.1 >/tmp/http.log 2>&1) & pid=$!;trap 'kill $pid 2>/dev/null || true' EXIT;sleep 1
+          cat > "$tmp/p.yml" <<'YAML'
+          schema: 1
+          profile: {id: fixture, title: FIXTURE, target_bytes: 10000000, reserve_bytes: 1000000, acquisition_headroom_bytes: 1000000}
+          artifacts:
+            - {id: required, family: test, kind: url, required: true, url: "http://127.0.0.1:18765/required.bin", checksum_url: "http://127.0.0.1:18765/required.sha256", filename: required.bin, destination: payload, budget_bytes: 1000000}
+          containers: []
+          YAML
+          python scripts/acquire.py acquire --profile "$tmp/p.yml" --vault "$tmp/vault"
+          python scripts/verify_vault.py --vault "$tmp/vault" --profile-id fixture
+      - name: Resolve live NOMAD sources
+        env: {GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"}
+        run: python scripts/acquire.py plan --profile profiles/nomad.yml --vault vault/nomad
+      - name: CLI smoke
+        run: |
+          python scripts/endworld.py --profile nomad --help >/dev/null
+          python scripts/endworld.py --profile nomad ai-mode --help >/dev/null

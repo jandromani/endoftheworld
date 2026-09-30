@@ -1,0 +1,130 @@
+schema: 1
+profile:
+  id: nomad
+  title: ENDWORLD NOMAD
+  target_bytes: 1000000000000
+  reserve_bytes: 150000000000
+  acquisition_headroom_bytes: 100000000000
+  root_partition_mib: 32768
+  description: >
+    One-terabyte rebuild-and-create node: bilingual knowledge, switchable local
+    general/coding AI, developer references and toolchains, survival/DIY/repair
+    libraries, resilient communications, local forge/vector DB/browser IDE and
+    the frozen Project NOMAD command center.
+runtime:
+  portal_port: 8080
+  kiwix_port: 8081
+  ai_port: 8082
+  whisper_port: 8083
+  forgejo_port: 3000
+  qdrant_port: 6333
+  syncthing_port: 8384
+  code_server_port: 8443
+  project_nomad_port: 8090
+prepare:
+  maps:
+    - {id: spain-pmtiles, source_artifact: spain-osm, filename: spain.pmtiles}
+    - {id: portugal-pmtiles, source_artifact: portugal-osm, filename: portugal.pmtiles}
+    - {id: france-pmtiles, source_artifact: france-osm, filename: france.pmtiles}
+artifacts:
+  - {id: wikipedia-es, family: knowledge, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/wikipedia/", href_regex: 'wikipedia_es_all_maxi_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 50000000000}
+  - {id: wikipedia-en-nopic, family: knowledge, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/wikipedia/", href_regex: 'wikipedia_en_all_nopic_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 70000000000}
+  - {id: wikipedia-medicine-es, family: medical, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/wikipedia/", href_regex: 'wikipedia_es_medicine_maxi_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 2000000000}
+  - {id: wikipedia-medicine-en, family: medical, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/wikipedia/", href_regex: 'wikipedia_en_medicine_maxi_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 4000000000}
+  - {id: wikibooks-en, family: education, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/wikibooks/", href_regex: 'wikibooks_en_all_nopic_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 7000000000}
+  - {id: wikisource-es, family: knowledge, kind: index_latest, required: false, index_url: "https://download.kiwix.org/zim/wikisource/", href_regex: 'wikisource_es_all_nopic_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 3000000000}
+  - {id: stackoverflow-en, family: developer, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'stackoverflow.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 150000000000}
+  - {id: freecodecamp-en, family: developer, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/freecodecamp/", href_regex: 'freecodecamp_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 1000000000}
+  - {id: devdocs-python, family: developer, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/devdocs/", href_regex: 'devdocs_en_python_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 500000000}
+  - {id: devdocs-javascript, family: developer, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/devdocs/", href_regex: 'devdocs_en_javascript_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 500000000}
+  - {id: devdocs-node, family: developer, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/devdocs/", href_regex: 'devdocs_en_node_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 500000000}
+  - {id: devdocs-git, family: developer, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/devdocs/", href_regex: 'devdocs_en_git_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 500000000}
+  - {id: devdocs-docker, family: developer, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/devdocs/", href_regex: 'devdocs_en_docker_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 500000000}
+  - {id: devdocs-bash, family: developer, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/devdocs/", href_regex: 'devdocs_en_bash_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 500000000}
+  - {id: electronics-stackexchange, family: electronics, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'electronics.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 7000000000}
+  - {id: arduino-stackexchange, family: electronics, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'arduino.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 1000000000}
+  - {id: raspberrypi-stackexchange, family: electronics, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'raspberrypi.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 1000000000}
+  - {id: robotics-stackexchange, family: electronics, kind: index_latest, required: false, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'robotics.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 1000000000}
+  - {id: unix-stackexchange, family: developer, kind: index_latest, required: false, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'unix.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 15000000000}
+  - {id: serverfault, family: developer, kind: index_latest, required: false, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'serverfault.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 15000000000}
+
+  - {id: survival-water, family: survival, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/other/", href_regex: 'zimgit-water_en_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 500000000}
+  - {id: survival-food, family: survival, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/other/", href_regex: 'zimgit-food-preparation_en_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 500000000}
+  - {id: survival-knots, family: survival, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/other/", href_regex: 'zimgit-knots_en_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 500000000}
+  - {id: post-disaster, family: survival, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/other/", href_regex: 'zimgit-post-disaster_en_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 1500000000}
+  - {id: ready-gov-en, family: survival, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/zimit/", href_regex: 'www.ready.gov_en_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 4000000000}
+  - {id: ready-gov-es, family: survival, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/zimit/", href_regex: 'www.ready.gov_es_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 4000000000}
+  - {id: appropriate-tech-cd3wd, family: survival, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/zimit/", href_regex: 'cd3wdproject.org_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 1500000000}
+  - {id: hundred-rabbits, family: survival, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/zimit/", href_regex: '100r.co_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 500000000}
+  - {id: ifixit-en, family: diy, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/ifixit/", href_regex: 'ifixit_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 6000000000}
+  - {id: ifixit-es, family: diy, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/ifixit/", href_regex: 'ifixit_es_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 6000000000}
+  - {id: diy-stackexchange, family: diy, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'diy.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 4000000000}
+  - {id: mechanics-stackexchange, family: diy, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'mechanics.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 1500000000}
+  - {id: woodworking-stackexchange, family: diy, kind: index_latest, required: false, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'woodworking.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 1000000000}
+  - {id: gardening-stackexchange, family: agriculture, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'gardening.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 2000000000}
+  - {id: cooking-stackexchange, family: agriculture, kind: index_latest, required: false, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'cooking.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 1000000000}
+  - {id: outdoors-stackexchange, family: survival, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'outdoors.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 1000000000}
+  - {id: ham-stackexchange, family: comms, kind: index_latest, required: true, index_url: "https://download.kiwix.org/zim/stack_exchange/", href_regex: 'ham.stackexchange.com_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 1000000000}
+  - {id: medlineplus-en, family: medical, kind: index_latest, required: false, index_url: "https://download.kiwix.org/zim/zimit/", href_regex: 'medlineplus.gov_en_all_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 4000000000}
+  - {id: nhs-medicines, family: medical, kind: index_latest, required: false, index_url: "https://download.kiwix.org/zim/zimit/", href_regex: 'nhs.uk_en_medicines_[0-9]{4}-[0-9]{2}[a-z]?\.zim', destination: knowledge/zim, budget_bytes: 1000000000}
+  - {id: libretexts-engineering, family: education, kind: index_latest, required: false, index_url: "https://download.kiwix.org/zim/libretexts/", href_regex: 'libretexts.org_en_eng_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 3000000000}
+  - {id: libretexts-physics, family: education, kind: index_latest, required: false, index_url: "https://download.kiwix.org/zim/libretexts/", href_regex: 'libretexts.org_en_phys_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 3000000000}
+  - {id: libretexts-math, family: education, kind: index_latest, required: false, index_url: "https://download.kiwix.org/zim/libretexts/", href_regex: 'libretexts.org_en_math_[0-9]{4}-[0-9]{2}\.zim', destination: knowledge/zim, budget_bytes: 3000000000}
+
+  - {id: qwen3-8b-q4, family: ai, kind: url, required: true, url: "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf?download=true", filename: Qwen3-8B-Q4_K_M.gguf, destination: ai/models, budget_bytes: 7000000000}
+  - {id: qwen3-30b-a3b-q4, family: ai, kind: url, required: true, url: "https://huggingface.co/Qwen/Qwen3-30B-A3B-GGUF/resolve/main/Qwen3-30B-A3B-Q4_K_M.gguf?download=true", filename: Qwen3-30B-A3B-Q4_K_M.gguf, destination: ai/models, budget_bytes: 24000000000}
+  - {id: qwen3-coder-30b-a3b-q4s, family: ai, kind: url, required: true, url: "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_K_S.gguf?download=true", filename: Qwen3-Coder-30B-A3B-Instruct-Q4_K_S.gguf, destination: ai/models, budget_bytes: 22000000000}
+  - {id: whisper-medium, family: ai, kind: url, required: true, url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin?download=true", filename: ggml-medium.bin, destination: ai/models, budget_bytes: 2500000000}
+
+  - {id: spain-osm, family: maps, kind: index_latest, required: true, index_url: "https://download.geofabrik.de/europe/spain.html", href_regex: 'spain-[0-9]{6}\.osm\.pbf', destination: maps/raw, budget_bytes: 7000000000}
+  - {id: portugal-osm, family: maps, kind: index_latest, required: true, index_url: "https://download.geofabrik.de/europe/portugal.html", href_regex: 'portugal-[0-9]{6}\.osm\.pbf', destination: maps/raw, budget_bytes: 4000000000}
+  - {id: france-osm, family: maps, kind: index_latest, required: true, index_url: "https://download.geofabrik.de/europe/france.html", href_regex: 'france-[0-9]{6}\.osm\.pbf', destination: maps/raw, budget_bytes: 12000000000}
+
+  - {id: bitchat-android, family: comms, kind: github_release_asset, required: true, repo: permissionlesstech/bitchat-android, asset_regex: 'bitchat-android-universal\.apk', checksum_asset_regex: 'BITCHAT_SHA256SUMS', destination: apps/android, budget_bytes: 300000000}
+  - {id: meshtastic-android, family: comms, kind: github_release_asset, required: true, repo: meshtastic/Meshtastic-Android, asset_regex: 'androidApp-fdroid-universal-release\.apk', destination: apps/android, budget_bytes: 500000000}
+  - {id: organicmaps-android, family: maps, kind: github_release_asset, required: true, repo: organicmaps/organicmaps, asset_regex: 'OrganicMaps-.*-web-release\.apk', checksum_asset_regex: 'OrganicMaps-.*-web-release\.apk\.sha256sum', destination: apps/android, budget_bytes: 500000000}
+  - {id: meshtastic-firmware, family: comms, kind: github_release_asset, required: true, repo: meshtastic/firmware, asset_regex: 'firmware-esp32-[0-9A-Za-z._-]+\.zip', destination: firmware/meshtastic, budget_bytes: 1200000000}
+  - {id: reticulum-source, family: comms, kind: github_snapshot, required: true, repo: markqvist/Reticulum, ref: latest-release, destination: source/comms, budget_bytes: 700000000}
+  - {id: satdump-source, family: radio, kind: github_snapshot, required: true, repo: SatDump/SatDump, ref: latest-release, destination: source/radio, budget_bytes: 2000000000}
+  - {id: rtl-sdr-source, family: radio, kind: github_snapshot, required: false, repo: osmocom/rtl-sdr, ref: default, destination: source/radio, budget_bytes: 1000000000}
+
+  - {id: project-nomad-source, family: core, kind: github_snapshot, required: true, repo: Crosstalk-Solutions/project-nomad, ref: latest-release, destination: source/core, budget_bytes: 1500000000}
+  - {id: llama-cpp-source, family: ai, kind: github_snapshot, required: true, repo: ggml-org/llama.cpp, ref: latest-release, destination: source/ai, budget_bytes: 2000000000}
+  - {id: qdrant-source, family: ai, kind: github_snapshot, required: true, repo: qdrant/qdrant, ref: latest-release, destination: source/ai, budget_bytes: 2000000000}
+  - {id: code-server-source, family: developer, kind: github_snapshot, required: true, repo: coder/code-server, ref: latest-release, destination: source/developer, budget_bytes: 1500000000}
+  - {id: free-programming-books-source, family: developer, kind: github_snapshot, required: true, repo: EbookFoundation/free-programming-books, ref: default, destination: source/knowledge, budget_bytes: 1500000000}
+  - {id: project-based-learning-source, family: developer, kind: github_snapshot, required: false, repo: practical-tutorials/project-based-learning, ref: default, destination: source/knowledge, budget_bytes: 1000000000}
+  - {id: platformio-source, family: electronics, kind: github_snapshot, required: true, repo: platformio/platformio-core, ref: latest-release, destination: source/electronics, budget_bytes: 1500000000}
+  - {id: arduino-cli-source, family: electronics, kind: github_snapshot, required: true, repo: arduino/arduino-cli, ref: latest-release, destination: source/electronics, budget_bytes: 1000000000}
+  - {id: esp32-source, family: electronics, kind: github_snapshot, required: true, repo: espressif/arduino-esp32, ref: latest-release, destination: source/electronics, budget_bytes: 3000000000}
+  - {id: marlin-source, family: diy, kind: github_snapshot, required: false, repo: MarlinFirmware/Marlin, ref: latest-release, destination: source/maker, budget_bytes: 1500000000}
+  - {id: klipper-source, family: diy, kind: github_snapshot, required: false, repo: Klipper3d/klipper, ref: default, destination: source/maker, budget_bytes: 1500000000}
+  - {id: cyberchef-source, family: developer, kind: github_snapshot, required: true, repo: gchq/CyberChef, ref: latest-release, destination: source/tools, budget_bytes: 2500000000}
+  - {id: stirling-pdf-source, family: developer, kind: github_snapshot, required: false, repo: Stirling-Tools/Stirling-PDF, ref: latest-release, destination: source/tools, budget_bytes: 2500000000}
+  - {id: syncthing-source, family: replication, kind: github_snapshot, required: true, repo: syncthing/syncthing, ref: latest-release, destination: source/replication, budget_bytes: 1200000000}
+  - {id: forgejo-source, family: software-vault, kind: url, required: true, url: "https://codeberg.org/forgejo/forgejo/archive/v15.0.9.tar.gz", filename: forgejo-source-v15.0.9.tar.gz, destination: source/software, budget_bytes: 2500000000}
+  - {id: verdaccio-source, family: software-vault, kind: github_snapshot, required: false, repo: verdaccio/verdaccio, ref: latest-release, destination: source/software, budget_bytes: 1500000000}
+  - {id: bandersnatch-source, family: software-vault, kind: github_snapshot, required: false, repo: pypa/bandersnatch, ref: latest-release, destination: source/software, budget_bytes: 1000000000}
+
+  - {id: planetiler, family: maps, kind: url, required: true, url: "https://github.com/onthegomap/planetiler/releases/download/v0.10.2/planetiler.jar", checksum_url: "https://github.com/onthegomap/planetiler/releases/download/v0.10.2/planetiler.jar.sha256", filename: planetiler.jar, destination: tools/planetiler, budget_bytes: 120000000}
+  - {id: maplibre-js, family: runtime, kind: url, required: true, url: "https://unpkg.com/maplibre-gl@5.13.0/dist/maplibre-gl.js", filename: maplibre-gl.js, destination: web/vendor, budget_bytes: 5000000}
+  - {id: maplibre-css, family: runtime, kind: url, required: true, url: "https://unpkg.com/maplibre-gl@5.13.0/dist/maplibre-gl.css", filename: maplibre-gl.css, destination: web/vendor, budget_bytes: 1000000}
+  - {id: pmtiles-js, family: runtime, kind: url, required: true, url: "https://unpkg.com/pmtiles@4.5.0/dist/pmtiles.js", filename: pmtiles.js, destination: web/vendor, budget_bytes: 1000000}
+containers:
+  - {id: kiwix, image: "ghcr.io/kiwix/kiwix-serve:3.8.2", required: true}
+  - {id: llama-server, image: "ghcr.io/ggml-org/llama.cpp:server", required: true}
+  - {id: whisper-server, image: "ghcr.io/ggml-org/whisper.cpp:main", required: true}
+  - {id: syncthing, image: "ghcr.io/syncthing/syncthing:2.1.5", required: true}
+  - {id: forgejo, image: "codeberg.org/forgejo/forgejo:15.0.9", required: true}
+  - {id: qdrant, image: "qdrant/qdrant:v1.19.1", required: true}
+  - {id: code-server, image: "ghcr.io/coder/code-server:4.139.1", required: true}
+  - {id: project-nomad-admin, image: "ghcr.io/crosstalk-solutions/project-nomad:v1.35.0", required: true}
+  - {id: project-nomad-mysql, image: "mysql:8.0", required: true}
+  - {id: project-nomad-redis, image: "redis:7-alpine", required: true}
+policy:
+  fail_if_required_missing: true
+  skip_optional_if_over_budget: true
+  preserve_previous_lock: true
+  no_execute_downloaded_artifacts: true
+  immutable_field_node: true
+  project_nomad_updater_disabled: true

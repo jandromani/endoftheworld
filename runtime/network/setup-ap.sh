@@ -74,6 +74,9 @@ address=/maps.end.world/$IP
 address=/apps.end.world/$IP
 address=/sync.end.world/$IP
 address=/git.end.world/$IP
+address=/dev.end.world/$IP
+address=/rag.end.world/$IP
+address=/nomad.end.world/$IP
 address=/#/$IP
 no-resolv
 domain-needed

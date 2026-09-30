@@ -31,4 +31,7 @@ echo "AI API:    http://$IP:8082"
 echo "Maps:      http://$IP:8080/map.html"
 [[ "${ENDWORLD_ENABLE_SYNCTHING:-0}" == "1" ]] && echo "Syncthing: http://$IP:8384"
 [[ "${ENDWORLD_ENABLE_FORGEJO:-0}" == "1" ]] && echo "Forgejo:   http://$IP:3000"
+[[ "${ENDWORLD_ENABLE_QDRANT:-0}" == "1" ]] && echo "Qdrant:    http://$IP:6333"
+[[ "${ENDWORLD_ENABLE_CODE_SERVER:-0}" == "1" ]] && echo "IDE:       http://$IP:8443"
+[[ "${ENDWORLD_ENABLE_NOMAD:-0}" == "1" ]] && echo "NOMAD:     http://$IP:${ENDWORLD_PROJECT_NOMAD_PORT:-8090}"
 echo

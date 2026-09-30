@@ -113,6 +113,27 @@ FAMILY does not maintain a separate fork of the NANO appliance code.
 
 See [docs/FAMILY.md](docs/FAMILY.md) and [docs/FAMILY_ACCEPTANCE.md](docs/FAMILY_ACCEPTANCE.md).
 
+## ENDWORLD NOMAD — implemented
+
+**Target:** 1 TB decimal. **Role:** rebuild-and-create workstation / offline command center.
+
+NOMAD adds three switchable local AI modes (8B lifeboat, 30B MoE general, 30B MoE coder), Stack Overflow/devdocs/electronics references, iFixit + practical survival/appropriate-technology libraries, Spain/Portugal/France maps, Qdrant, code-server, Forgejo, Syncthing and a frozen Project NOMAD command center. Its rootfs also carries native C/C++, Python, Node.js, Java/Maven, Rust and Go toolchains.
+
+Project NOMAD's updater is intentionally absent from the runtime: new versions flow through ENDWORLD Scout -> quarantine -> verify -> freeze.
+
+```bash
+make nomad-plan
+make nomad-acquire
+make nomad-prepare
+make nomad-verify
+make nomad-selftest
+make nomad-image
+make nomad-run
+make nomad-ai-coder   # general / lite are also available
+```
+
+See [docs/NOMAD.md](docs/NOMAD.md) and [docs/NOMAD_ACCEPTANCE.md](docs/NOMAD_ACCEPTANCE.md).
+
 ## Commands (target design)
 
 ```bash
@@ -129,7 +150,7 @@ endworld status
 ```
 nano          64 GB — implemented
 family        256 GB — implemented
-nomad         ~1 TB class — planned
+nomad         1 TB — implemented
 civilization  multi-TB — planned
 ark           maximum preservation — planned
 ```

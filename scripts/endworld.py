@@ -28,6 +28,7 @@ def main() -> int:
     sub = ap.add_subparsers(dest="command", required=True)
     for name in ("plan", "acquire", "prepare", "verify", "run", "stop", "status", "doctor", "scout", "selftest"):
         sub.add_parser(name)
+    ai=sub.add_parser("ai-mode"); ai.add_argument("mode",choices=["lite","general","coder"])
     b = sub.add_parser("build-image")
     b.add_argument("--output")
     fl = sub.add_parser("flash")
@@ -65,6 +66,8 @@ def main() -> int:
         if (ROOT / vault / "lock" / f"{args.profile}.lock.json").exists():
             cmd += ["--vault", vault]
         return run(*cmd)
+    if args.command == "ai-mode":
+        return run("bash","runtime/switch-ai.sh",args.mode)
     if args.command == "build-image":
         output = args.output or f"dist/endworld-{args.profile}-amd64.img"
         return run("bash", "scripts/build_disk_image.sh", args.profile, output, sudo=True)
