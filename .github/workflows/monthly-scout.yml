@@ -24,7 +24,7 @@ jobs:
       - name: Verify required NANO sources still resolve
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/build_nano.py plan
+        run: python scripts/acquire.py plan --profile profiles/nano.yml --vault vault/nano
 
       - name: Discover upstream changes and candidate capabilities
         env:
