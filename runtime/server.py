@@ -11,6 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import unquote, urlparse
 
 MAX_BODY = 1_000_000
+MAX_AUDIO_BODY = 64 * 1024 * 1024
 
 def safe_join(base: pathlib.Path, rel: str) -> pathlib.Path | None:
     rel = unquote(rel).lstrip("/")
@@ -52,7 +53,7 @@ class App:
         return {"node":socket.gethostname(),"profile":"nano","uptime_seconds":int(time.time()-self.started),
         "internet":internet_online(),"storage":{"total":usage.total,"used":usage.used,"free":usage.free},
         "battery":battery_status(),"services":{"portal":True,"knowledge":service_alive("http://127.0.0.1:8081/"),
-        "ai":service_alive("http://127.0.0.1:8082/health")},"map_ready":(self.vault/"maps/tiles/spain.pmtiles").exists()}
+        "ai":service_alive("http://127.0.0.1:8082/health"),"voice":service_alive("http://127.0.0.1:8083/")},"map_ready":(self.vault/"maps/tiles/spain.pmtiles").exists()}
     def apps(self)->list[dict]:
         appdir=self.vault/"apps/android"
         if not appdir.exists(): return []
@@ -93,9 +94,27 @@ class Handler(BaseHTTPRequestHandler):
         rel="index.html" if path=="/" else path.lstrip("/")
         return self.serve_path(safe_join(self.app.portal,rel),send_body)
     def do_POST(self):
-        if urlparse(self.path).path!="/api/chat": return self.send_json({"error":"not found"},404)
+        path=urlparse(self.path).path
         try:length=int(self.headers.get("Content-Length","0"))
         except ValueError:return self.send_json({"error":"bad content length"},400)
+
+        if path=="/api/transcribe":
+            if length<=0 or length>MAX_AUDIO_BODY:return self.send_json({"error":"invalid audio body size"},413)
+            ctype=self.headers.get("Content-Type","")
+            if "multipart/form-data" not in ctype:return self.send_json({"error":"multipart/form-data required"},400)
+            body=self.rfile.read(length)
+            req=urllib.request.Request("http://127.0.0.1:8083/inference",data=body,
+                headers={"Content-Type":ctype},method="POST")
+            try:
+                with urllib.request.urlopen(req,timeout=600) as r:
+                    data=r.read(); response_type=r.headers.get("Content-Type","application/json")
+                self.send_response(200);self.send_header("Content-Type",response_type)
+                self.send_header("Content-Length",str(len(data)));self.send_header("Cache-Control","no-store");self.end_headers()
+                self.wfile.write(data);return
+            except urllib.error.HTTPError as exc:return self.send_json({"error":f"whisper.cpp HTTP {exc.code}"},502)
+            except Exception as exc:return self.send_json({"error":f"local transcription unavailable: {exc}"},503)
+
+        if path!="/api/chat": return self.send_json({"error":"not found"},404)
         if length<=0 or length>MAX_BODY:return self.send_json({"error":"invalid body size"},413)
         try:payload=json.loads(self.rfile.read(length))
         except Exception:return self.send_json({"error":"invalid json"},400)
