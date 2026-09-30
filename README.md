@@ -79,6 +79,40 @@ NANO now wires a local portal, Kiwix, llama.cpp, whisper.cpp transcription, a PM
 
 See [docs/NANO.md](docs/NANO.md).
 
+## ENDWORLD FAMILY — implemented
+
+**Target:** 256 GB class  
+**Payload policy:** 212 GB acquisition ceiling + 20 GB derived/container headroom + 24 GB OS/filesystem/mutable-state reserve.
+
+FAMILY keeps the NANO lifecycle but expands it into a household appliance:
+
+- Spanish Wikipedia + English Wikipedia without images + Spanish medical/Wikisource.
+- Qwen3 8B Q4 local AI and Whisper medium.
+- Spain + Portugal PMTiles with runtime map discovery.
+- Bitchat, Meshtastic, Organic Maps and Meshtastic firmware.
+- Reticulum installed from the frozen source archive.
+- Syncthing for trusted household replication.
+- Forgejo LTS as a persistent local software forge.
+- Frozen source snapshots for Project NOMAD, Syncthing and Forgejo.
+- Optional collections such as Wikivoyage, Wikibooks, Gutenberg and Stack Overflow when budget permits.
+
+```bash
+make family-plan
+make family-acquire
+make family-prepare
+make family-verify
+make family-selftest
+make family-image
+
+# local test runtime
+make family-run
+```
+
+The core runtime, health checks, map discovery and image builder are profile-aware;
+FAMILY does not maintain a separate fork of the NANO appliance code.
+
+See [docs/FAMILY.md](docs/FAMILY.md) and [docs/FAMILY_ACCEPTANCE.md](docs/FAMILY_ACCEPTANCE.md).
+
 ## Commands (target design)
 
 ```bash
@@ -93,11 +127,11 @@ endworld status
 ## Profiles
 
 ```
-nano          tens of GB
-family        hundreds of GB
-nomad         ~1 TB class
-civilization  multi-TB
-ark           maximum preservation
+nano          64 GB — implemented
+family        256 GB — implemented
+nomad         ~1 TB class — planned
+civilization  multi-TB — planned
+ark           maximum preservation — planned
 ```
 
 ## Principle
