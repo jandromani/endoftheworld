@@ -182,6 +182,7 @@ sync
 
 echo "[9/9] Final integrity metadata..."
 cleanup
+set -e
 trap - EXIT INT TERM
 sha256sum "$OUTPUT" > "$OUTPUT.sha256"
 echo "Built: $OUTPUT"
