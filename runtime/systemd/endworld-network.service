@@ -1,0 +1,15 @@
+[Unit]
+Description=ENDWORLD NANO offline Wi-Fi access point
+After=network-pre.target
+Before=endworld-portal.service
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=-/etc/endworld/nano.env
+ExecStart=/opt/endworld/runtime/network/setup-ap.sh start
+ExecStop=/opt/endworld/runtime/network/setup-ap.sh stop
+
+[Install]
+WantedBy=multi-user.target
