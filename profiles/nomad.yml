@@ -119,8 +119,8 @@ containers:
   - {id: qdrant, image: "qdrant/qdrant:v1.19.1", required: true}
   - {id: code-server, image: "ghcr.io/coder/code-server:4.139.1", required: true}
   - {id: project-nomad-admin, image: "ghcr.io/crosstalk-solutions/project-nomad:v1.35.0", required: true}
-  - {id: project-nomad-mysql, image: "mysql:8.0", required: true}
-  - {id: project-nomad-redis, image: "redis:7-alpine", required: true}
+  - {id: project-nomad-mysql, image: "docker.io/library/mysql:8.0", required: true}
+  - {id: project-nomad-redis, image: "docker.io/library/redis:7-alpine", required: true}
 policy:
   fail_if_required_missing: true
   skip_optional_if_over_budget: true
