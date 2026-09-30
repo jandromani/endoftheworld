@@ -93,7 +93,7 @@ mount --bind /run "$ROOTFS/run"
 echo "[4/9] Installing appliance OS packages..."
 export DEBIAN_FRONTEND=noninteractive
 chroot "$ROOTFS" apt-get update
-chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub2-common efibootmgr   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip   docker.io hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros
+chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub2-common efibootmgr   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros
 
 echo "endworld-nano" > "$ROOTFS/etc/hostname"
 cat > "$ROOTFS/etc/hosts" <<'EOF'
@@ -115,12 +115,21 @@ chmod 0440 "$ROOTFS/etc/sudoers.d/endworld"
 
 echo "[5/9] Copying ENDWORLD runtime and frozen vault..."
 mkdir -p "$ROOTFS/opt/endworld" "$ROOTFS/etc/endworld"
-rsync -a --delete "$REPO/runtime/" "$ROOTFS/opt/endworld/runtime/"
-rsync -a "$REPO/scripts/" "$ROOTFS/opt/endworld/scripts/"
+rsync -a --delete   --exclude '.git/' --exclude '.venv/' --exclude 'vault/' --exclude 'dist/'   "$REPO/" "$ROOTFS/opt/endworld/"
 install -m 0644 "$REPO/config/nano.env" "$ROOTFS/etc/endworld/nano.env"
 rsync -aH --info=progress2 "$VAULT/" "$ROOTFS/srv/endworld/"
 
 chmod +x "$ROOTFS"/opt/endworld/runtime/*.sh "$ROOTFS"/opt/endworld/runtime/network/*.sh "$ROOTFS"/opt/endworld/scripts/*.sh 2>/dev/null || true
+ln -sf /opt/endworld/scripts/endworld.py "$ROOTFS/usr/local/bin/endworld"
+
+RETICULUM_TAR="$(find "$ROOTFS/srv/endworld/source/comms" -maxdepth 1 -type f -name 'reticulum-source-*.tar.gz' | head -1 || true)"
+if [[ -n "$RETICULUM_TAR" ]]; then
+  RETICULUM_CHROOT="${RETICULUM_TAR#"$ROOTFS"}"
+  chroot "$ROOTFS" python3 -m pip install --break-system-packages --no-build-isolation --no-deps "$RETICULUM_CHROOT"
+else
+  echo "Frozen Reticulum source archive not found" >&2
+  exit 2
+fi
 
 echo "[6/9] Configuring networking and services..."
 mkdir -p "$ROOTFS/etc/systemd/network"
