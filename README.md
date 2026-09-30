@@ -66,6 +66,7 @@ make nano-plan       # resolve sources, download nothing
 make nano-acquire    # acquire + hash + freeze
 make nano-prepare    # build PMTiles + CycloneDX BOM
 make nano-verify     # re-hash the vault
+make nano-selftest   # validate profile/runtime wiring
 make nano-image      # build 64 GB BIOS+UEFI appliance image
 
 # or test the prepared vault locally:
@@ -74,7 +75,7 @@ make nano-run
 
 Open `http://NODE-IP:8080` from any device on the LAN.
 
-NANO now wires a local portal, Kiwix, llama.cpp, whisper.cpp transcription, a PMTiles Spain map, Android APK vault, Meshtastic firmware, installed Reticulum tools, frozen Project NOMAD source, local Wi-Fi/DNS, health checks, and a guarded bootable-image/flash pipeline.
+NANO now wires a local portal, Kiwix, llama.cpp, whisper.cpp transcription, a PMTiles Spain map, Android APK vault, Meshtastic firmware, installed Reticulum tools, frozen Project NOMAD source, local Wi-Fi/DNS, health checks, a capability inventory at `/api/capabilities`, and a guarded bootable-image/flash pipeline. The portal labels each frozen item as a live service, ready download, preserved source, build/runtime dependency, or missing artifact instead of pretending every archived project is already running.
 
 See [docs/NANO.md](docs/NANO.md).
 
