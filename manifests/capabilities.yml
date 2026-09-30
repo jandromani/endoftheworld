@@ -1,0 +1,99 @@
+schema: 1
+capabilities:
+  - id: project-nomad
+    family: core
+    repo: Crosstalk-Solutions/project-nomad
+    track: release
+    priority: critical
+    auto_promote: false
+
+  - id: kiwix-tools
+    family: knowledge
+    repo: kiwix/kiwix-tools
+    track: release
+    priority: critical
+    auto_promote: false
+
+  - id: llama-cpp
+    family: ai
+    repo: ggml-org/llama.cpp
+    track: release
+    priority: critical
+    auto_promote: false
+
+  - id: bitchat-android
+    family: comms
+    repo: permissionlesstech/bitchat-android
+    track: release
+    priority: high
+    auto_promote: false
+
+  - id: meshtastic-firmware
+    family: comms
+    repo: meshtastic/firmware
+    track: release
+    priority: critical
+    auto_promote: false
+
+  - id: meshtastic-android
+    family: comms
+    repo: meshtastic/Meshtastic-Android
+    track: release
+    priority: high
+    auto_promote: false
+
+  - id: reticulum
+    family: comms
+    repo: markqvist/Reticulum
+    track: release
+    priority: critical
+    auto_promote: false
+
+  - id: organicmaps
+    family: maps
+    repo: organicmaps/organicmaps
+    track: release
+    priority: high
+    auto_promote: false
+
+  - id: satdump
+    family: radio
+    repo: SatDump/SatDump
+    track: release
+    priority: high
+    auto_promote: false
+
+  - id: bitcoin-core
+    family: ledger
+    repo: bitcoin/bitcoin
+    track: release
+    priority: optional
+    auto_promote: false
+
+  - id: syncthing
+    family: replication
+    repo: syncthing/syncthing
+    track: release
+    priority: critical
+    auto_promote: false
+
+  - id: forgejo
+    family: software-vault
+    repo: forgejo/forgejo
+    track: release
+    priority: high
+    auto_promote: false
+
+  - id: verdaccio
+    family: software-vault
+    repo: verdaccio/verdaccio
+    track: release
+    priority: medium
+    auto_promote: false
+
+  - id: bandersnatch
+    family: software-vault
+    repo: pypa/bandersnatch
+    track: release
+    priority: medium
+    auto_promote: false
