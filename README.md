@@ -1,161 +1,295 @@
-# ENDWORLD
+<div align="center">
 
-**Civilization-in-a-box.**
+<img src="docs/assets/the-ark.svg" alt="THE ARK — offline knowledge, AI, communications and reconstruction appliances" width="100%" />
 
-ENDWORLD builds reproducible offline capability packs from public upstream projects and datasets while the Internet is available, freezes them with provenance and integrity metadata, and serves them locally when the Internet is not.
+# THE ARK
 
-## Model
+### Offline knowledge, AI, communications and reconstruction appliances
 
+**Preserve knowledge · Keep local intelligence alive · Stay connected · Retain the ability to rebuild**
+
+[![NANO CI](https://github.com/jandromani/endoftheworld/actions/workflows/nano-validate.yml/badge.svg)](https://github.com/jandromani/endoftheworld/actions/workflows/nano-validate.yml)
+[![FAMILY CI](https://github.com/jandromani/endoftheworld/actions/workflows/family-validate.yml/badge.svg)](https://github.com/jandromani/endoftheworld/actions/workflows/family-validate.yml)
+[![NOMAD CI](https://github.com/jandromani/endoftheworld/actions/workflows/nomad-validate.yml/badge.svg)](https://github.com/jandromani/endoftheworld/actions/workflows/nomad-validate.yml)
+![Stars](https://img.shields.io/github/stars/jandromani/endoftheworld?style=flat-square)
+![Forks](https://img.shields.io/github/forks/jandromani/endoftheworld?style=flat-square)
+![Issues](https://img.shields.io/github/issues/jandromani/endoftheworld?style=flat-square)
+![Last commit](https://img.shields.io/github/last-commit/jandromani/endoftheworld?style=flat-square)
+![Offline First](https://img.shields.io/badge/runtime-offline--first-0b7285?style=flat-square)
+![Integrity](https://img.shields.io/badge/vault-SHA--256-5f3dc4?style=flat-square)
+![Boot](https://img.shields.io/badge/boot-BIOS%20%2B%20UEFI-7950f2?style=flat-square)
+
+[Why](#why-the-ark) · [Profiles](#the-fleet) · [Quickstart](#quickstart) · [Architecture](#architecture) · [Docs](#documentation) · [Roadmap](#roadmap)
+
+</div>
+
+---
+
+## What is THE ARK?
+
+**THE ARK** is a family of reproducible, offline-first appliances that acquire useful public knowledge and software while the Internet exists, verify and freeze it, then serve it locally when the Internet is unavailable.
+
+The public project is **THE ARK**. The underlying control-plane and CLI remain named **ENDWORLD** for compatibility.
+
+> **Internet is a build-time dependency, not a run-time dependency.**
+
+A normal backup preserves files. THE ARK aims to preserve **capability**:
+
+- 📚 searchable offline knowledge;
+- 🧠 local language models;
+- 🎙️ local speech-to-text;
+- 🗺️ offline maps;
+- 📡 field communications software and firmware;
+- 🔁 peer-to-peer replication;
+- 🧰 repair, DIY and survival references;
+- 💻 source control, an IDE and developer toolchains;
+- 🔎 vector-search infrastructure;
+- 🧊 pinned provenance, hashes and immutable manifests;
+- 💽 a reproducible BIOS/UEFI appliance image.
+
+## Why THE ARK?
+
+Modern technical capability has hidden runtime dependencies everywhere: cloud APIs, package registries, app stores, search engines, CDNs, container registries, documentation websites and SaaS control planes.
+
+A folder full of PDFs is useful. A bootable node that can **search, reason, map, communicate, code, repair and replicate** is much more useful.
+
+THE ARK is designed for:
+
+- low-connectivity and remote environments;
+- household resilience;
+- field operations;
+- education and labs;
+- homelab sovereignty;
+- disaster preparedness;
+- long-lived technical archives;
+- experiments in preserving enough tooling to rebuild useful systems.
+
+It is **not** a claim that one SSD can preserve civilization. It is an engineering framework for deciding what to preserve, how to verify it and how to make it operational offline.
+
+## The fleet
+
+Each profile is a larger “deck” of the same Ark. The engine is shared; capability density increases.
+
+| Profile | Target | Mission | AI | Extra services | Status |
+|---|---:|---|---|---|---|
+| 🛟 **NANO** | 64 GB | Survive & reference | Qwen3 4B | — | ✅ Software/CI implemented |
+| 🏠 **FAMILY** | 256 GB | Live, share & preserve | Qwen3 8B | Syncthing, Forgejo | ✅ Software/CI implemented |
+| 🧭 **NOMAD** | 1 TB | Rebuild & create | 8B + 30B general + 30B coder | Qdrant, code-server, Project NOMAD | ✅ Software/CI implemented |
+| 🏛️ **CIVILIZATION** | multi-TB | Reconstruct systems | planned | package mirrors, CAD, science, infra | 🚧 Planned |
+| 🛶 **ARK** | maximum | Preservation seed | planned | maximum curated preservation | 🚧 Planned |
+
+Detailed product sheets:
+
+- [NANO](profiles/nano/README.md)
+- [FAMILY](profiles/family/README.md)
+- [NOMAD](profiles/nomad/README.md)
+- [CIVILIZATION](profiles/civilization/README.md)
+- [ARK](profiles/ark/README.md)
+
+## What is already inside?
+
+### 📚 Knowledge
+
+Kiwix/ZIM collections, Wikipedia, medical references, developer references, survival/repair material and profile-specific curated sources.
+
+### 🧠 Local intelligence
+
+llama.cpp provides a local OpenAI-compatible inference endpoint. NOMAD can switch between **lite**, **general** and **coder** models without changing the API used by the portal.
+
+### 🎙️ Voice
+
+whisper.cpp provides local transcription.
+
+### 🗺️ Maps
+
+Frozen OpenStreetMap extracts are transformed with Planetiler into PMTiles and served through a local MapLibre interface.
+
+### 📡 Communications
+
+The vault can preserve Bitchat, Meshtastic Android + firmware, Reticulum and supporting radio/mapping material.
+
+### 💻 Developer sovereignty
+
+FAMILY introduces Forgejo. NOMAD adds code-server, Qdrant and native C/C++, Python, Node, Java/Maven, Rust and Go toolchains, plus frozen developer references and source trees.
+
+### 🧊 Trust boundary
+
+Unknown upstream software is not silently promoted. The intended lifecycle is:
+
+```text
+Internet → Scout → Quarantine → Verify → Freeze → Prepare → Image → Offline node
 ```
-Internet -> SCOUT -> QUARANTINE -> VERIFY -> FREEZE -> ENDWORLD IMAGE -> OFFLINE NODE
+
+## Architecture
+
+```text
+                         THE ARK
+                            │
+                    ENDWORLD control plane
+                            │
+          ┌─────────────────┼─────────────────┐
+          │                 │                 │
+       profiles          manifests          policy
+          │                 │                 │
+          └──────────── acquisition ──────────┘
+                            │
+                     verified frozen vault
+                            │
+              ┌─────────────┼─────────────┐
+              │             │             │
+          knowledge        AI           maps
+              │             │             │
+              ├──── apps / source / firmware ────┐
+              │                                   │
+              └──────────── runtime ──────────────┘
+                            │
+                  BIOS + UEFI appliance
 ```
 
-ENDWORLD is not one giant Git repository and it is not just a pile of ISOs. This repository is the **control plane**: manifests, acquisition policy, build logic, verification, orchestration and offline runtime configuration. Large artifacts live in a content store/NAS/SSD and are assembled into profiles.
+See [Architecture](docs/architecture.md), [Trust & verification](docs/trust-and-verification.md) and [Storage model](docs/storage-model.md).
 
-## Capability lifecycle
+## Quickstart
 
-1. **Scout** — discover new releases and candidate capabilities.
-2. **Quarantine** — download without trusting or activating them.
-3. **Verify** — license, hashes/signatures, SBOM, malware/vulnerability checks and architecture support.
-4. **Test** — install and exercise offline.
-5. **Freeze** — pin exact version/commit/digest and retain source + binaries + docs where licensing permits.
-6. **Promote** — include only approved capabilities in a stable ENDWORLD profile.
-7. **Replicate** — export to SSD/NAS/another ENDWORLD node.
-
-Unknown software is never auto-promoted to the stable image.
-
-## Update cadence
-
-- **Known upstream versions:** scout monthly.
-- **Security-critical metadata:** can be checked more frequently.
-- **New capability discovery:** monthly report, human review.
-- **Stable image rebuild:** quarterly or on demand.
-- **Emergency rebuild:** only for an explicitly approved critical fix.
-
-The scheduled GitHub job updates lightweight metadata only. Multi-GB/TB acquisition belongs on an ENDWORLD Builder or self-hosted runner.
-
-## Initial capability families
-
-- Core / offline portal: Project NOMAD
-- Knowledge: Kiwix / ZIM
-- AI: llama.cpp / Ollama-compatible models
-- Communications: Bitchat, Meshtastic, Reticulum
-- Maps: Organic Maps / OSM-derived packs
-- Radio: SatDump and related receive tooling
-- Software vault: source repositories, APKs, package/container mirrors
-- Replication: Syncthing / content-addressed archives
-- Ledger: Bitcoin Core as an optional archival capability
-
-See `manifests/capabilities.yml`.
-
-
-## ENDWORLD NANO — implemented
-
-The first runnable profile is now in the repository.
-
-**Target:** 64 GB class  
-**Payload policy:** ~48 GB acquisition ceiling + 4 GB derived/container headroom + 12 GB OS/filesystem/runtime reserve.
+### Clone
 
 ```bash
 git clone https://github.com/jandromani/endoftheworld.git
 cd endoftheworld
+```
 
+### Install builder prerequisites
+
+```bash
 make builder-deps
 make setup
-make nano-plan       # resolve sources, download nothing
-make nano-acquire    # acquire + hash + freeze
-make nano-prepare    # build PMTiles + CycloneDX BOM
-make nano-verify     # re-hash the vault
-make nano-selftest   # validate profile/runtime wiring
-make nano-image      # build 64 GB BIOS+UEFI appliance image
-
-# or test the prepared vault locally:
-make nano-run
+make doctor
 ```
 
-Open `http://NODE-IP:8080` from any device on the LAN.
-
-NANO now wires a local portal, Kiwix, llama.cpp, whisper.cpp transcription, a PMTiles Spain map, Android APK vault, Meshtastic firmware, installed Reticulum tools, frozen Project NOMAD source, local Wi-Fi/DNS, health checks, a capability inventory at `/api/capabilities`, and a guarded bootable-image/flash pipeline. The portal labels each frozen item as a live service, ready download, preserved source, build/runtime dependency, or missing artifact instead of pretending every archived project is already running.
-
-See [docs/NANO.md](docs/NANO.md).
-
-## ENDWORLD FAMILY — implemented
-
-**Target:** 256 GB class  
-**Payload policy:** 212 GB acquisition ceiling + 20 GB derived/container headroom + 24 GB OS/filesystem/mutable-state reserve.
-
-FAMILY keeps the NANO lifecycle but expands it into a household appliance:
-
-- Spanish Wikipedia + English Wikipedia without images + Spanish medical/Wikisource.
-- Qwen3 8B Q4 local AI and Whisper medium.
-- Spain + Portugal PMTiles with runtime map discovery.
-- Bitchat, Meshtastic, Organic Maps and Meshtastic firmware.
-- Reticulum installed from the frozen source archive.
-- Syncthing for trusted household replication.
-- Forgejo LTS as a persistent local software forge.
-- Frozen source snapshots for Project NOMAD, Syncthing and Forgejo.
-- Optional collections such as Wikivoyage, Wikibooks, Gutenberg and Stack Overflow when budget permits.
+### Build a profile
 
 ```bash
-make family-plan
-make family-acquire
-make family-prepare
-make family-verify
-make family-selftest
-make family-image
-
-# local test runtime
-make family-run
-```
-
-The core runtime, health checks, map discovery and image builder are profile-aware;
-FAMILY does not maintain a separate fork of the NANO appliance code.
-
-See [docs/FAMILY.md](docs/FAMILY.md) and [docs/FAMILY_ACCEPTANCE.md](docs/FAMILY_ACCEPTANCE.md).
-
-## ENDWORLD NOMAD — implemented
-
-**Target:** 1 TB decimal. **Role:** rebuild-and-create workstation / offline command center.
-
-NOMAD adds three switchable local AI modes (8B lifeboat, 30B MoE general, 30B MoE coder), Stack Overflow/devdocs/electronics references, iFixit + practical survival/appropriate-technology libraries, Spain/Portugal/France maps, Qdrant, code-server, Forgejo, Syncthing and a frozen Project NOMAD command center. Its rootfs also carries native C/C++, Python, Node.js, Java/Maven, Rust and Go toolchains.
-
-Project NOMAD's updater is intentionally absent from the runtime: new versions flow through ENDWORLD Scout -> quarantine -> verify -> freeze.
-
-```bash
+# choose nano, family or nomad
 make nomad-plan
 make nomad-acquire
 make nomad-prepare
 make nomad-verify
 make nomad-selftest
-make nomad-image
-make nomad-run
-make nomad-ai-coder   # general / lite are also available
 ```
 
-See [docs/NOMAD.md](docs/NOMAD.md) and [docs/NOMAD_ACCEPTANCE.md](docs/NOMAD_ACCEPTANCE.md).
-
-## Commands (target design)
+### Run the prepared vault locally
 
 ```bash
-endworld scout
-endworld acquire --profile family
-endworld verify
-endworld freeze --profile civilization
-endworld export /dev/sdX
-endworld status
+make nomad-run
 ```
 
-## Profiles
+### Build a bootable image
 
-```
-nano          64 GB — implemented
-family        256 GB — implemented
-nomad         1 TB — implemented
-civilization  multi-TB — planned
-ark           maximum preservation — planned
+```bash
+make nomad-image
 ```
 
-## Principle
+### Flash
 
-> Internet is a build-time dependency, not a run-time dependency.
+> ⚠️ The target device is overwritten.
 
+```bash
+make nomad-flash DEVICE=/dev/sdX
+```
+
+Full guide: [docs/guides/quickstart.md](docs/guides/quickstart.md).
+
+## NOMAD: switch the local brain
+
+```bash
+make nomad-ai-lite
+make nomad-ai-general
+make nomad-ai-coder
+```
+
+All modes remain behind the same local inference endpoint.
+
+## Repository map
+
+```text
+profiles/       profile manifests + product READMEs
+manifests/      tracked capability catalog
+scripts/        acquisition, verification, preparation, image build, CLI
+runtime/        portal, local services, networking, systemd integration
+config/         runtime configuration by profile
+docs/           architecture, guides, references and operating model
+```
+
+## Documentation
+
+Start with the [documentation index](docs/README.md).
+
+| Area | Documents |
+|---|---|
+| Vision | [Overview](docs/overview.md) · [Philosophy](docs/philosophy.md) |
+| Design | [Architecture](docs/architecture.md) · [Storage](docs/storage-model.md) · [Trust](docs/trust-and-verification.md) |
+| Runtime | [Services](docs/runtime-services.md) · [Networking](docs/networking.md) · [AI](docs/ai.md) · [Developer mode](docs/developer-mode.md) |
+| Operations | [Quickstart](docs/guides/quickstart.md) · [Build image](docs/guides/build-image.md) · [Offline operation](docs/guides/offline-operation.md) · [Troubleshooting](docs/guides/troubleshooting.md) |
+| Reference | [CLI](docs/reference/cli.md) · [Environment](docs/reference/environment-variables.md) · [Ports](docs/reference/ports-and-services.md) · [Capabilities](docs/reference/capability-catalog.md) |
+
+Project governance:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [SECURITY.md](SECURITY.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [ROADMAP.md](ROADMAP.md)
+- [CHANGELOG.md](CHANGELOG.md)
+
+## Verification status
+
+NANO, FAMILY and NOMAD have repository/CI validation covering profile contracts, source resolution, acquisition logic, runtime routing and shared engine regressions.
+
+That is intentionally different from **physical field validation**. A profile is only field-proven after its real payload has been acquired, its full-size image has been built and flashed, and the target machine has been repeatedly booted and exercised without WAN connectivity.
+
+See the acceptance documents already in `docs/`.
+
+## Security posture
+
+THE ARK prefers boring trust rules:
+
+1. download into quarantine;
+2. record provenance;
+3. verify checksums when upstream provides them;
+4. hash everything locally;
+5. pin/freeze what is promoted;
+6. separate immutable vault content from mutable runtime state;
+7. avoid “latest” at field-runtime;
+8. rebuild intentionally.
+
+Project NOMAD's updater sidecar is deliberately excluded from the ENDWORLD NOMAD runtime. New upstream versions go through the Ark lifecycle instead.
+
+## Roadmap
+
+```text
+NANO          64 GB      SURVIVE             ✅
+FAMILY       256 GB      LIVE + SHARE        ✅
+NOMAD          1 TB      REBUILD + CREATE    ✅
+CIVILIZATION  multi-TB   RECONSTRUCT         🚧
+ARK           maximum    PRESERVE            🚧
+```
+
+See [ROADMAP.md](ROADMAP.md).
+
+## Contributing
+
+The highest-value contributions are not “add 500 random downloads”. They are well-argued, maintainable capabilities with provenance, a budget, an offline use case and an acceptance path.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing a capability or profile.
+
+## Acknowledgements
+
+THE ARK integrates or preserves work from many upstream communities, including Kiwix, OpenStreetMap, Planetiler, PMTiles, MapLibre, llama.cpp, whisper.cpp, Syncthing, Forgejo, Qdrant, code-server, Project NOMAD, Reticulum, Meshtastic and others. Their respective licenses and attribution requirements remain authoritative.
+
+---
+
+<div align="center">
+
+### Preserve more than files.
+
+**Preserve the ability to do things.**
+
+</div>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+<title id="title">THE ARK product family</title>
+<desc id="desc">A layered ark illustrating NANO, FAMILY, NOMAD, CIVILIZATION and ARK with increasing capability density.</desc>
+<defs>
+  <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#68b7ee"/><stop offset="1" stop-color="#dff4ff"/></linearGradient>
+  <linearGradient id="sea" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#1479a8"/><stop offset="1" stop-color="#064663"/></linearGradient>
+  <linearGradient id="wood" x1="0" x2="1"><stop stop-color="#6e3e1f"/><stop offset=".5" stop-color="#a96732"/><stop offset="1" stop-color="#5d331d"/></linearGradient>
+  <filter id="shadow"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-opacity=".22"/></filter>
+</defs>
+<rect width="1600" height="610" fill="url(#sky)"/>
+<rect y="610" width="1600" height="290" fill="url(#sea)"/>
+<circle cx="1400" cy="125" r="70" fill="#fff4a8" opacity=".85"/>
+<g fill="#fff" opacity=".7"><ellipse cx="260" cy="130" rx="150" ry="45"/><ellipse cx="430" cy="105" rx="110" ry="35"/><ellipse cx="1150" cy="170" rx="125" ry="35"/></g>
+<g font-family="Arial,Helvetica,sans-serif">
+  <text x="70" y="105" font-size="76" font-weight="900" fill="#082f49">THE ARK</text>
+  <text x="74" y="148" font-size="25" font-weight="700" fill="#164e63">OFFLINE KNOWLEDGE · AI · COMMUNICATIONS · RECONSTRUCTION</text>
+  <text x="74" y="184" font-size="18" fill="#155e75">Preserve the ability to do things.</text>
+</g>
+<g transform="translate(250 215)" filter="url(#shadow)">
+  <path d="M120 480 Q210 645 600 665 Q1030 670 1160 480 L1095 560 Q920 610 635 610 Q345 606 185 550 Z" fill="#3c2415"/>
+  <path d="M95 460 L1190 460 L1110 575 Q890 625 630 620 Q365 620 175 565 Z" fill="url(#wood)" stroke="#3b2417" stroke-width="8"/>
+  <rect x="180" y="375" width="900" height="82" rx="13" fill="#f0c78c" stroke="#5b321c" stroke-width="6"/>
+  <rect x="150" y="282" width="985" height="86" rx="13" fill="#eab878" stroke="#5b321c" stroke-width="6"/>
+  <rect x="120" y="185" width="1055" height="88" rx="13" fill="#dfa568" stroke="#5b321c" stroke-width="6"/>
+  <rect x="90" y="84" width="1115" height="92" rx="13" fill="#d59457" stroke="#5b321c" stroke-width="6"/>
+  <rect x="410" y="-18" width="560" height="92" rx="18" fill="#c37d3d" stroke="#5b321c" stroke-width="7"/>
+  <g font-family="Arial,Helvetica,sans-serif" fill="#2b1a12" font-weight="900">
+    <text x="570" y="431" font-size="42">NANO</text>
+    <text x="555" y="340" font-size="42">FAMILY</text>
+    <text x="550" y="245" font-size="42">NOMAD</text>
+    <text x="490" y="145" font-size="42">CIVILIZATION</text>
+    <text x="625" y="43" font-size="46">ARK</text>
+  </g>
+  <g font-family="Arial,Helvetica,sans-serif" text-anchor="middle">
+    <g transform="translate(255 412)" fill="#123"><circle r="24" fill="#fff3"/><text y="8" font-size="26">📚</text></g>
+    <g transform="translate(330 412)"><text y="8" font-size="27">🧠</text></g>
+    <g transform="translate(405 412)"><text y="8" font-size="27">🗺️</text></g>
+    <g transform="translate(480 412)"><text y="8" font-size="27">📡</text></g>
+    <g transform="translate(260 318)"><text y="8" font-size="28">🏠</text></g>
+    <g transform="translate(335 318)"><text y="8" font-size="28">🔁</text></g>
+    <g transform="translate(410 318)"><text y="8" font-size="28">🗄️</text></g>
+    <g transform="translate(485 318)"><text y="8" font-size="28">🛠️</text></g>
+    <g transform="translate(255 220)"><text y="8" font-size="28">💻</text></g>
+    <g transform="translate(330 220)"><text y="8" font-size="28">⌨️</text></g>
+    <g transform="translate(405 220)"><text y="8" font-size="28">🔎</text></g>
+    <g transform="translate(480 220)"><text y="8" font-size="28">🤖</text></g>
+    <g transform="translate(555 220)"><text y="8" font-size="28">🔧</text></g>
+    <g transform="translate(260 118)"><text y="8" font-size="29">🏥</text></g>
+    <g transform="translate(335 118)"><text y="8" font-size="29">🌱</text></g>
+    <g transform="translate(410 118)"><text y="8" font-size="29">⚙️</text></g>
+    <g transform="translate(485 118)"><text y="8" font-size="29">🔬</text></g>
+    <g transform="translate(560 118)"><text y="8" font-size="29">🏗️</text></g>
+    <g transform="translate(505 25)"><text y="8" font-size="31">🌍</text></g>
+    <g transform="translate(560 25)"><text y="8" font-size="31">🌾</text></g>
+    <g transform="translate(815 25)"><text y="8" font-size="31">🛰️</text></g>
+    <g transform="translate(870 25)"><text y="8" font-size="31">🧬</text></g>
+  </g>
+  <g font-size="34" text-anchor="middle">
+    <text x="930" y="430">🐕 🐈 🐓</text>
+    <text x="935" y="338">🐕 🐈 🐐 🐇 🦆</text>
+    <text x="935" y="242">🦉 🐕 🦙 🐧 🦊 🐐</text>
+    <text x="930" y="142">🐄 🐎 🦌 🐘 🦒 🐼 🦜</text>
+    <text x="760" y="48">🐘 🦒 🦍 🐅 🦏 🦅</text>
+  </g>
+  <g stroke="#fff8" stroke-width="4">
+    <line x1="1250" y1="0" x2="1250" y2="455"/><line x1="1220" y1="20" x2="1280" y2="20"/>
+    <line x1="1220" y1="105" x2="1280" y2="105"/><line x1="1220" y1="205" x2="1280" y2="205"/>
+  </g>
+</g>
+<g font-family="Arial,Helvetica,sans-serif" font-weight="700" fill="#e6f7ff">
+  <text x="80" y="825" font-size="22">NANO → FAMILY → NOMAD → CIVILIZATION → ARK</text>
+  <text x="80" y="858" font-size="18" opacity=".85">More storage. More animals. More knowledge. More capability. Same trust model.</text>
+</g>
+</svg>
