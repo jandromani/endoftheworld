@@ -1,0 +1,20 @@
+schema: 1
+queries:
+  - family: offline-core
+    query: '"offline-first" knowledge server stars:>100'
+  - family: mesh-comms
+    query: 'mesh communication lora stars:>100'
+  - family: offline-maps
+    query: 'offline maps openstreetmap stars:>100'
+  - family: local-ai
+    query: 'local llm inference stars:>500'
+  - family: preservation
+    query: 'offline archive self hosted stars:>100'
+  - family: emergency
+    query: 'disaster response offline stars:>50'
+
+policy:
+  max_candidates_per_query: 10
+  reject_archived: true
+  require_recent_push_days: 730
+  human_review_required: true
