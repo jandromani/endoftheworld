@@ -4,7 +4,7 @@ profile:
   id: nano
   title: ENDWORLD NANO
   target_bytes: 64000000000
-  reserve_bytes: 8000000000
+  reserve_bytes: 12000000000
   description: >
     A portable offline node that prioritizes Spanish knowledge, medicine,
     local AI, maps/data, resilient communications and Android recovery apps.
@@ -22,7 +22,7 @@ artifacts:
     index_url: https://download.kiwix.org/zim/wikipedia/
     href_regex: 'wikipedia_es_all_maxi_[0-9]{4}-[0-9]{2}\.zim'
     destination: knowledge/zim
-    budget_bytes: 42000000000
+    budget_bytes: 40000000000
 
   - id: wikipedia-medicine-es
     family: medical
@@ -122,6 +122,42 @@ artifacts:
     ref: latest-release
     destination: source/core
     budget_bytes: 1000000000
+
+  - id: planetiler
+    family: maps
+    kind: url
+    required: true
+    url: https://github.com/onthegomap/planetiler/releases/download/v0.10.2/planetiler.jar
+    filename: planetiler.jar
+    destination: tools/planetiler
+    budget_bytes: 120000000
+
+  - id: maplibre-js
+    family: runtime
+    kind: url
+    required: true
+    url: https://cdn.jsdelivr.net/npm/maplibre-gl@6.11.2/dist/maplibre-gl.js
+    filename: maplibre-gl.js
+    destination: web/vendor
+    budget_bytes: 5000000
+
+  - id: maplibre-css
+    family: runtime
+    kind: url
+    required: true
+    url: https://cdn.jsdelivr.net/npm/maplibre-gl@6.11.2/dist/maplibre-gl.css
+    filename: maplibre-gl.css
+    destination: web/vendor
+    budget_bytes: 1000000
+
+  - id: pmtiles-js
+    family: runtime
+    kind: url
+    required: true
+    url: https://unpkg.com/pmtiles@4.5.0/dist/pmtiles.js
+    filename: pmtiles.js
+    destination: web/vendor
+    budget_bytes: 1000000
 
 containers:
   - id: kiwix
