@@ -14,7 +14,7 @@ need(){ command -v "$1" >/dev/null || { echo "Missing build dependency: $1" >&2;
 for c in parted losetup mkfs.vfat mkfs.ext4 mount umount debootstrap grub-install rsync chroot sha256sum; do need "$c"; done
 [[ "$(uname -m)" == "x86_64" ]] || { echo "NANO amd64 image builder currently requires an x86_64 Linux host." >&2; exit 2; }
 [[ -f "$VAULT/lock/nano.lock.json" ]] || { echo "Acquire and prepare NANO first: missing lock." >&2; exit 2; }
-[[ -f "$VAULT/maps/tiles/spain.pmtiles" ]] || { echo "Run endworld prepare first: Spain PMTiles missing." >&2; exit 2; }
+[[ -f "$VAULT/maps/tiles/spain.pmtiles" ]] || { echo "Run endworld prepare first: Spain PMTiles missing." >&2; exit 2; }\n[[ -f "$VAULT/lock/nano.cdx.json" ]] || { echo "Run endworld prepare first: CycloneDX BOM missing." >&2; exit 2; }
 
 python3 "$REPO/scripts/verify_vault.py" --vault "$VAULT"
 
