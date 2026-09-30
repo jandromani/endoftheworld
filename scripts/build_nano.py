@@ -127,6 +127,7 @@ def resolve_artifact(spec: dict) -> dict:
             resolved_url=final,
             filename=spec.get("filename") or pathlib.PurePosixPath(urllib.parse.urlparse(final).path).name,
             expected_bytes=size,
+            checksum_url=spec.get("checksum_url"),
         )
         return out
 
@@ -158,6 +159,13 @@ def resolve_artifact(spec: dict) -> dict:
             preferred = int(any(k in n for k in ("universal", "full", "foss")))
             return (preferred, int(a.get("size") or 0), n)
         asset = sorted(assets, key=rank)[-1]
+        checksum_url = None
+        checksum_rx = spec.get("checksum_asset_regex")
+        if checksum_rx:
+            crx = re.compile(checksum_rx, re.I)
+            checksum_assets = [a for a in rel.get("assets", []) if crx.fullmatch(a.get("name", ""))]
+            if checksum_assets:
+                checksum_url = sorted(checksum_assets, key=lambda a: a.get("name", ""))[0]["browser_download_url"]
         out.update(
             repo=spec["repo"],
             release_tag=rel.get("tag_name"),
@@ -166,6 +174,7 @@ def resolve_artifact(spec: dict) -> dict:
             resolved_url=asset["browser_download_url"],
             filename=asset["name"],
             expected_bytes=int(asset.get("size") or 0) or None,
+            checksum_url=checksum_url,
         )
         return out
 
@@ -206,6 +215,45 @@ def sha256_file(path: pathlib.Path) -> str:
     return h.hexdigest()
 
 
+def upstream_sha256(url: str | None, filename: str) -> str | None:
+    if not url:
+        return None
+    text = get_text(url)
+    hashes = []
+    for line in text.splitlines():
+        m = re.search(r"(?i)\\b([0-9a-f]{64})\\b", line)
+        if not m:
+            continue
+        hashes.append(m.group(1).lower())
+        if filename in line:
+            return m.group(1).lower()
+    unique = sorted(set(hashes))
+    if len(unique) == 1:
+        return unique[0]
+    raise BuildError(f"Could not unambiguously resolve upstream SHA-256 for {filename} from {url}")
+
+
+def finalize_download(resolved: dict, dest: pathlib.Path, vault: pathlib.Path, status: str) -> dict:
+    digest = sha256_file(dest)
+    expected = upstream_sha256(resolved.get("checksum_url"), resolved["filename"])
+    if expected and digest.lower() != expected.lower():
+        rejected = dest.with_suffix(dest.suffix + ".rejected")
+        os.replace(dest, rejected)
+        raise BuildError(
+            f"Upstream SHA-256 mismatch for {resolved['id']}: "
+            f"expected {expected}, got {digest}; moved to {rejected}"
+        )
+    return {
+        **resolved,
+        "path": str(dest.relative_to(vault)),
+        "bytes": dest.stat().st_size,
+        "sha256": digest,
+        "upstream_sha256": expected,
+        "upstream_checksum_verified": bool(expected),
+        "status": status,
+    }
+
+
 def download(resolved: dict, vault: pathlib.Path) -> dict:
     dest_dir = vault / resolved["destination"]
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -213,13 +261,7 @@ def download(resolved: dict, vault: pathlib.Path) -> dict:
     part = dest.with_suffix(dest.suffix + ".part")
 
     if dest.exists():
-        return {
-            **resolved,
-            "path": str(dest.relative_to(vault)),
-            "bytes": dest.stat().st_size,
-            "sha256": sha256_file(dest),
-            "status": "present",
-        }
+        return finalize_download(resolved, dest, vault, "present")
 
     start = part.stat().st_size if part.exists() else 0
     headers = {"Range": f"bytes={start}-"} if start else {}
@@ -258,15 +300,11 @@ def download(resolved: dict, vault: pathlib.Path) -> dict:
                 last_print = time.monotonic()
 
     os.replace(part, dest)
-    digest = sha256_file(dest)
-    return {
+    resolved = {
         **resolved,
         "resolved_url": response.geturl() if hasattr(response, "geturl") else resolved.get("resolved_url"),
-        "path": str(dest.relative_to(vault)),
-        "bytes": dest.stat().st_size,
-        "sha256": digest,
-        "status": "downloaded",
     }
+    return finalize_download(resolved, dest, vault, "downloaded")
 
 
 def acquire_container(spec: dict, vault: pathlib.Path, dry_run: bool) -> dict:
