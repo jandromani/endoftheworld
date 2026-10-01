@@ -1,0 +1,20 @@
+schema: 1
+region: ES
+
+reticulum:
+  auto_interface: true
+  enable_transport: false
+
+meshtastic:
+  role: CLIENT
+  cloud_mqtt_required: false
+
+sdr:
+  receive_only: true
+  preserve_satdump_source: true
+  preserve_rtl_sdr_source: true
+
+power:
+  default_policy: monitor
+  conserve_threshold_percent: 20
+  recover_threshold_percent: 35
