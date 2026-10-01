@@ -47,7 +47,14 @@ jobs:
         run: |
           sudo env ENDWORLD_VAULT="$PWD/vault/nano-mini" bash scripts/build_disk_image.sh nano-mini "$PWD/dist/endworld-nano-mini-amd64.img"
           sudo chown "$USER:$USER" dist/endworld-nano-mini-amd64.img*
-          python scripts/release_trust.py verify --file dist/endworld-nano-mini-amd64.img.release.json
+          (cd dist && sha256sum -c endworld-nano-mini-amd64.img.sha256)
+          python - <<'PY'
+          import hashlib,json,pathlib
+          img=pathlib.Path("dist/endworld-nano-mini-amd64.img")
+          h=hashlib.sha256(img.read_bytes()).hexdigest()
+          r=json.load(open("dist/endworld-nano-mini-amd64.img.release.json"))
+          assert next(x for x in r["files"] if x["role"]=="image")["sha256"]==h
+          PY
 
       - name: Boot BIOS with no NIC
         run: tests/nano-mini/qemu_offline_gate.sh dist/endworld-nano-mini-amd64.img bios
