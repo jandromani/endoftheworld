@@ -153,7 +153,11 @@ cat > "$ROOTFS/usr/local/bin/endworld" <<'EOF'
 #!/bin/sh
 exec python3 /opt/endworld/scripts/endworld.py "$@"
 EOF
-chmod 0755 "$ROOTFS/usr/local/bin/endworld"
+cat > "$ROOTFS/usr/local/bin/endworld-firstboot" <<'EOF'
+#!/bin/sh
+exec python3 /opt/endworld/scripts/first_boot_wizard.py "$@"
+EOF
+chmod 0755 "$ROOTFS/usr/local/bin/endworld" "$ROOTFS/usr/local/bin/endworld-firstboot"
 
 RETICULUM_TAR="$(find "$ROOTFS/srv/endworld/source/comms" -maxdepth 1 -type f -name 'reticulum-source-*.tar.gz' | head -1 || true)"
 if [[ -n "$RETICULUM_TAR" ]]; then
@@ -197,6 +201,9 @@ source "$REPO/config/$PROFILE.env"
 cat >> "$ROOTFS/home/endworld/.bashrc" <<EOF
 
 if [[ -t 1 ]]; then
+  if [[ "\$(tty 2>/dev/null || true)" == "/dev/tty1" && ! -f /var/lib/endworld/firstboot.done ]]; then
+    sudo /usr/local/bin/endworld-firstboot || true
+  fi
   echo
   echo "$TITLE"
   echo "Portal: http://$HOSTNAME.local/  |  Wi-Fi: ${ENDWORLD_WIFI_SSID}"

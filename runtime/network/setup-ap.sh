@@ -27,6 +27,10 @@ stop_all(){
 
 if [[ "$ACTION" == "stop" ]]; then stop_all; exit 0; fi
 stop_all
+if [[ -f "$ETC/profile.env" && ! -f /var/lib/endworld/firstboot.done ]]; then
+  echo "First-boot setup incomplete; Wi-Fi AP stays disabled until credentials are changed."
+  exit 0
+fi
 
 IFACE="${ENDWORLD_WIFI_INTERFACE:-}"
 if [[ -z "$IFACE" ]]; then IFACE="$(detect_iface || true)"; fi
