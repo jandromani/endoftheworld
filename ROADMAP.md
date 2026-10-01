@@ -111,3 +111,22 @@ No profile is considered physically field-proven until a real full-size payload 
 - package snapshots are generated before prepare/BOM and become normal hashed lock artifacts
 
 The package layer deliberately snapshots **downloaded dependency closure**, not merely mirror software source.
+
+
+---
+
+## Frontier epics
+
+The product ladder and frontier backlog are related but not identical. Profiles define **what an Ark carries**; frontier epics define **what the platform must learn to do next**.
+
+| Epic | Primary unlock |
+|---|---|
+| [#8 Zero-touch builder](https://github.com/jandromani/endoftheworld/issues/8) | adoption across every profile |
+| [#9 Boot-chain trust](https://github.com/jandromani/endoftheworld/issues/9) | trusted releases / field promotion |
+| [#10 Universal search & RAG](https://github.com/jandromani/endoftheworld/issues/10) | NOMAD → CIVILIZATION knowledge plane |
+| [#11 Software closure & updates](https://github.com/jandromani/endoftheworld/issues/11) | CIVILIZATION |
+| [#12 Ark-to-Ark replication](https://github.com/jandromani/endoftheworld/issues/12) | final ARK |
+| [#13 Power/radio resilience](https://github.com/jandromani/endoftheworld/issues/13) | field-ready NANO/FAMILY/NOMAD |
+| [#14 Physical proof](https://github.com/jandromani/endoftheworld/issues/14) | every profile before “field-proven” |
+
+The final ARK tier should emerge from #9 + #11 + #12 + #13 + #14, not from simply allocating a larger disk.
