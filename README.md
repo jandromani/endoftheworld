@@ -378,9 +378,9 @@ Instead of hiding 17 loose TODOs in this README, the remaining work is organized
 | 🔐 **Trusted Ark** | release manifest + detached signatures | 🟨 MVP shipped | [#9](https://github.com/jandromani/endoftheworld/issues/9) |
 | 🔎 **Ask the whole Ark** | local FTS/RAG over docs, metadata and source | 🟨 MVP shipped | [#10](https://github.com/jandromani/endoftheworld/issues/10) |
 | 📦 **Rebuild more software** | 7 ecosystems + verified offline update bundles | 🟨 MVP shipped | [#11](https://github.com/jandromani/endoftheworld/issues/11) |
-| 🤝 **Arks can save Arks** | peer replication, deltas, multi-node final ARK | ⬜ next | [#12](https://github.com/jandromani/endoftheworld/issues/12) |
-| 🔌 **Survive without normal infrastructure** | power telemetry + radio/beyond-IP workflows | ⬜ next | [#13](https://github.com/jandromani/endoftheworld/issues/13) |
-| 🧪 **Prove it in the real world** | hardware matrix + repeated disconnected drills | ⬜ next | [#14](https://github.com/jandromani/endoftheworld/issues/14) |
+| 🤝 **Arks can save Arks** | content-addressed peer packs + verified restore | 🟨 MVP shipped | [#12](https://github.com/jandromani/endoftheworld/issues/12) |
+| 🔌 **Survive without normal infrastructure** | power policy + Reticulum/Meshtastic/SDR field plan | 🟨 MVP shipped | [#13](https://github.com/jandromani/endoftheworld/issues/13) |
+| 🧪 **Prove it in the real world** | field-report harness + evidence-only matrix | 🟨 harness shipped · evidence pending | [#14](https://github.com/jandromani/endoftheworld/issues/14) |
 
 <details>
 <summary><strong>Show the full checklist of remaining frontiers</strong></summary>
@@ -394,14 +394,14 @@ Instead of hiding 17 loose TODOs in this README, the remaining work is organized
 - [ ] automated local RAG ingestion
 - [ ] Maven/Cargo/Go/OCI deeper closure
 - [ ] offline update bundles/deltas
-- [ ] Ark-to-Ark replication
-- [ ] content-addressed deduplication
+- [x] Ark-to-Ark replication MVP
+- [x] content-addressed deduplication MVP
 - [ ] UPS/solar/power layer
 - [ ] deeper SDR/radio workflows
 - [ ] multilingual portal/docs
 - [ ] physical hardware matrix
 - [ ] repeated disconnected recovery drills
-- [ ] multi-node final ARK tier
+- [x] multi-node final ARK protocol MVP
 
 </details>
 

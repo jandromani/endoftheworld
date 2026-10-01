@@ -130,3 +130,19 @@ The product ladder and frontier backlog are related but not identical. Profiles 
 | [#14 Physical proof](https://github.com/jandromani/endoftheworld/issues/14) | every profile before “field-proven” |
 
 The final ARK tier should emerge from #9 + #11 + #12 + #13 + #14, not from simply allocating a larger disk.
+
+---
+
+## ARK Mesh / field-resilience milestone
+
+The software MVP for frontier epics #12–#14 now adds:
+
+- content-addressed Ark-to-Ark inventories and capability packs;
+- verified reconstruction and separate mutable-state backup;
+- power telemetry with opt-in low-power service shedding;
+- generated Reticulum/field communications plans;
+- reproducible physical field reports and an evidence-only hardware matrix.
+
+This does **not** promote the project to “field-proven”. That requires committed
+reports from real BIOS/UEFI, storage, Wi-Fi and power/radio hardware under
+disconnected recovery drills.

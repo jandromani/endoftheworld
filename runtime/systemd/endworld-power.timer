@@ -1,0 +1,11 @@
+[Unit]
+Description=Run THE ARK power policy periodically
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=60s
+AccuracySec=10s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

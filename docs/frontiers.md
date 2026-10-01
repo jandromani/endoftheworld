@@ -75,6 +75,8 @@ Track: https://github.com/jandromani/endoftheworld/issues/11
 
 ## 5. 🤝 Ark-to-Ark replication & the final ARK — Issue #12
 
+**Status: 🟨 MVP shipped.** Content-addressed chunks, peer inventories, missing-chunk packs, verified restore, mutable-state export/import and a reference multi-node replication policy are implemented. Real multi-site deployments and encrypted peer transport remain.
+
 **Goal:** stop thinking of the final ARK as one giant disk.
 
 - peer inventory exchange;
@@ -92,6 +94,8 @@ Track: https://github.com/jandromani/endoftheworld/issues/11
 Track: https://github.com/jandromani/endoftheworld/issues/12
 
 ## 6. 🔌 Energy, radio & beyond-IP resilience — Issue #13
+
+**Status: 🟨 MVP shipped.** Linux/NUT power telemetry, opt-in service shedding, generated Reticulum configuration and a Meshtastic/SDR field plan are implemented. Real UPS/solar/radio hardware evidence remains.
 
 A computer without power or communications is only a box.
 
@@ -112,6 +116,8 @@ A computer without power or communications is only a box.
 Track: https://github.com/jandromani/endoftheworld/issues/13
 
 ## 7. 🧪 Physical proof — Issue #14
+
+**Status: 🟨 evidence harness shipped.** The cold-boot/offline field-test protocol and evidence-only hardware matrix are implemented. The matrix deliberately remains UNVERIFIED until real hardware reports are committed.
 
 Repository CI is not field evidence.
 

@@ -1,0 +1,28 @@
+schema: 1
+evidence_protocol: ark-field-test-v1
+
+support_states:
+  - UNVERIFIED
+  - PASS
+  - PASS_WITH_NOTES
+  - FAIL
+
+required_evidence:
+  - exact hardware identity
+  - BIOS_or_UEFI_mode
+  - CPU_and_memory
+  - storage_identity
+  - WiFi_AP_capability
+  - local_portal_and_Kiwix
+  - WAN_disconnected_check
+  - cold_boot_operator_assertion
+  - vault_integrity_verification
+
+maintenance:
+  integrity_scrub_days: 30
+  disconnected_recovery_drill_days: 90
+  media_review_months: 24
+
+principle: >
+  CI validates software contracts. Only committed physical reports can promote a
+  hardware combination from UNVERIFIED.

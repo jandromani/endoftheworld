@@ -1,0 +1,9 @@
+[Unit]
+Description=THE ARK power and field resilience policy
+After=docker.service local-fs.target
+RequiresMountsFor=/srv/endworld
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/endworld/profile.env
+ExecStart=/usr/bin/python3 /opt/endworld/scripts/power_policy.py --apply --state /srv/endworld/state/field/power.json

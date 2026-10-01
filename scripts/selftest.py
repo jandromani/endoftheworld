@@ -16,6 +16,8 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
+# Frontier integration: every profile must retain the common mesh/field/evidence wiring.
+
 
 class SelfTestError(RuntimeError):
     pass
@@ -105,6 +107,9 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         "scripts/prepare_profile.py", "scripts/build_disk_image.sh",
         "scripts/build_search_index.py", "scripts/release_trust.py", "scripts/update_bundle.py",
         "scripts/first_boot_wizard.py", "builder/ark_builder.py",
+        "scripts/ark_mesh.py", "scripts/power_policy.py", "scripts/field_comms.py",
+        "scripts/field_drill.py", "scripts/hardware_matrix.py",
+        "config/ark-cluster.yml", "config/field-comms.yml",
     ):
         require((ROOT / rel).is_file(), f"missing wired runtime file: {rel}")
 

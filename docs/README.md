@@ -55,3 +55,10 @@
 - [Trusted releases](guides/TRUSTED-RELEASES.md)
 - [Ask the whole Ark](guides/ASK-THE-ARK.md)
 - [Offline software closure and updates](guides/OFFLINE-UPDATES.md)
+
+## Field & multi-node resilience
+
+- [Ark-to-Ark replication](guides/ARK-MESH.md)
+- [Power, radio and beyond-IP resilience](guides/FIELD-RESILIENCE.md)
+- [Physical field-test protocol](guides/FIELD-TEST.md)
+- [Evidence-only hardware matrix](hardware-matrix.md)
