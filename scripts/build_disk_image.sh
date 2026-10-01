@@ -236,6 +236,10 @@ cleanup
 set -e
 trap - EXIT INT TERM
 sha256sum "$OUTPUT" > "$OUTPUT.sha256"
+python3 "$REPO/scripts/release_trust.py" create --profile "$PROFILE" --image "$OUTPUT" --vault "$VAULT" --out "$OUTPUT.release.json"
+if [[ -n "${ENDWORLD_SIGNING_KEY:-}" ]]; then
+  python3 "$REPO/scripts/release_trust.py" sign --file "$OUTPUT.release.json" --key "$ENDWORLD_SIGNING_KEY" --signature "$OUTPUT.release.sig"
+fi
 echo "Built: $OUTPUT"
 echo "SHA256: $(cat "$OUTPUT.sha256")"
 echo "Profile: $PROFILE ($IMAGE_BYTES bytes)"
