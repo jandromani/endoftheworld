@@ -6,6 +6,10 @@ on:
       - "scripts/**"
       - "runtime/**"
       - "manifests/**"
+      - "config/**"
+      - "hardware/**"
+      - "field-reports/**"
+      - "docs/hardware-matrix.md"
       - "docs/guides/**"
       - "Makefile"
       - ".github/workflows/frontier-validate.yml"
@@ -15,6 +19,10 @@ on:
       - "scripts/**"
       - "runtime/**"
       - "manifests/**"
+      - "config/**"
+      - "hardware/**"
+      - "field-reports/**"
+      - "docs/hardware-matrix.md"
       - "docs/guides/**"
       - "Makefile"
       - ".github/workflows/frontier-validate.yml"
@@ -93,3 +101,59 @@ jobs:
           cp -a /tmp/base /tmp/target
           python scripts/update_bundle.py apply /tmp/update.tar --target-vault /tmp/target
           test "$(cat /tmp/target/data/demo.txt)" = "new"
+
+      - name: Ark-to-Ark content-addressed replication
+        run: |
+          rm -rf /tmp/mesh && mkdir -p /tmp/mesh/source/lock /tmp/mesh/source/data /tmp/mesh/peer/lock
+          python - <<'PY'
+          import hashlib,json,pathlib
+          s=pathlib.Path("/tmp/mesh/source")
+          p=s/"data/demo.txt";p.write_text("same chunks can save another Ark\n"*4000)
+          rec={"id":"demo","family":"test","path":"data/demo.txt","sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"bytes":p.stat().st_size,"required":True}
+          (s/"lock/nano.lock.json").write_text(json.dumps({"profile":"nano","artifacts":[rec],"containers":[]}))
+          (s/"lock/nano.cdx.json").write_text('{"bomFormat":"CycloneDX"}')
+          t=pathlib.Path("/tmp/mesh/peer")
+          (t/"lock/nano.lock.json").write_text(json.dumps({"profile":"nano","artifacts":[],"containers":[]}))
+          (t/"lock/nano.cdx.json").write_text('{"bomFormat":"CycloneDX"}')
+          PY
+          python scripts/ark_mesh.py inventory --vault /tmp/mesh/source --profile nano --store /tmp/mesh/source-store --out /tmp/mesh/source.json --chunk-bytes 1048576
+          python scripts/ark_mesh.py inventory --vault /tmp/mesh/peer --profile nano --out /tmp/mesh/peer.json --chunk-bytes 1048576
+          python scripts/ark_mesh.py diff --source /tmp/mesh/source.json --target /tmp/mesh/peer.json > /tmp/mesh/diff.json
+          python scripts/ark_mesh.py pack --source-inventory /tmp/mesh/source.json --target-inventory /tmp/mesh/peer.json --store /tmp/mesh/source-store --out /tmp/mesh/pack.tar
+          python scripts/ark_mesh.py verify-pack /tmp/mesh/pack.tar
+          python scripts/ark_mesh.py apply-pack /tmp/mesh/pack.tar --store /tmp/mesh/peer-store --inventory-out /tmp/mesh/received.json
+          python scripts/ark_mesh.py restore --inventory /tmp/mesh/received.json --store /tmp/mesh/peer-store --target-vault /tmp/mesh/recovered
+          cmp /tmp/mesh/source/data/demo.txt /tmp/mesh/recovered/data/demo.txt
+          cmp /tmp/mesh/source/lock/nano.lock.json /tmp/mesh/recovered/lock/nano.lock.json
+      - name: Power and communications policy
+        run: |
+          cat > /tmp/power-low.json <<'EOF'
+          {"battery_present":true,"battery_percent":10,"battery_status":"Discharging","ac_online":false,"ups":{"available":false}}
+          EOF
+          python scripts/power_policy.py --fixture /tmp/power-low.json --state /tmp/power-state.json --policy conserve --apply
+          python - <<'PY'
+          import json
+          assert json.load(open("/tmp/power-state.json"))["mode"]=="survival"
+          PY
+          cat > /tmp/power-high.json <<'EOF'
+          {"battery_present":true,"battery_percent":80,"battery_status":"Charging","ac_online":true,"ups":{"available":false}}
+          EOF
+          python scripts/power_policy.py --fixture /tmp/power-high.json --state /tmp/power-state.json --policy conserve --apply
+          python - <<'PY'
+          import json
+          assert json.load(open("/tmp/power-state.json"))["mode"]=="normal"
+          PY
+          python scripts/field_comms.py check --config config/field-comms.yml
+          python scripts/field_comms.py render --config config/field-comms.yml --out /tmp/comms.md
+          python scripts/field_comms.py reticulum-config --config config/field-comms.yml --out /tmp/reticulum.conf
+          grep -q "Reticulum" /tmp/comms.md
+          grep -q "AutoInterface" /tmp/reticulum.conf
+      - name: Physical evidence protocol
+        run: |
+          mkdir -p /tmp/reports
+          cat > /tmp/field-fixture.json <<'EOF'
+          {"profile":"nano","hardware":{"system_vendor":"CI","product_name":"fixture","bios_vendor":"fixture","bios_version":"1","boot_mode":"UEFI","cpu":"fixture CPU","memory_bytes":8589934592,"disks":[],"gpus":[],"wifi_ap_capable":true},"runtime":{"boot_id":"ci-fixture","kernel":"fixture"},"checks":{"portal":true,"kiwix":true,"ai":true,"voice":true,"wan_reachable":false}}
+          EOF
+          python scripts/field_drill.py --fixture /tmp/field-fixture.json --profile nano --expect-offline --cold-boot-asserted --require-cold-boot --out /tmp/reports/ci.json --markdown /tmp/field.md
+          python scripts/hardware_matrix.py --reports /tmp/reports --out /tmp/matrix.md
+          grep -q "PASS" /tmp/matrix.md
