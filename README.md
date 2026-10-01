@@ -1,205 +1,435 @@
 <div align="center">
 
-<img src="docs/assets/the-ark-generated.jpg" alt="THE ARK — offline knowledge, AI, communications and reconstruction appliances" width="100%" />
+<img src="docs/assets/the-ark-hero.jpg" alt="THE ARK — the offline computer for knowledge, AI, maps, communications and rebuilding" width="900" />
 
 # THE ARK
 
-### Offline knowledge, AI, communications and reconstruction appliances
+### The computer you can still use when the Internet is gone.
 
-**Preserve knowledge · Keep local intelligence alive · Stay connected · Retain the ability to rebuild**
+**Knowledge · AI · Maps · Communications · Repair · Coding · Reconstruction**
 
 [![NANO CI](https://github.com/jandromani/endoftheworld/actions/workflows/nano-validate.yml/badge.svg)](https://github.com/jandromani/endoftheworld/actions/workflows/nano-validate.yml)
 [![FAMILY CI](https://github.com/jandromani/endoftheworld/actions/workflows/family-validate.yml/badge.svg)](https://github.com/jandromani/endoftheworld/actions/workflows/family-validate.yml)
 [![NOMAD CI](https://github.com/jandromani/endoftheworld/actions/workflows/nomad-validate.yml/badge.svg)](https://github.com/jandromani/endoftheworld/actions/workflows/nomad-validate.yml)
 [![CIVILIZATION CI](https://github.com/jandromani/endoftheworld/actions/workflows/civilization-validate.yml/badge.svg)](https://github.com/jandromani/endoftheworld/actions/workflows/civilization-validate.yml)
 ![Stars](https://img.shields.io/github/stars/jandromani/endoftheworld?style=flat-square)
-![Forks](https://img.shields.io/github/forks/jandromani/endoftheworld?style=flat-square)
-![Issues](https://img.shields.io/github/issues/jandromani/endoftheworld?style=flat-square)
 ![Last commit](https://img.shields.io/github/last-commit/jandromani/endoftheworld?style=flat-square)
-![Offline First](https://img.shields.io/badge/runtime-offline--first-0b7285?style=flat-square)
+![Offline first](https://img.shields.io/badge/runtime-offline--first-0b7285?style=flat-square)
 ![Integrity](https://img.shields.io/badge/vault-SHA--256-5f3dc4?style=flat-square)
 ![Boot](https://img.shields.io/badge/boot-BIOS%20%2B%20UEFI-7950f2?style=flat-square)
 
-[Why](#why-the-ark) · [Profiles](#the-fleet) · [Quickstart](#quickstart) · [Architecture](#architecture) · [Docs](#documentation) · [Roadmap](#roadmap)
+**[🚀 I know nothing about Linux — start here](docs/guides/BEGINNER.md)** ·
+**[🇪🇸 Guía para empezar desde cero](docs/es/EMPIEZA-AQUI.md)** ·
+[How it works](docs/how-it-works.md) ·
+[Project NOMAD inside](docs/project-nomad.md) ·
+[What is still missing?](docs/frontiers.md)
 
 </div>
 
 ---
 
-## What is THE ARK?
+## 👶 Explain it like I am five
 
-**THE ARK** is a family of reproducible, offline-first appliances that acquire useful public knowledge and software while the Internet exists, verify and freeze it, then serve it locally when the Internet is unavailable.
+Imagine that the Internet is a gigantic library, map room, software store and toolbox.
 
-The public project is **THE ARK**. The underlying control-plane and CLI remain named **ENDWORLD** for compatibility.
+THE ARK builds a **small private copy of the useful parts** before you lose access to them.
 
-> **Internet is a build-time dependency, not a run-time dependency.**
+It puts those things on an SSD:
 
-A normal backup preserves files. THE ARK aims to preserve **capability**:
+- 📚 books and reference material;
+- 🩺 medical knowledge;
+- 🧠 an AI that runs on your own computer;
+- 🎙️ speech recognition;
+- 🗺️ maps;
+- 📡 communications software;
+- 🔧 repair and DIY knowledge;
+- 💻 programming tools and source code;
+- 📦 software dependencies;
+- 🧊 a receipt telling you exactly what was saved and whether it changed.
 
-- 📚 searchable offline knowledge;
-- 🧠 local language models;
-- 🎙️ local speech-to-text;
-- 🗺️ offline maps;
-- 📡 field communications software and firmware;
-- 🔁 peer-to-peer replication;
-- 🧰 repair, DIY and survival references;
-- 💻 source control, an IDE and developer toolchains;
-- 🔎 vector-search infrastructure;
-- 🧊 pinned provenance, hashes and immutable manifests;
-- 💽 a reproducible BIOS/UEFI appliance image.
+Then THE ARK makes that SSD **bootable**.
 
-## Why THE ARK?
+You can plug it into a compatible PC, boot from it and open a local website. The important services run on the machine itself.
 
-Modern technical capability has hidden runtime dependencies everywhere: cloud APIs, package registries, app stores, search engines, CDNs, container registries, documentation websites and SaaS control planes.
+> **Internet is needed while building the Ark. Internet is not required to use the finished Ark.**
 
-A folder full of PDFs is useful. A bootable node that can **search, reason, map, communicate, code, repair and replicate** is much more useful.
+---
 
-THE ARK is designed for:
+# 🚀 “I know nothing about computers. How do I use this?”
 
-- low-connectivity and remote environments;
-- household resilience;
-- field operations;
-- education and labs;
-- homelab sovereignty;
-- disaster preparedness;
-- long-lived technical archives;
-- experiments in preserving enough tooling to rebuild useful systems.
+Start with **NANO**.
 
-It is **not** a claim that one SSD can preserve civilization. It is an engineering framework for deciding what to preserve, how to verify it and how to make it operational offline.
+You need:
 
-## The fleet
+1. **A normal x86-64 PC running Debian/Ubuntu Linux** while you build it.
+2. **Internet access during the build.**
+3. **Free disk space for the download + the final image.**
+4. **A spare SSD/USB drive** large enough for the profile.
+5. Time: downloading large offline libraries can take a while.
 
-Each profile is a larger “deck” of the same Ark. The engine is shared; capability density increases.
+> Windows/macOS are not direct image-builder targets yet. That is a frontier we still need to cross.
 
-| Profile | Target | Mission | AI | Extra services | Status |
-|---|---:|---|---|---|---|
-| 🛟 **NANO** | 64 GB | Survive & reference | Qwen3 4B | — | ✅ Software/CI implemented |
-| 🏠 **FAMILY** | 256 GB | Live, share & preserve | Qwen3 8B | Syncthing, Forgejo | ✅ Software/CI implemented |
-| 🧭 **NOMAD** | 1 TB | Rebuild & create | 8B + 30B general + 30B coder | Qdrant, code-server, Project NOMAD | ✅ Software/CI implemented |
-| 🏛️ **CIVILIZATION** | 4 TB | Reconstruct systems | 8B + 30B general + 30B coder | package snapshots, CAD, science, GIS | ✅ Software/CI implemented |
-| 🛶 **ARK** | maximum | Preservation seed | planned | maximum curated preservation | 🚧 Planned |
+### The easy path
 
-Detailed product sheets:
-
-- [NANO](profiles/nano/README.md)
-- [FAMILY](profiles/family/README.md)
-- [NOMAD](profiles/nomad/README.md)
-- [CIVILIZATION](profiles/civilization/README.md)
-- [ARK](profiles/ark/README.md)
-
-## What is already inside?
-
-### 📚 Knowledge
-
-Kiwix/ZIM collections, Wikipedia, medical references, developer references, survival/repair material and profile-specific curated sources.
-
-### 🧠 Local intelligence
-
-llama.cpp provides a local OpenAI-compatible inference endpoint. NOMAD can switch between **lite**, **general** and **coder** models without changing the API used by the portal.
-
-### 🎙️ Voice
-
-whisper.cpp provides local transcription.
-
-### 🗺️ Maps
-
-Frozen OpenStreetMap extracts are transformed with Planetiler into PMTiles and served through a local MapLibre interface.
-
-### 📡 Communications
-
-The vault can preserve Bitchat, Meshtastic Android + firmware, Reticulum and supporting radio/mapping material.
-
-### 💻 Developer sovereignty
-
-FAMILY introduces Forgejo. NOMAD adds code-server, Qdrant and native C/C++, Python, Node, Java/Maven, Rust and Go toolchains, plus frozen developer references and source trees.
-
-### 🧊 Trust boundary
-
-Unknown upstream software is not silently promoted. The intended lifecycle is:
-
-```text
-Internet → Scout → Quarantine → Verify → Freeze → Prepare → Image → Offline node
-```
-
-## Architecture
-
-```text
-                         THE ARK
-                            │
-                    ENDWORLD control plane
-                            │
-          ┌─────────────────┼─────────────────┐
-          │                 │                 │
-       profiles          manifests          policy
-          │                 │                 │
-          └──────────── acquisition ──────────┘
-                            │
-                     verified frozen vault
-                            │
-              ┌─────────────┼─────────────┐
-              │             │             │
-          knowledge        AI           maps
-              │             │             │
-              ├──── apps / source / firmware ────┐
-              │                                   │
-              └──────────── runtime ──────────────┘
-                            │
-                  BIOS + UEFI appliance
-```
-
-See [Architecture](docs/architecture.md), [Trust & verification](docs/trust-and-verification.md) and [Storage model](docs/storage-model.md).
-
-## Quickstart
-
-### Clone
+Open a terminal and paste:
 
 ```bash
 git clone https://github.com/jandromani/endoftheworld.git
 cd endoftheworld
+bash scripts/ark-wizard.sh
 ```
 
-### Install builder prerequisites
+The wizard asks:
+
+```text
+Which Ark do you want?
+
+1) NANO          64 GB   — knowledge + AI + Spain maps
+2) FAMILY       256 GB   — NANO + sharing + local Git
+3) NOMAD          1 TB   — developer workstation + Project NOMAD
+4) CIVILIZATION   4 TB   — NOMAD + package closure + CAD/science/Europe
+
+Choose 1-4:
+```
+
+It does **not** erase a drive without asking.
+
+---
+
+## 🧪 I only want to try it. Do I need to erase a disk?
+
+No.
+
+On a Linux PC:
 
 ```bash
-make builder-deps
-make setup
-make doctor
+make nano-acquire
+make nano-prepare
+make nano-verify
+make nano-run
 ```
 
-### Build a profile
+Then open:
+
+**http://localhost:8080**
+
+You will see the Ark portal while still using your normal operating system.
+
+Stop it with:
 
 ```bash
-# choose nano, family or nomad
-make nomad-plan
-make nomad-acquire
-make nomad-prepare
-make nomad-verify
-make nomad-selftest
+make nano-stop
 ```
 
-### Run the prepared vault locally
+---
+
+# 💽 I want the real bootable “end-of-the-world computer”
+
+After the profile has been acquired and verified:
 
 ```bash
-make nomad-run
+make nano-image
 ```
 
-### Build a bootable image
+This creates:
+
+```text
+dist/endworld-nano-amd64.img
+dist/endworld-nano-amd64.img.sha256
+```
+
+Find your spare disk:
 
 ```bash
-make nomad-image
+lsblk -o NAME,SIZE,MODEL,TRAN,MOUNTPOINTS
 ```
 
-### Flash
-
-> ⚠️ The target device is overwritten.
+Then flash it:
 
 ```bash
-make nomad-flash DEVICE=/dev/sdX
+make nano-flash DEVICE=/dev/sdX
 ```
 
-Full guide: [docs/guides/quickstart.md](docs/guides/quickstart.md).
+⚠️ **That drive will be erased.** The flash script shows the target and asks you to type the exact device path before writing.
 
-## NOMAD: switch the local brain
+Now:
+
+1. shut down the target PC;
+2. connect the Ark SSD;
+3. enter BIOS/UEFI boot selection;
+4. boot from that SSD;
+5. wait for the node to start;
+6. open **http://endworld-nano.local/** from another device on the same LAN, or connect to the Ark Wi-Fi if the hardware supports access-point mode.
+
+Default console account in the current development image:
+
+```text
+user:     endworld
+password: endworld
+```
+
+Change it after first boot:
+
+```bash
+passwd
+```
+
+The Wi-Fi defaults live in `config/<profile>.env` and should also be changed before use on an untrusted network.
+
+**Full beginner guide → [docs/guides/BEGINNER.md](docs/guides/BEGINNER.md)**
+
+---
+
+# 🛟 Which Ark should I build?
+
+| | Size | Imagine it as… | Best for |
+|---|---:|---|---|
+| 🛟 **NANO** | 64 GB | emergency backpack | first build, portable reference node |
+| 🏠 **FAMILY** | 256 GB | house library/server | family files, stronger AI, local Git |
+| 🧭 **NOMAD** | 1 TB | mobile workshop | developers, makers, field teams |
+| 🏛️ **CIVILIZATION** | 4 TB | reconstruction workshop | package dependencies, CAD, science, Europe |
+| 🛶 **ARK** | maximum | preservation network | planned multi-node preservation tier |
+
+If you are unsure: **build NANO first**.
+
+NANO teaches you the complete lifecycle with the smallest storage bill.
+
+---
+
+# 📦 What do we actually save?
+
+| Thing | Format | Why it is there |
+|---|---|---|
+| Wikipedia / medicine / manuals | `.zim` | searchable offline library |
+| Local AI models | `.gguf` | AI without a cloud API |
+| Speech model | Whisper binary | local transcription |
+| Raw maps | `.osm.pbf` | source map data |
+| Ready maps | `.pmtiles` | fast local map viewer |
+| Android apps | `.apk` | install useful tools without an app store |
+| Device firmware | archives | recover/flash supported field devices |
+| Software source | source `.tar.gz` | preserve code for rebuilding |
+| Docker services | container `.tar` | start known services without a registry |
+| APT/PyPI/npm closure | snapshot `.tar` | rebuild selected software without registries |
+| Runtime web assets | JS/CSS/tools | make the local portal work |
+| Lock file | JSON | exact receipt of what was saved |
+| BOM | CycloneDX JSON | machine-readable inventory |
+
+Personal files created **after** boot live in the mutable `state/` area and are deliberately separate from the frozen vault.
+
+---
+
+# 🧾 Manifest? Lock? Vault? Explain the strange words.
+
+Think of packing an actual Ark:
+
+| THE ARK word | Simple meaning |
+|---|---|
+| `manifests/capabilities.yml` | 🔭 **the radar** — interesting projects we watch |
+| `profiles/nano.yml` | 📝 **the packing list** — what NANO must carry |
+| `scripts/acquire.py` | 🛒 **the shopper** — downloads the packing list |
+| `vault/nano/` | 📦 **the warehouse** — the actual downloaded content |
+| `nano.lock.json` | 🧾 **the receipt** — exact URLs, versions, sizes and SHA-256 hashes |
+| `nano.cdx.json` | 📋 **the inventory/BOM** — machine-readable list of the frozen box |
+| `prepare` | 🧰 **the workshop** — turns raw things into usable things, e.g. OSM → PMTiles |
+| `build-image` | 🧳 **packing the suitcase** — Debian + runtime + vault into one disk image |
+| `flash` | 💽 **putting the suitcase on the SSD** |
+| `runtime/` | 🕹️ **the control panel** — the portal and local services |
+| `config/<profile>.env` | 🎛️ **the knobs** — Wi-Fi name, AI mode, ports/features |
+
+The important distinction:
+
+### The capability catalog is **not** the Ark.
+
+`manifests/capabilities.yml` is what we are watching.
+
+### The profile is the promise.
+
+`profiles/<profile>.yml` says what that product should contain.
+
+### The lock is the proof.
+
+After acquisition, the lock records what was **actually resolved and frozen**.
+
+Read the full walkthrough: **[How THE ARK works](docs/how-it-works.md)**.
+
+---
+
+# 🔁 What happens when I build it?
+
+```mermaid
+flowchart LR
+    A["🌐 Internet"] --> B["🔭 Scout"]
+    B --> C["📝 Profile"]
+    C --> D["🛒 Acquire"]
+    D --> E["🧊 Verify + Freeze"]
+    E --> F["📦 Vault"]
+    F --> G["🧰 Prepare"]
+    G --> H["💽 Build image"]
+    H --> I["⚡ Boot"]
+    I --> J["🏠 Local portal"]
+```
+
+And the trust boundary is deliberately boring:
+
+```text
+Internet
+   ↓
+discover
+   ↓
+download as data
+   ↓
+verify / hash
+   ↓
+freeze exact artifact
+   ↓
+build a new Ark
+   ↓
+offline node
+```
+
+A field Ark does not silently mutate because an upstream `latest` tag changed.
+
+---
+
+# 🧭 Where does Project NOMAD fit?
+
+**Project NOMAD is inside the larger Ark profiles.**
+
+Project NOMAD is an offline-first browser-based **Command Center** that can orchestrate containerized tools and resources. Upstream, it includes concepts such as AI/RAG, Kiwix, Kolibri, maps, CyberChef, notes and a Supply Depot application catalog.
+
+In THE ARK:
+
+```text
+THE ARK / ENDWORLD
+│
+├── decides WHAT is trusted and frozen
+├── creates the bootable appliance
+├── owns profile manifests + hashes + provenance
+│
+└── NOMAD / CIVILIZATION
+     └── Project NOMAD Command Center
+          ├── admin UI
+          ├── MySQL
+          ├── Redis
+          └── local application orchestration
+```
+
+So they solve different layers:
+
+- **THE ARK / ENDWORLD** = preservation, provenance, reproducibility, bootable image and trust boundary.
+- **Project NOMAD** = human-friendly local command center and app orchestration.
+
+We deliberately disable Project NOMAD's automatic updater inside a frozen Ark. New versions should enter through the Ark build pipeline instead.
+
+Read: **[Project NOMAD inside THE ARK](docs/project-nomad.md)**.
+
+---
+
+# 🧠 What can I do after it boots?
+
+From a phone/laptop on the local network you can open the portal and:
+
+- search the offline library;
+- ask local AI questions;
+- transcribe audio locally;
+- view offline maps;
+- download preserved Android apps;
+- inspect the exact frozen capability inventory.
+
+FAMILY additionally exposes:
+
+- Syncthing;
+- Forgejo.
+
+NOMAD/CIVILIZATION additionally expose:
+
+- Qdrant;
+- code-server;
+- Project NOMAD;
+- switchable general/coder AI;
+- a native developer toolchain.
+
+CIVILIZATION additionally preserves selected APT/PyPI/npm dependency closure and reconstruction-oriented CAD/science/GIS source ecosystems.
+
+---
+
+# 🧩 What are we still missing?
+
+THE ARK is ambitious, but the honest frontier list matters more than pretending it is finished.
+
+| Frontier | Why it matters | State |
+|---|---|---|
+| 🖱️ no-terminal desktop builder | ordinary users should click, not type | ⬜ |
+| 📀 signed prebuilt images/releases | build once, download safely | ⬜ |
+| 🪟 Windows/macOS builder | much broader adoption | ⬜ |
+| 🔐 Secure Boot | stronger boot-chain trust | ⬜ |
+| 🔑 first-boot credential wizard | remove public development defaults | ⬜ |
+| 🔎 one search over every library/code/doc | true unified offline knowledge | ⬜ |
+| 🧠 automated local RAG ingestion | ask questions over all saved material | ⬜ |
+| 📦 Maven/Cargo/Go/OCI deeper closure | more complete software rebuilding | ⬜ |
+| 🔄 offline update bundles/deltas | update an Ark using another disk | ⬜ |
+| 🤝 Ark-to-Ark replication | exchange verified capability packs | ⬜ |
+| 🧬 content-addressed deduplication | reduce multi-profile duplication | ⬜ |
+| 🔌 UPS/solar/power layer | resilience includes electricity | ⬜ |
+| 📻 deeper SDR/radio workflows | communications beyond IP networks | ⬜ |
+| 🌍 multilingual portal/docs | useful beyond English/Spanish | ⬜ |
+| 🧪 physical hardware matrix | prove Wi-Fi/GPU/boot combinations | ⬜ |
+| 🧯 repeated disconnected recovery drills | prove disaster-readiness | ⬜ |
+| 🗄️ multi-node final ARK tier | survive loss of a single machine | ⬜ |
+
+Full frontier map → **[docs/frontiers.md](docs/frontiers.md)**.
+
+---
+
+# 🧪 What is actually proven today?
+
+There are different kinds of “works”:
+
+1. ✅ **repository complete** — files/wiring exist;
+2. ✅ **CI tested** — profile contracts and acquisition paths are validated;
+3. ✅ **live source resolution** — required current sources resolve;
+4. ⬜ **full real payload acquired** — hundreds of GB/TB downloaded on a builder;
+5. ⬜ **full raw image built**;
+6. ⬜ **flashed and repeatedly booted on real hardware with WAN removed**.
+
+Current software/CI profiles:
+
+```text
+NANO            64 GB     SURVIVE             ✅
+FAMILY         256 GB     LIVE + SHARE        ✅
+NOMAD            1 TB     REBUILD + CREATE    ✅
+CIVILIZATION     4 TB     RECONSTRUCT         ✅
+ARK            maximum    PRESERVE            🚧
+```
+
+We do not call a profile “physically field-proven” until the final offline hardware stages happen.
+
+---
+
+# 🛠️ For developers
+
+Manual lifecycle:
+
+```bash
+make nano-plan
+make nano-acquire
+make nano-prepare
+make nano-verify
+make nano-selftest
+make nano-run
+make nano-image
+make nano-flash DEVICE=/dev/sdX
+```
+
+CIVILIZATION inserts dependency snapshotting before preparation:
+
+```bash
+make civilization-acquire
+make civilization-snapshot-packages
+make civilization-prepare
+```
+
+NOMAD/CIVILIZATION AI modes:
 
 ```bash
 make nomad-ai-lite
@@ -207,90 +437,62 @@ make nomad-ai-general
 make nomad-ai-coder
 ```
 
-All modes remain behind the same local inference endpoint.
+---
 
-## Repository map
+# 📚 Documentation
 
-```text
-profiles/       profile manifests + product READMEs
-manifests/      tracked capability catalog
-scripts/        acquisition, verification, preparation, image build, CLI
-runtime/        portal, local services, networking, systemd integration
-config/         runtime configuration by profile
-docs/           architecture, guides, references and operating model
-```
+**If you are new:** [Beginner guide](docs/guides/BEGINNER.md)
 
-## Documentation
+**If you want to understand the machine:** [How it works](docs/how-it-works.md)
 
-Start with the [documentation index](docs/README.md).
+**If you want to rebuild it from zero:** [Reconstruction guide](docs/reconstruction.md)
 
-| Area | Documents |
+| Area | Docs |
 |---|---|
-| Vision | [Overview](docs/overview.md) · [Philosophy](docs/philosophy.md) |
-| Design | [Architecture](docs/architecture.md) · [Storage](docs/storage-model.md) · [Trust](docs/trust-and-verification.md) |
-| Runtime | [Services](docs/runtime-services.md) · [Networking](docs/networking.md) · [AI](docs/ai.md) · [Developer mode](docs/developer-mode.md) |
-| Operations | [Quickstart](docs/guides/quickstart.md) · [Build image](docs/guides/build-image.md) · [Offline operation](docs/guides/offline-operation.md) · [Troubleshooting](docs/guides/troubleshooting.md) |
-| Reference | [CLI](docs/reference/cli.md) · [Environment](docs/reference/environment-variables.md) · [Ports](docs/reference/ports-and-services.md) · [Capabilities](docs/reference/capability-catalog.md) |
-
-Project governance:
-
-- [CONTRIBUTING.md](CONTRIBUTING.md)
-- [SECURITY.md](SECURITY.md)
-- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- [ROADMAP.md](ROADMAP.md)
-- [CHANGELOG.md](CHANGELOG.md)
-
-## Verification status
-
-NANO, FAMILY and NOMAD have repository/CI validation covering profile contracts, source resolution, acquisition logic, runtime routing and shared engine regressions.
-
-That is intentionally different from **physical field validation**. A profile is only field-proven after its real payload has been acquired, its full-size image has been built and flashed, and the target machine has been repeatedly booted and exercised without WAN connectivity.
-
-See the acceptance documents already in `docs/`.
-
-## Security posture
-
-THE ARK prefers boring trust rules:
-
-1. download into quarantine;
-2. record provenance;
-3. verify checksums when upstream provides them;
-4. hash everything locally;
-5. pin/freeze what is promoted;
-6. separate immutable vault content from mutable runtime state;
-7. avoid “latest” at field-runtime;
-8. rebuild intentionally.
-
-Project NOMAD's updater sidecar is deliberately excluded from the ENDWORLD NOMAD runtime. New upstream versions go through the Ark lifecycle instead.
-
-## Roadmap
-
-```text
-NANO          64 GB      SURVIVE             ✅
-FAMILY       256 GB      LIVE + SHARE        ✅
-NOMAD          1 TB      REBUILD + CREATE    ✅
-CIVILIZATION    4 TB     RECONSTRUCT         ✅
-ARK           maximum    PRESERVE            🚧
-```
-
-See [ROADMAP.md](ROADMAP.md).
-
-## Contributing
-
-The highest-value contributions are not “add 500 random downloads”. They are well-argued, maintainable capabilities with provenance, a budget, an offline use case and an acceptance path.
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing a capability or profile.
-
-## Acknowledgements
-
-THE ARK integrates or preserves work from many upstream communities, including Kiwix, OpenStreetMap, Planetiler, PMTiles, MapLibre, llama.cpp, whisper.cpp, Syncthing, Forgejo, Qdrant, code-server, Project NOMAD, Reticulum, Meshtastic and others. Their respective licenses and attribution requirements remain authoritative.
+| Start | [Beginner](docs/guides/BEGINNER.md) · [Español](docs/es/EMPIEZA-AQUI.md) · [FAQ](docs/guides/faq.md) |
+| Mental model | [How it works](docs/how-it-works.md) · [Architecture](docs/architecture.md) · [Storage](docs/storage-model.md) |
+| Trust | [Trust & verification](docs/trust-and-verification.md) · [Security](SECURITY.md) |
+| Components | [Runtime](docs/runtime-services.md) · [AI](docs/ai.md) · [Networking](docs/networking.md) · [Developer mode](docs/developer-mode.md) |
+| Project NOMAD | [How NOMAD sits inside THE ARK](docs/project-nomad.md) |
+| Operations | [Build image](docs/guides/build-image.md) · [Offline operation](docs/guides/offline-operation.md) · [Troubleshooting](docs/guides/troubleshooting.md) |
+| Reference | [CLI](docs/reference/cli.md) · [Environment](docs/reference/environment-variables.md) · [Ports](docs/reference/ports-and-services.md) |
+| Future | [Frontiers](docs/frontiers.md) · [Roadmap](ROADMAP.md) |
 
 ---
 
+# 🎨 Can the GitHub page have a custom background?
+
+No. GitHub owns the repository page background and the user's light/dark theme.
+
+What we **can** control inside the README:
+
+- responsive images;
+- different light/dark banners with `<picture>`;
+- badges;
+- HTML alignment/tables;
+- collapsible `<details>`;
+- Mermaid diagrams;
+- SVG/PNG/JPG section artwork;
+- anchors and a strong visual information hierarchy.
+
+That keeps the repo native to GitHub instead of depending on fragile custom CSS.
+
+---
+
+# ❤️ The idea
+
+A backup says:
+
+> “I saved the files.”
+
+THE ARK asks:
+
+> **“Can I still use the knowledge, software and tools?”**
+
 <div align="center">
 
-### Preserve more than files.
+## Preserve more than files.
 
-**Preserve the ability to do things.**
+### Preserve the ability to do things.
 
 </div>
