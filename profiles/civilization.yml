@@ -108,7 +108,7 @@ artifacts:
 
 
   # --- CIVILIZATION reconstruction layer --------------------------------------
-  - {id: europe-osm, family: maps, kind: url, required: true, url: "https://download.geofabrik.de/europe-latest.osm.pbf", filename: europe-latest.osm.pbf, destination: maps/raw, budget_bytes: 80000000000}
+  - {id: europe-osm, family: maps, kind: index_latest, required: true, index_url: "https://download.geofabrik.de/europe.html", href_regex: 'europe-[0-9]{6}\.osm\.pbf', destination: maps/raw, budget_bytes: 80000000000}
   - {id: freecad-source, family: cad, kind: github_snapshot, required: true, repo: FreeCAD/FreeCAD, ref: latest-release, destination: source/cad, budget_bytes: 5000000000}
   - {id: kicad-source, family: electronics, kind: github_snapshot, required: true, repo: KiCad/kicad-source-mirror, ref: latest-release, destination: source/cad, budget_bytes: 5000000000}
   - {id: openscad-source, family: cad, kind: github_snapshot, required: true, repo: openscad/openscad, ref: latest-release, destination: source/cad, budget_bytes: 3000000000}
