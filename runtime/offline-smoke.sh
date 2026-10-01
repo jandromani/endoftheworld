@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 log(){ echo "[NANO-MINI] $*" | tee /dev/console; }
+finish(){ local rc=$?; if (( rc != 0 )); then log "THE_ARK_OFFLINE_SMOKE=FAIL rc=$rc"; fi; sync; systemctl poweroff --no-block || true; exit $rc; }
+trap finish EXIT
 wait_url(){ local url="$1"; for _ in $(seq 1 180); do curl -fsS --max-time 2 "$url" >/dev/null 2>&1 && return 0; sleep 1; done; log "TIMEOUT $url"; return 1; }
 
 log "offline smoke starting"
@@ -47,5 +49,3 @@ state_code="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1/vault/sta
 [[ "$state_code" == "403" ]]
 
 log "THE_ARK_OFFLINE_SMOKE=PASS"
-sync
-systemctl poweroff
