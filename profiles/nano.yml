@@ -116,6 +116,98 @@ artifacts:
     destination: firmware/meshtastic
     budget_bytes: 1000000000
 
+  - id: meshtastic-firmware-esp32c3
+    family: comms
+    kind: github_release_asset
+    required: false
+    repo: meshtastic/firmware
+    asset_regex: 'firmware-esp32c3-[0-9A-Za-z._-]+\.zip'
+    destination: firmware/meshtastic
+    budget_bytes: 50000000
+
+  - id: meshtastic-firmware-esp32c6
+    family: comms
+    kind: github_release_asset
+    required: false
+    repo: meshtastic/firmware
+    asset_regex: 'firmware-esp32c6-[0-9A-Za-z._-]+\.zip'
+    destination: firmware/meshtastic
+    budget_bytes: 50000000
+
+  - id: meshtastic-firmware-esp32s3
+    family: comms
+    kind: github_release_asset
+    required: false
+    repo: meshtastic/firmware
+    asset_regex: 'firmware-esp32s3-[0-9A-Za-z._-]+\.zip'
+    destination: firmware/meshtastic
+    budget_bytes: 300000000
+
+  - id: meshtastic-firmware-nrf52840
+    family: comms
+    kind: github_release_asset
+    required: false
+    repo: meshtastic/firmware
+    asset_regex: 'firmware-nrf52840-[0-9A-Za-z._-]+\.zip'
+    destination: firmware/meshtastic
+    budget_bytes: 100000000
+
+  - id: meshtastic-firmware-rp2040
+    family: comms
+    kind: github_release_asset
+    required: false
+    repo: meshtastic/firmware
+    asset_regex: 'firmware-rp2040-[0-9A-Za-z._-]+\.zip'
+    destination: firmware/meshtastic
+    budget_bytes: 30000000
+
+  - id: meshtastic-firmware-rp2350
+    family: comms
+    kind: github_release_asset
+    required: false
+    repo: meshtastic/firmware
+    asset_regex: 'firmware-rp2350-[0-9A-Za-z._-]+\.zip'
+    destination: firmware/meshtastic
+    budget_bytes: 30000000
+
+  - id: meshtastic-firmware-stm32
+    family: comms
+    kind: github_release_asset
+    required: false
+    repo: meshtastic/firmware
+    asset_regex: 'firmware-stm32-[0-9A-Za-z._-]+\.zip'
+    destination: firmware/meshtastic
+    budget_bytes: 30000000
+
+  - id: sideband-android
+    family: comms
+    kind: github_release_asset
+    required: true
+    repo: markqvist/Sideband
+    asset_regex: 'Sideband_[0-9.]+\.apk'
+    destination: apps/android
+    budget_bytes: 300000000
+
+  - id: lxmf-source
+    family: comms
+    kind: github_snapshot
+    required: true
+    repo: markqvist/LXMF
+    ref: latest-release
+    destination: source/comms
+    budget_bytes: 200000000
+    license_review: upstream-lxmf-license
+
+  - id: nomadnet-source
+    family: comms
+    kind: github_snapshot
+    required: false
+    repo: markqvist/NomadNet
+    ref: latest-release
+    destination: source/comms
+    budget_bytes: 100000000
+    license_review: upstream-nomadnet-license
+
   - id: reticulum-source
     family: comms
     kind: github_snapshot
