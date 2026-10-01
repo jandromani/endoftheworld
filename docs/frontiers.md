@@ -4,7 +4,7 @@ THE ARK's long-term goal is not “store more files”. It is to preserve enough
 
 The backlog is organized as seven engineering epics. The GitHub issues are the live execution layer; this document explains why each frontier exists and what “done” means.
 
-## 1. 🖱️ Zero-touch Ark — Issue #8
+## 1. 🖱️ Zero-touch Ark — Issue #8\n\n**Status: 🟨 MVP shipped.** Local browser builder + secure first-boot setup are implemented. Desktop packaging, Windows/macOS and prebuilt image UX remain.
 
 **Goal:** a non-technical user can create an Ark without understanding Linux.
 
@@ -22,7 +22,7 @@ The backlog is organized as seven engineering epics. The GitHub issues are the l
 
 Track: https://github.com/jandromani/endoftheworld/issues/8
 
-## 2. 🔐 Trusted Ark — Issue #9
+## 2. 🔐 Trusted Ark — Issue #9\n\n**Status: 🟨 MVP shipped.** Release manifests bind image/lock/BOM to a Git revision and support detached offline signatures. Secure Boot and published signed images remain.
 
 **Goal:** strengthen the trust chain from source acquisition to the machine that actually boots.
 
@@ -38,7 +38,7 @@ Track: https://github.com/jandromani/endoftheworld/issues/8
 
 Track: https://github.com/jandromani/endoftheworld/issues/9
 
-## 3. 🔎 Ask the whole Ark — Issue #10
+## 3. 🔎 Ask the whole Ark — Issue #10\n\n**Status: 🟨 MVP shipped.** SQLite FTS5 indexes docs, inventory and text/code from preserved sources; the portal performs grounded local retrieval with source labels. Full ZIM ingestion, OCR and semantic embeddings remain.
 
 **Goal:** one local knowledge surface over everything preserved.
 
@@ -54,7 +54,7 @@ Track: https://github.com/jandromani/endoftheworld/issues/9
 
 Track: https://github.com/jandromani/endoftheworld/issues/10
 
-## 4. 📦 Deep software closure & offline updates — Issue #11
+## 4. 📦 Deep software closure & offline updates — Issue #11\n\n**Status: 🟨 MVP shipped.** CIVILIZATION now snapshots APT/PyPI/npm/Maven/Cargo/Go/OCI and supports verified changed-artifact update bundles. Full mirrors, chunk-level dedup and A/B rollback remain.
 
 CIVILIZATION already snapshots selected APT/PyPI/npm dependency closure. The next step is broader rebuildability.
 

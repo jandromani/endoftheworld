@@ -26,7 +26,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(prog="endworld")
     ap.add_argument("--profile", default="nano", help="profile id from profiles/<id>.yml")
     sub = ap.add_subparsers(dest="command", required=True)
-    for name in ("plan", "acquire", "prepare", "verify", "run", "stop", "status", "doctor", "scout", "selftest"):
+    for name in ("plan", "acquire", "prepare", "verify", "run", "stop", "status", "doctor", "scout", "selftest", "index"):
         sub.add_parser(name)
     ai=sub.add_parser("ai-mode"); ai.add_argument("mode",choices=["lite","general","coder"])
     sp = sub.add_parser("snapshot-packages")
@@ -50,9 +50,14 @@ def main() -> int:
         rc = run(py, "scripts/prepare_profile.py", "--profile", str(profile_path), "--vault", vault)
         if rc:
             return rc
-        return run(py, "scripts/generate_bom.py", "--vault", vault, "--profile-id", args.profile)
+        rc = run(py, "scripts/generate_bom.py", "--vault", vault, "--profile-id", args.profile)
+        if rc:
+            return rc
+        return run(py, "scripts/build_search_index.py", "--vault", vault, "--repo", str(ROOT))
     if args.command == "verify":
         return run(py, "scripts/verify_vault.py", "--vault", vault, "--profile-id", args.profile)
+    if args.command == "index":
+        return run(py, "scripts/build_search_index.py", "--vault", vault, "--repo", str(ROOT))
     if args.command == "run":
         return run("bash", "runtime/start-profile.sh", args.profile)
     if args.command == "stop":
