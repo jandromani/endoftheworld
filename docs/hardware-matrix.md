@@ -1,0 +1,1 @@
+# THE ARK Physical Hardware Matrix\n\nThis table contains only committed field reports. **No row means no evidence.** CI success is not hardware support evidence.\n\n| Profile | Hardware | Boot | CPU | RAM | Wi-Fi AP | Result | Evidence |\n|---|---|---|---|---:|---|---|---|\n| — | No physical reports committed yet | — | — | — | — | UNVERIFIED | — |\n
