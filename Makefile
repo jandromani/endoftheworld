@@ -24,6 +24,8 @@ nano-plan:
 	$(PY) scripts/endworld.py --profile nano plan
 nano-acquire:
 	$(PY) scripts/endworld.py --profile nano acquire
+nano-freeze-factory:
+	$(PY) scripts/endworld.py --profile nano freeze-factory
 nano-prepare:
 	$(PY) scripts/endworld.py --profile nano prepare
 nano-verify:
@@ -47,6 +49,8 @@ family-plan:
 	$(PY) scripts/endworld.py --profile family plan
 family-acquire:
 	$(PY) scripts/endworld.py --profile family acquire
+family-freeze-factory:
+	$(PY) scripts/endworld.py --profile family freeze-factory
 family-prepare:
 	$(PY) scripts/endworld.py --profile family prepare
 family-verify:
@@ -73,6 +77,8 @@ nomad-plan:
 	$(PY) scripts/endworld.py --profile nomad plan
 nomad-acquire:
 	$(PY) scripts/endworld.py --profile nomad acquire
+nomad-freeze-factory:
+	$(PY) scripts/endworld.py --profile nomad freeze-factory
 nomad-prepare:
 	$(PY) scripts/endworld.py --profile nomad prepare
 nomad-verify:
@@ -104,6 +110,8 @@ civilization-acquire:
 	$(PY) scripts/endworld.py --profile civilization acquire
 civilization-snapshot-packages:
 	$(PY) scripts/endworld.py --profile civilization snapshot-packages
+civilization-freeze-factory:
+	$(PY) scripts/endworld.py --profile civilization freeze-factory
 civilization-prepare:
 	$(PY) scripts/endworld.py --profile civilization prepare
 civilization-verify:
