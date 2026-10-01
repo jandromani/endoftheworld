@@ -45,13 +45,32 @@ def req(url: str, method: str = "GET", headers: dict | None = None):
     return urllib.request.Request(url, method=method, headers=h)
 
 
+def urlopen_retry(request, timeout: int = 45, attempts: int | None = None):
+    """Open an HTTP request with bounded retries for transient upstream failures."""
+    tries = attempts or int(os.environ.get("ENDWORLD_HTTP_ATTEMPTS", "4"))
+    last = None
+    for attempt in range(1, max(1, tries) + 1):
+        try:
+            return urllib.request.urlopen(request, timeout=timeout)
+        except urllib.error.HTTPError as exc:
+            last = exc
+            if exc.code not in {408, 425, 429, 500, 502, 503, 504}:
+                raise
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            last = exc
+        if attempt < tries:
+            time.sleep(min(8.0, 1.5 * (2 ** (attempt - 1))))
+    assert last is not None
+    raise last
+
+
 def get_json(url: str) -> dict:
-    with urllib.request.urlopen(req(url), timeout=45) as r:
+    with urlopen_retry(req(url), timeout=45) as r:
         return json.load(r)
 
 
 def get_text(url: str) -> str:
-    with urllib.request.urlopen(req(url), timeout=45) as r:
+    with urlopen_retry(req(url), timeout=45) as r:
         return r.read().decode("utf-8", "replace")
 
 
@@ -68,12 +87,11 @@ def response_size(response) -> int | None:
 
 def resolve_final_url(url: str) -> tuple[str, int | None]:
     # Prefer HEAD: modern mirrors increasingly implement "latest" as a
-    # redirect, and probing those aliases with Range can trigger broken
-    # redirect/cache behaviour. Fall back to a one-byte GET for hosts that do
-    # not implement HEAD or omit a useful Content-Length.
+    # redirect. Both HEAD and the one-byte GET are retried because large public
+    # mirrors can transiently return 502/503/504 or time out under load.
     head_final = None
     try:
-        with urllib.request.urlopen(req(url, method="HEAD"), timeout=45) as r:
+        with urlopen_retry(req(url, method="HEAD"), timeout=45) as r:
             head_final = r.geturl()
             size = response_size(r)
             if size is not None:
@@ -83,7 +101,7 @@ def resolve_final_url(url: str) -> tuple[str, int | None]:
 
     probe_url = head_final or url
     request = req(probe_url, headers={"Range": "bytes=0-0"})
-    with urllib.request.urlopen(request, timeout=45) as r:
+    with urlopen_retry(request, timeout=45) as r:
         return r.geturl(), response_size(r)
 
 
