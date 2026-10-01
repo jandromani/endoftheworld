@@ -1,0 +1,11 @@
+[Unit]
+Description=Expand THE ARK data partition to available disk size
+After=local-fs.target
+Before=endworld-stack.service endworld-portal.service
+ConditionPathIsMountPoint=/srv/endworld
+[Service]
+Type=oneshot
+ExecStart=/opt/endworld/scripts/grow_data_partition.sh
+RemainAfterExit=yes
+[Install]
+WantedBy=multi-user.target
