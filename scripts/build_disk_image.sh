@@ -79,7 +79,7 @@ for n in 1 2 3 4; do
 done
 
 echo "[2/9] Creating filesystems..."
-mkfs.vfat -F32 -n ENDWORLD_EFI "${LOOP}p2" >/dev/null
+mkfs.vfat -F32 -n ARK_EFI "${LOOP}p2" >/dev/null
 mkfs.ext4 -F -L ENDWORLD_ROOT "${LOOP}p3" >/dev/null
 mkfs.ext4 -F -m 0 -L ENDWORLD_DATA "${LOOP}p4" >/dev/null
 
@@ -132,7 +132,7 @@ cat > "$ROOTFS/etc/hosts" <<EOF
 EOF
 cat > "$ROOTFS/etc/fstab" <<'EOF'
 LABEL=ENDWORLD_ROOT / ext4 defaults,noatime 0 1
-LABEL=ENDWORLD_EFI /boot/efi vfat umask=0077 0 1
+LABEL=ARK_EFI /boot/efi vfat umask=0077 0 1
 LABEL=ENDWORLD_DATA /srv/endworld ext4 defaults,noatime 0 2
 EOF
 
