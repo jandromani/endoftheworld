@@ -6,9 +6,9 @@ exposes health/status/app APIs, implements common captive-portal probes, and
 proxies local chat requests to llama.cpp.
 """
 from __future__ import annotations
-import argparse, json, mimetypes, os, pathlib, shutil, socket, time, urllib.error, urllib.request
+import argparse, json, mimetypes, os, pathlib, re, shutil, socket, sqlite3, time, urllib.error, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 MAX_BODY = 1_000_000
 MAX_AUDIO_BODY = 64 * 1024 * 1024
@@ -121,7 +121,7 @@ class App:
         except Exception: ai_mode="default"
         return {"node":socket.gethostname(),"profile":self.profile,"title":self.title(),"uptime_seconds":int(time.time()-self.started),
         "internet":internet_online(),"storage":{"total":usage.total,"used":usage.used,"free":usage.free},"battery":battery_status(),"ai_mode":ai_mode,
-        "services":{"portal":True,"knowledge":service_alive("http://127.0.0.1:8081/"),"ai":service_alive("http://127.0.0.1:8082/health"),"voice":service_alive("http://127.0.0.1:8083/"),"syncthing":service_alive("http://127.0.0.1:8384/"),"forgejo":service_alive("http://127.0.0.1:3000/"),"qdrant":service_alive("http://127.0.0.1:6333/healthz"),"code_server":service_alive("http://127.0.0.1:8443/"),"project_nomad":service_alive("http://127.0.0.1:8090/api/health")},"map_ready":any((self.vault/"maps/tiles").glob("*.pmtiles")) if (self.vault/"maps/tiles").exists() else False}
+        "search_ready":(self.vault/"state/search/ark-search.sqlite").is_file(),"services":{"portal":True,"knowledge":service_alive("http://127.0.0.1:8081/"),"ai":service_alive("http://127.0.0.1:8082/health"),"voice":service_alive("http://127.0.0.1:8083/"),"syncthing":service_alive("http://127.0.0.1:8384/"),"forgejo":service_alive("http://127.0.0.1:3000/"),"qdrant":service_alive("http://127.0.0.1:6333/healthz"),"code_server":service_alive("http://127.0.0.1:8443/"),"project_nomad":service_alive("http://127.0.0.1:8090/api/health")},"map_ready":any((self.vault/"maps/tiles").glob("*.pmtiles")) if (self.vault/"maps/tiles").exists() else False}
     def apps(self)->list[dict]:
         appdir=self.vault/"apps/android"
         if not appdir.exists(): return []
@@ -139,6 +139,21 @@ class App:
         records=list(lock.get("artifacts",[]))+list(lock.get("containers",[]))
         installed=shutil.which("rnstatus") is not None
         return [describe_capability(rec,self.vault,installed) for rec in records]
+    def search_hits(self,query:str,limit:int=10)->list[dict]:
+        dbp=self.vault/"state/search/ark-search.sqlite"
+        if not dbp.is_file(): return []
+        tokens=re.findall(r"[\\w.+#/-]+",query,flags=re.UNICODE)[:12]
+        if not tokens:return []
+        match=" AND ".join('"' + t.replace('"','') + '"' for t in tokens)
+        try:
+            db=sqlite3.connect(f"file:{dbp}?mode=ro",uri=True)
+            rows=db.execute("""SELECT source,title,kind,url,
+                snippet(ark_fts,2,'','', ' … ',24),substr(body,1,4000),bm25(ark_fts)
+                FROM ark_fts WHERE ark_fts MATCH ? ORDER BY bm25(ark_fts) LIMIT ?""",
+                (match,max(1,min(limit,20)))).fetchall()
+            db.close()
+        except sqlite3.Error:return []
+        return [{"source":r[0],"title":r[1],"kind":r[2],"url":r[3],"excerpt":r[4],"_body":r[5],"score":r[6]} for r in rows]
 
 class Handler(BaseHTTPRequestHandler):
     server_version="ENDWORLD/0.1"
@@ -155,7 +170,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_HEAD(self): self.route(False)
     def do_GET(self): self.route(True)
     def route(self,send_body=True):
-        path=urlparse(self.path).path
+        parsed=urlparse(self.path); path=parsed.path
         if path in ("/generate_204","/gen_204","/hotspot-detect.html","/library/test/success.html"): return self.redirect("/",302)
         if path=="/ncsi.txt":
             data=b"Microsoft NCSI"; self.send_response(200); self.send_header("Content-Type","text/plain")
@@ -167,6 +182,11 @@ class Handler(BaseHTTPRequestHandler):
         if path=="/api/apps": return self.send_json(self.app.apps())
         if path=="/api/maps": return self.send_json(self.app.maps())
         if path=="/api/capabilities": return self.send_json(self.app.capabilities())
+        if path=="/api/search":
+            q=(parse_qs(parsed.query).get("q") or [""])[0].strip()
+            hits=self.app.search_hits(q,10)
+            return self.send_json({"query":q,"search_ready":(self.app.vault/"state/search/ark-search.sqlite").is_file(),
+                                   "results":[{k:v for k,v in h.items() if k!="_body"} for h in hits]})
         if path=="/api/lock":
             lock=self.app.lock_path()
             if not lock.exists(): return self.send_json({"error":"lock missing"},404)
@@ -196,6 +216,30 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(data);return
             except urllib.error.HTTPError as exc:return self.send_json({"error":f"whisper.cpp HTTP {exc.code}"},502)
             except Exception as exc:return self.send_json({"error":f"local transcription unavailable: {exc}"},503)
+
+        if path=="/api/ask":
+            if length<=0 or length>MAX_BODY:return self.send_json({"error":"invalid body size"},413)
+            try:payload=json.loads(self.rfile.read(length))
+            except Exception:return self.send_json({"error":"invalid json"},400)
+            question=str(payload.get("question") or "").strip()
+            if not question:return self.send_json({"error":"question required"},400)
+            hits=self.app.search_hits(question,6)
+            if not hits:return self.send_json({"error":"no matching local evidence","kiwix_query":question},404)
+            sources=[]; chunks=[]
+            for i,h in enumerate(hits,1):
+                sid=f"S{i}"
+                sources.append({"id":sid,**{k:v for k,v in h.items() if k!="_body"}})
+                chunks.append(f"[{sid}] {h['title']}\nSOURCE: {h['source']}\n{h['_body'][:3000]}")
+            msgs=[{"role":"system","content":"You are THE ARK offline assistant. Answer only from supplied local evidence. Cite claims with [S1], [S2], etc. Say when evidence is insufficient."},
+                  {"role":"user","content":"QUESTION:\n"+question+"\n\nLOCAL EVIDENCE:\n\n"+"\n\n".join(chunks)}]
+            req=urllib.request.Request("http://127.0.0.1:8082/v1/chat/completions",
+                data=json.dumps({"model":"local","messages":msgs,"temperature":0.2,"max_tokens":900,"stream":False}).encode(),
+                headers={"Content-Type":"application/json"},method="POST")
+            try:
+                with urllib.request.urlopen(req,timeout=180) as r:data=json.load(r)
+                answer=data.get("choices",[{}])[0].get("message",{}).get("content","")
+                return self.send_json({"answer":answer,"sources":sources,"kiwix_query":question})
+            except Exception as exc:return self.send_json({"error":f"local AI unavailable: {exc}","sources":sources},503)
 
         if path!="/api/chat": return self.send_json({"error":"not found"},404)
         if length<=0 or length>MAX_BODY:return self.send_json({"error":"invalid body size"},413)
