@@ -121,7 +121,7 @@ class App:
         except Exception: ai_mode="default"
         return {"node":socket.gethostname(),"profile":self.profile,"title":self.title(),"uptime_seconds":int(time.time()-self.started),
         "internet":internet_online(),"storage":{"total":usage.total,"used":usage.used,"free":usage.free},"battery":battery_status(),"ai_mode":ai_mode,
-        "search_ready":(self.vault/"state/search/ark-search.sqlite").is_file(),"services":{"portal":True,"knowledge":service_alive("http://127.0.0.1:8081/"),"ai":service_alive("http://127.0.0.1:8082/health"),"voice":service_alive("http://127.0.0.1:8083/"),"syncthing":service_alive("http://127.0.0.1:8384/"),"forgejo":service_alive("http://127.0.0.1:3000/"),"qdrant":service_alive("http://127.0.0.1:6333/healthz"),"code_server":service_alive("http://127.0.0.1:8443/"),"project_nomad":service_alive("http://127.0.0.1:8090/api/health")},"map_ready":any((self.vault/"maps/tiles").glob("*.pmtiles")) if (self.vault/"maps/tiles").exists() else False}
+        "search_ready":(self.vault/"state/search/ark-search.sqlite").is_file(),"field":self.field(),"services":{"portal":True,"knowledge":service_alive("http://127.0.0.1:8081/"),"ai":service_alive("http://127.0.0.1:8082/health"),"voice":service_alive("http://127.0.0.1:8083/"),"syncthing":service_alive("http://127.0.0.1:8384/"),"forgejo":service_alive("http://127.0.0.1:3000/"),"qdrant":service_alive("http://127.0.0.1:6333/healthz"),"code_server":service_alive("http://127.0.0.1:8443/"),"project_nomad":service_alive("http://127.0.0.1:8090/api/health")},"map_ready":any((self.vault/"maps/tiles").glob("*.pmtiles")) if (self.vault/"maps/tiles").exists() else False}
     def apps(self)->list[dict]:
         appdir=self.vault/"apps/android"
         if not appdir.exists(): return []
@@ -139,6 +139,18 @@ class App:
         records=list(lock.get("artifacts",[]))+list(lock.get("containers",[]))
         installed=shutil.which("rnstatus") is not None
         return [describe_capability(rec,self.vault,installed) for rec in records]
+    def field(self)->dict:
+        p=self.vault/"state/field/power.json"
+        try:
+            data=json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            b=battery_status()
+            data={"schema":1,"policy":os.getenv("ENDWORLD_POWER_POLICY","monitor"),"mode":"monitor",
+                  "battery_present":b.get("present",False),"battery_percent":b.get("percent"),
+                  "battery_status":b.get("status"),"ac_online":None}
+        data["comms_plan_ready"]=(self.vault/"state/field/comms-plan.md").is_file()
+        data["ark_mesh_available"]=(pathlib.Path(__file__).resolve().parents[1]/"scripts/ark_mesh.py").is_file()
+        return data
     def search_hits(self,query:str,limit:int=10)->list[dict]:
         dbp=self.vault/"state/search/ark-search.sqlite"
         if not dbp.is_file(): return []
@@ -182,6 +194,7 @@ class Handler(BaseHTTPRequestHandler):
         if path=="/api/apps": return self.send_json(self.app.apps())
         if path=="/api/maps": return self.send_json(self.app.maps())
         if path=="/api/capabilities": return self.send_json(self.app.capabilities())
+        if path=="/api/field": return self.send_json(self.app.field())
         if path=="/api/search":
             q=(parse_qs(parsed.query).get("q") or [""])[0].strip()
             hits=self.app.search_hits(q,10)
