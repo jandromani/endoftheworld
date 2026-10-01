@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - "builder/**"
+      - "profiles/**"
       - "scripts/**"
       - "runtime/**"
       - "manifests/**"
@@ -16,6 +17,7 @@ on:
   pull_request:
     paths:
       - "builder/**"
+      - "profiles/**"
       - "scripts/**"
       - "runtime/**"
       - "manifests/**"
