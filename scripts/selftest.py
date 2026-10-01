@@ -125,6 +125,12 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         expected = {"qwen3-4b-q4", "whisper-small"}
         require(expected.issubset(ids), f"NANO wiring missing ids: {sorted(expected - ids)}")
         require(target == 64_000_000_000, "NANO target must stay exactly 64,000,000,000 bytes")
+    elif pid == "nano-mini":
+        expected={"qwen3-4b-q4","whisper-small"}
+        require(expected.issubset(ids), f"NANO-MINI wiring missing ids: {sorted(expected-ids)}")
+        require(6_000_000_000 <= target <= 8_000_000_000, "NANO-MINI target outside CI envelope")
+        require((ROOT/"config/nano-mini.env").is_file(),"NANO-MINI runtime env missing")
+        require((ROOT/"runtime/offline-smoke.sh").is_file(),"NANO-MINI offline smoke missing")
     elif pid == "family":
         expected = {
             "wikipedia-en-nopic", "wikisource-es", "qwen3-8b-q4", "whisper-medium",

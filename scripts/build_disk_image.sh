@@ -202,6 +202,9 @@ cp "$REPO"/runtime/systemd/* "$ROOTFS/etc/systemd/system/"
 chroot "$ROOTFS" systemctl disable hostapd.service dnsmasq.service 2>/dev/null || true
 chroot "$ROOTFS" systemctl enable docker.service avahi-daemon.service systemd-networkd.service systemd-resolved.service
 chroot "$ROOTFS" systemctl enable endworld-network.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-power.timer
+if [[ "$PROFILE" == "nano-mini" ]]; then
+  chroot "$ROOTFS" systemctl enable endworld-ci-smoke.service
+fi
 
 mkdir -p "$ROOTFS/etc/systemd/system/getty@tty1.service.d"
 cat > "$ROOTFS/etc/systemd/system/getty@tty1.service.d/autologin.conf" <<'EOF'
@@ -228,6 +231,17 @@ EOF
 chroot "$ROOTFS" chown -R endworld:endworld /home/endworld
 
 echo "[7/9] Installing bootloader..."
+if [[ "$PROFILE" == "nano-mini" ]]; then
+cat > "$ROOTFS/etc/default/grub" <<EOF
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=1
+GRUB_DISTRIBUTOR="$TITLE"
+GRUB_TERMINAL="serial console"
+GRUB_SERIAL_COMMAND="serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1"
+GRUB_CMDLINE_LINUX_DEFAULT="console=ttyS0,115200n8 console=tty0 loglevel=4 systemd.show_status=true"
+GRUB_CMDLINE_LINUX=""
+EOF
+else
 cat > "$ROOTFS/etc/default/grub" <<EOF
 GRUB_DEFAULT=0
 GRUB_TIMEOUT=2
@@ -235,6 +249,7 @@ GRUB_DISTRIBUTOR="$TITLE"
 GRUB_CMDLINE_LINUX_DEFAULT="quiet loglevel=3"
 GRUB_CMDLINE_LINUX=""
 EOF
+fi
 chroot "$ROOTFS" grub-install --target=i386-pc --recheck "$LOOP"
 chroot "$ROOTFS" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ENDWORLD --removable --no-nvram --recheck
 chroot "$ROOTFS" update-grub

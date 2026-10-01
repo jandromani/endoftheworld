@@ -1,0 +1,56 @@
+name: NANO-MINI offline boot gate
+
+on:
+  push:
+    paths:
+      - "profiles/nano-mini.yml"
+      - "config/nano-mini.env"
+      - "tests/nano-mini/**"
+      - "runtime/**"
+      - "scripts/build_disk_image.sh"
+      - "scripts/verify_vault.py"
+      - ".github/workflows/nano-mini-offline.yml"
+  pull_request:
+    paths:
+      - "profiles/nano-mini.yml"
+      - "config/nano-mini.env"
+      - "tests/nano-mini/**"
+      - "runtime/**"
+      - "scripts/build_disk_image.sh"
+      - "scripts/verify_vault.py"
+      - ".github/workflows/nano-mini-offline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-boot-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install image and QEMU dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq python3-yaml debootstrap parted dosfstools e2fsprogs util-linux rsync grub-pc-bin grub-efi-amd64-bin grub2-common efibootmgr qemu-system-x86 ovmf
+          sudo systemctl start docker
+
+      - name: Validate test profile
+        run: python scripts/selftest.py --profile profiles/nano-mini.yml
+
+      - name: Build frozen fixture vault
+        run: tests/nano-mini/build_fixture.sh vault/nano-mini
+
+      - name: Build real hybrid appliance image
+        run: |
+          sudo env ENDWORLD_VAULT="$PWD/vault/nano-mini" bash scripts/build_disk_image.sh nano-mini "$PWD/dist/endworld-nano-mini-amd64.img"
+          sudo chown "$USER:$USER" dist/endworld-nano-mini-amd64.img*
+          python scripts/release_trust.py verify --file dist/endworld-nano-mini-amd64.img.release.json
+
+      - name: Boot BIOS with no NIC
+        run: tests/nano-mini/qemu_offline_gate.sh dist/endworld-nano-mini-amd64.img bios
+
+      - name: Boot UEFI with no NIC
+        run: tests/nano-mini/qemu_offline_gate.sh dist/endworld-nano-mini-amd64.img uefi
