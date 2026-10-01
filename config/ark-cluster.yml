@@ -1,0 +1,35 @@
+schema: 1
+protocol: ark-mesh-v1
+description: >
+  Reference policy for the final multi-node ARK. This is a replication protocol,
+  not a fixed-size disk profile.
+
+chunk_bytes: 8388608
+
+replication:
+  immutable_min_copies: 3
+  mutable_state_min_copies: 2
+  cold_storage_min_copies: 1
+  geographic_separation_required: true
+
+node_roles:
+  - id: field
+    purpose: Active node used by people.
+    recommended_profile: nomad
+  - id: reconstruction
+    purpose: Large software/knowledge reconstruction node.
+    recommended_profile: civilization
+  - id: cold
+    purpose: Powered-off verified copy stored separately.
+    recommended_profile: civilization
+
+promotion:
+  require_verified_inventory: true
+  require_pack_verification: true
+  require_lock_hash_match: true
+  execute_transferred_payloads: false
+
+state_policy:
+  separate_from_immutable_vault: true
+  encrypted_transport_recommended: true
+  contains_secrets_warning: true
