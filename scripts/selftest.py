@@ -16,6 +16,8 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
+# Frontier integration: every profile must retain the common mesh/field/evidence wiring.
+
 
 class SelfTestError(RuntimeError):
     pass
