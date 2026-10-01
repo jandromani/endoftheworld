@@ -93,13 +93,35 @@ VAULT_BYTES="$(du -sb "$VAULT" | awk '{print $1}')"
 (( VAULT_BYTES < DATA_FREE )) || { echo "Vault $(numfmt --to=iec "$VAULT_BYTES") does not fit data partition $(numfmt --to=iec "$DATA_FREE")" >&2; exit 2; }
 
 echo "[3/9] Bootstrapping Debian $SUITE..."
-debootstrap --arch=amd64 --variant=minbase "$SUITE" "$ROOTFS" "$MIRROR"
+FACTORY_DIR="${ENDWORLD_FACTORY_DIR:-$VAULT/factory/$SUITE-amd64}"
+FACTORY_MODE="${ENDWORLD_FACTORY_MODE:-auto}"
+FACTORY_BOOT="$FACTORY_DIR/debootstrap-$SUITE-amd64.tar.gz"
+FACTORY_DEBS="$FACTORY_DIR/appliance-debs-$SUITE-amd64.tar"
+USE_FACTORY=0
+if [[ "$FACTORY_MODE" != "online" && -f "$FACTORY_BOOT" && -f "$FACTORY_DEBS" ]]; then
+  python3 "$REPO/scripts/verify_factory.py" --factory "$FACTORY_DIR"
+  USE_FACTORY=1
+elif [[ "$FACTORY_MODE" == "offline" ]]; then
+  echo "Offline factory requested but not found/complete: $FACTORY_DIR" >&2
+  exit 2
+fi
 
-cat > "$ROOTFS/etc/apt/sources.list" <<EOF
+if (( USE_FACTORY )); then
+  echo "Using frozen offline factory: $FACTORY_DIR"
+  debootstrap --arch=amd64 --variant=minbase --unpack-tarball="$FACTORY_BOOT" "$SUITE" "$ROOTFS" "$MIRROR"
+  mkdir -p "$ROOTFS/opt/ark-factory/repo"
+  tar -xf "$FACTORY_DEBS" -C "$ROOTFS/opt/ark-factory/repo"
+  cat > "$ROOTFS/etc/apt/sources.list" <<'EOF'
+deb [trusted=yes] file:/opt/ark-factory/repo ./
+EOF
+else
+  debootstrap --arch=amd64 --variant=minbase "$SUITE" "$ROOTFS" "$MIRROR"
+  cat > "$ROOTFS/etc/apt/sources.list" <<EOF
 deb $MIRROR $SUITE main contrib non-free-firmware
 deb $MIRROR $SUITE-updates main contrib non-free-firmware
 deb http://security.debian.org/debian-security $SUITE-security main contrib non-free-firmware
 EOF
+fi
 cp -L /etc/resolv.conf "$ROOTFS/etc/resolv.conf"
 
 for fs in dev proc sys run; do mkdir -p "$ROOTFS/$fs"; done
@@ -114,7 +136,7 @@ export DEBIAN_FRONTEND=noninteractive
 mapfile -t APPLIANCE_PACKAGES < <(python3 "$REPO/scripts/appliance_packages.py" --profile "$PROFILE")
 chroot "$ROOTFS" apt-get update
 chroot "$ROOTFS" apt-get install -y --no-install-recommends "${APPLIANCE_PACKAGES[@]}"
-
+if (( USE_FACTORY )); then rm -rf "$ROOTFS/opt/ark-factory"; fi
 
 HOSTNAME="endworld-$PROFILE"
 echo "$HOSTNAME" > "$ROOTFS/etc/hostname"
