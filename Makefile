@@ -4,7 +4,7 @@ PIP := $(VENV)/bin/pip
 PY := $(VENV)/bin/python
 DEVICE ?=
 
-.PHONY: setup builder-deps doctor scout 	nano-plan nano-acquire nano-prepare nano-verify nano-selftest nano-all nano-run nano-stop nano-status nano-image nano-flash 	family-plan family-acquire family-prepare family-verify family-selftest family-all family-run family-stop family-status family-image family-flash 	nomad-plan nomad-acquire nomad-prepare nomad-verify nomad-selftest nomad-all nomad-run nomad-stop nomad-status nomad-image nomad-flash nomad-ai-lite nomad-ai-general nomad-ai-coder 	civilization-plan civilization-acquire civilization-snapshot-packages civilization-prepare civilization-verify civilization-selftest civilization-all civilization-run civilization-stop civilization-status civilization-image civilization-flash civilization-ai-lite civilization-ai-general civilization-ai-coder
+.PHONY: setup builder-deps doctor scout ark-gui 	nano-plan nano-acquire nano-prepare nano-verify nano-selftest nano-all nano-run nano-stop nano-status nano-image nano-flash 	family-plan family-acquire family-prepare family-verify family-selftest family-all family-run family-stop family-status family-image family-flash 	nomad-plan nomad-acquire nomad-prepare nomad-verify nomad-selftest nomad-all nomad-run nomad-stop nomad-status nomad-image nomad-flash nomad-ai-lite nomad-ai-general nomad-ai-coder 	civilization-plan civilization-acquire civilization-snapshot-packages civilization-prepare civilization-verify civilization-selftest civilization-all civilization-run civilization-stop civilization-status civilization-image civilization-flash civilization-ai-lite civilization-ai-general civilization-ai-coder
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -16,6 +16,9 @@ builder-deps:
 
 doctor:
 	$(PY) scripts/endworld.py doctor
+
+ark-gui:
+	bash scripts/ark-gui.sh
 
 nano-plan:
 	$(PY) scripts/endworld.py --profile nano plan

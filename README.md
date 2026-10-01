@@ -1,10 +1,9 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/ark-hero-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="docs/assets/ark-hero-light.svg">
-  <img src="docs/assets/ark-hero-light.svg" alt="THE ARK — an offline computer for knowledge, AI, maps, communications and rebuilding" width="100%">
-</picture>
+<a href="docs/assets/the-ark-original.png">
+  <img src="docs/assets/the-ark-original.png" alt="THE ARK — original generated artwork" width="100%">
+</a>
+<sub>Original generated artwork · 1672×941 · click for full resolution</sub>
 
 # THE ARK
 
@@ -74,6 +73,16 @@ You need:
 > Windows/macOS are not direct image-builder targets yet. That is a frontier we still need to cross.
 
 ### The easy path
+
+**Browser GUI (recommended):**
+
+```bash
+bash scripts/ark-gui.sh
+```
+
+It opens a local click-through builder on `127.0.0.1:8787`.
+
+**Terminal wizard:**
 
 Open a terminal and paste:
 
@@ -363,15 +372,15 @@ THE ARK already has working software profiles. The next frontier is making it **
 
 Instead of hiding 17 loose TODOs in this README, the remaining work is organized into **7 engineering epics**:
 
-| Frontier epic | What a human gets when it is done | Track it |
-|---|---|---|
-| 🖱️ **Zero-touch Ark** | choose a profile, click, flash, boot | [#8](https://github.com/jandromani/endoftheworld/issues/8) |
-| 🔐 **Trusted Ark** | signed images, stronger boot chain, safe promotion | [#9](https://github.com/jandromani/endoftheworld/issues/9) |
-| 🔎 **Ask the whole Ark** | one local search/RAG over books, code and docs | [#10](https://github.com/jandromani/endoftheworld/issues/10) |
-| 📦 **Rebuild more software** | deeper package closure + offline updates | [#11](https://github.com/jandromani/endoftheworld/issues/11) |
-| 🤝 **Arks can save Arks** | peer replication, deltas, multi-node final ARK | [#12](https://github.com/jandromani/endoftheworld/issues/12) |
-| 🔌 **Survive without normal infrastructure** | power telemetry + radio/beyond-IP workflows | [#13](https://github.com/jandromani/endoftheworld/issues/13) |
-| 🧪 **Prove it in the real world** | hardware matrix + repeated disconnected drills | [#14](https://github.com/jandromani/endoftheworld/issues/14) |
+| Frontier epic | What a human gets | State | Track it |
+|---|---|---|---|
+| 🖱️ **Zero-touch Ark** | local browser builder + hardened first boot | 🟨 MVP shipped | [#8](https://github.com/jandromani/endoftheworld/issues/8) |
+| 🔐 **Trusted Ark** | release manifest + detached signatures | 🟨 MVP shipped | [#9](https://github.com/jandromani/endoftheworld/issues/9) |
+| 🔎 **Ask the whole Ark** | local FTS/RAG over docs, metadata and source | 🟨 MVP shipped | [#10](https://github.com/jandromani/endoftheworld/issues/10) |
+| 📦 **Rebuild more software** | 7 ecosystems + verified offline update bundles | 🟨 MVP shipped | [#11](https://github.com/jandromani/endoftheworld/issues/11) |
+| 🤝 **Arks can save Arks** | peer replication, deltas, multi-node final ARK | ⬜ next | [#12](https://github.com/jandromani/endoftheworld/issues/12) |
+| 🔌 **Survive without normal infrastructure** | power telemetry + radio/beyond-IP workflows | ⬜ next | [#13](https://github.com/jandromani/endoftheworld/issues/13) |
+| 🧪 **Prove it in the real world** | hardware matrix + repeated disconnected drills | ⬜ next | [#14](https://github.com/jandromani/endoftheworld/issues/14) |
 
 <details>
 <summary><strong>Show the full checklist of remaining frontiers</strong></summary>

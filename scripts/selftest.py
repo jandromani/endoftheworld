@@ -103,6 +103,8 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         "runtime/server.py", "runtime/start-stack.sh", "runtime/start-profile.sh",
         "runtime/portal/index.html", "scripts/acquire.py", "scripts/verify_vault.py",
         "scripts/prepare_profile.py", "scripts/build_disk_image.sh",
+        "scripts/build_search_index.py", "scripts/release_trust.py", "scripts/update_bundle.py",
+        "scripts/first_boot_wizard.py", "builder/ark_builder.py",
     ):
         require((ROOT / rel).is_file(), f"missing wired runtime file: {rel}")
 
