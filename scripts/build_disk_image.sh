@@ -111,17 +111,10 @@ mount --bind /run "$ROOTFS/run"
 
 echo "[4/9] Installing appliance OS packages..."
 export DEBIAN_FRONTEND=noninteractive
+mapfile -t APPLIANCE_PACKAGES < <(python3 "$REPO/scripts/appliance_packages.py" --profile "$PROFILE")
 chroot "$ROOTFS" apt-get update
-chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub2-common efibootmgr   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros firmware-mediatek firmware-amd-graphics firmware-nvidia-graphics esptool unzip
+chroot "$ROOTFS" apt-get install -y --no-install-recommends "${APPLIANCE_PACKAGES[@]}"
 
-if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
-  echo "Installing rebuild-and-create developer toolchain..."
-  chroot "$ROOTFS" apt-get install -y --no-install-recommends git build-essential cmake ninja-build pkg-config clang gdb python3-dev python3-venv nodejs npm default-jdk-headless maven rustc cargo golang-go sqlite3 ripgrep tmux vim
-fi
-if [[ "$PROFILE" == "civilization" ]]; then
-  echo "Installing CIVILIZATION science/reconstruction baseline..."
-  chroot "$ROOTFS" apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-pandas python3-matplotlib python3-sympy ffmpeg imagemagick graphviz pandoc
-fi
 
 HOSTNAME="endworld-$PROFILE"
 echo "$HOSTNAME" > "$ROOTFS/etc/hostname"
@@ -207,7 +200,7 @@ EOF
 cp "$REPO"/runtime/systemd/* "$ROOTFS/etc/systemd/system/"
 chroot "$ROOTFS" systemctl disable hostapd.service dnsmasq.service 2>/dev/null || true
 chroot "$ROOTFS" systemctl enable docker.service avahi-daemon.service systemd-networkd.service systemd-resolved.service
-chroot "$ROOTFS" systemctl enable endworld-network.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-power.timer
+chroot "$ROOTFS" systemctl enable endworld-grow-data.service endworld-network.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-power.timer
 if [[ "$PROFILE" == "nano-mini" ]]; then
   chroot "$ROOTFS" systemctl enable endworld-ci-smoke.service
 fi
@@ -259,6 +252,14 @@ fi
 chroot "$ROOTFS" grub-install --target=i386-pc --recheck "$LOOP"
 chroot "$ROOTFS" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ENDWORLD --removable --no-nvram --recheck
 chroot "$ROOTFS" update-grub
+# Prefer Debian's Microsoft-signed shim + Debian-signed GRUB for removable-media
+# UEFI Secure Boot when the firmware trusts the standard Microsoft/Debian chain.
+if [[ -f "$ROOTFS/usr/lib/shim/shimx64.efi.signed" && -f "$ROOTFS/usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed" ]]; then
+  mkdir -p "$ROOTFS/boot/efi/EFI/BOOT"
+  cp "$ROOTFS/usr/lib/shim/shimx64.efi.signed" "$ROOTFS/boot/efi/EFI/BOOT/BOOTX64.EFI"
+  cp "$ROOTFS/usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed" "$ROOTFS/boot/efi/EFI/BOOT/grubx64.efi"
+  [[ -f "$ROOTFS/usr/lib/shim/mmx64.efi.signed" ]] && cp "$ROOTFS/usr/lib/shim/mmx64.efi.signed" "$ROOTFS/boot/efi/EFI/BOOT/mmx64.efi" || true
+fi
 
 echo "[8/9] Cleaning image..."
 chroot "$ROOTFS" apt-get clean

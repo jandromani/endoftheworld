@@ -126,7 +126,8 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
                     "meshtastic-firmware-esp32s3","meshtastic-firmware-nrf52840",
                     "meshtastic-firmware-rp2040","meshtastic-firmware-rp2350"}
         require(expected.issubset(ids), f"NANO wiring missing ids: {sorted(expected - ids)}")
-        require(target == 64_000_000_000, "NANO target must stay exactly 64,000,000,000 bytes")
+        require(target == 58_000_000_000, "NANO image target must stay 58 GB decimal so it fits commodity 64 GB media")
+        require(reserve == 6_000_000_000, "NANO reserve must preserve the 52 GB usable payload envelope")
     elif pid == "nano-mini":
         expected={"qwen3-4b-q4","whisper-small"}
         require(expected.issubset(ids), f"NANO-MINI wiring missing ids: {sorted(expected-ids)}")
