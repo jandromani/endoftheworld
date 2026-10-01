@@ -102,7 +102,7 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
                 f"{spec.get('id')}: PMTiles filename required")
 
     for rel in (
-        "runtime/server.py", "runtime/start-stack.sh", "runtime/start-profile.sh",
+        "runtime/server.py", "runtime/kiwix_client.py", "runtime/start-stack.sh", "runtime/start-profile.sh",
         "runtime/portal/index.html", "scripts/acquire.py", "scripts/verify_vault.py",
         "scripts/prepare_profile.py", "scripts/build_disk_image.sh",
         "scripts/build_search_index.py", "scripts/release_trust.py", "scripts/update_bundle.py",
@@ -163,6 +163,14 @@ def validate_runtime(profile: dict) -> None:
     require(server.safe_join(base, "ok/file.bin") == (base / "ok/file.bin").resolve(), "safe_join rejected safe path")
     require(server.safe_join(base, "../escape") is None, "safe_join allowed parent traversal")
     require(server.safe_join(base, "%2e%2e/escape") is None, "safe_join allowed encoded traversal")
+    start_stack=(ROOT/"runtime/start-stack.sh").read_text(encoding="utf-8")
+    require("--entrypoint whisper-server" in start_stack and "ENDWORLD_WHISPER_LANGUAGE" in start_stack,
+            "whisper server entrypoint/language is not pinned")
+    require('docker image inspect "$image"' in start_stack,"container boot cache is not wired")
+    server_text=(ROOT/"runtime/server.py").read_text(encoding="utf-8")
+    require('path=="/vault/state"' in server_text,"mutable state is not blocked from /vault")
+    require("kiwix_hits" in server_text and "ENDWORLD_RAG_MAX_CHARS" in server_text,
+            "Kiwix federation/RAG budget is not wired")
 
     samples = {
         "wikipedia-es": ("knowledge", "knowledge/zim/wiki.zim", "service"),

@@ -112,7 +112,7 @@ mount --bind /run "$ROOTFS/run"
 echo "[4/9] Installing appliance OS packages..."
 export DEBIAN_FRONTEND=noninteractive
 chroot "$ROOTFS" apt-get update
-chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub2-common efibootmgr   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano pciutils smartmontools nut-client   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros
+chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub2-common efibootmgr   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros
 
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   echo "Installing rebuild-and-create developer toolchain..."
@@ -220,7 +220,7 @@ if [[ -t 1 ]]; then
   echo
   echo "$TITLE"
   echo "Portal: http://$HOSTNAME.local/  |  Wi-Fi: ${ENDWORLD_WIFI_SSID}"
-  echo "Default Wi-Fi password: ${ENDWORLD_WIFI_PASSWORD} (change /etc/endworld/profile.env)"
+  if [[ ! -f /var/lib/endworld/firstboot.done ]]; then echo "First boot incomplete: run sudo endworld-firstboot"; fi
   echo "Status: sudo python3 /opt/endworld/scripts/healthcheck.py --vault /srv/endworld --profile-id $PROFILE"
   echo
 fi
@@ -256,5 +256,5 @@ fi
 echo "Built: $OUTPUT"
 echo "SHA256: $(cat "$OUTPUT.sha256")"
 echo "Profile: $PROFILE ($IMAGE_BYTES bytes)"
-echo "Default console user: endworld / endworld"
-echo "Default Wi-Fi: $ENDWORLD_WIFI_SSID / $ENDWORLD_WIFI_PASSWORD"
+echo "Bootstrap console user: endworld (first-boot wizard forces a private password)"
+echo "Wi-Fi remains disabled until first-boot setup completes."
