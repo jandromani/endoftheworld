@@ -6,7 +6,10 @@ exposes health/status/app APIs, implements common captive-portal probes, and
 proxies local chat requests to llama.cpp.
 """
 from __future__ import annotations
-import argparse, json, mimetypes, os, pathlib, re, shutil, socket, sqlite3, time, urllib.error, urllib.request
+import argparse, json, mimetypes, os, pathlib, re, shutil, socket, sqlite3, sys, time, urllib.error, urllib.request
+_RUNTIME_DIR=pathlib.Path(__file__).resolve().parent
+if str(_RUNTIME_DIR) not in sys.path: sys.path.insert(0,str(_RUNTIME_DIR))
+from kiwix_client import search_kiwix
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
 
@@ -139,6 +142,8 @@ class App:
         records=list(lock.get("artifacts",[]))+list(lock.get("containers",[]))
         installed=shutil.which("rnstatus") is not None
         return [describe_capability(rec,self.vault,installed) for rec in records]
+    def kiwix_hits(self,query:str,limit:int=4)->list[dict]:
+        return search_kiwix(query,self.vault/"knowledge/zim",limit=limit)
     def field(self)->dict:
         p=self.vault/"state/field/power.json"
         try:
@@ -197,14 +202,16 @@ class Handler(BaseHTTPRequestHandler):
         if path=="/api/field": return self.send_json(self.app.field())
         if path=="/api/search":
             q=(parse_qs(parsed.query).get("q") or [""])[0].strip()
-            hits=self.app.search_hits(q,10)
+            hits=self.app.search_hits(q,6)+self.app.kiwix_hits(q,4)
             return self.send_json({"query":q,"search_ready":(self.app.vault/"state/search/ark-search.sqlite").is_file(),
-                                   "results":[{k:v for k,v in h.items() if k!="_body"} for h in hits]})
+                                   "results":[{k:v for k,v in h.items() if k!="_body"} for h in hits[:10]]})
         if path=="/api/lock":
             lock=self.app.lock_path()
             if not lock.exists(): return self.send_json({"error":"lock missing"},404)
             try:return self.send_json(json.loads(lock.read_text(encoding="utf-8")))
             except Exception as exc:return self.send_json({"error":str(exc)},500)
+        if path=="/vault/state" or path.startswith("/vault/state/"):
+            self.send_error(403,"Mutable state is private"); return
         for prefix,base in (("/vault/",self.app.vault),("/vendor/",self.app.vault/"web/vendor"),("/maps/",self.app.vault/"maps/tiles")):
             if path.startswith(prefix): return self.serve_path(safe_join(base,path[len(prefix):]),send_body)
         rel="index.html" if path=="/" else path.lstrip("/")
@@ -236,17 +243,28 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:return self.send_json({"error":"invalid json"},400)
             question=str(payload.get("question") or "").strip()
             if not question:return self.send_json({"error":"question required"},400)
-            hits=self.app.search_hits(question,6)
+            hits=self.app.search_hits(question,4)+self.app.kiwix_hits(question,4)
             if not hits:return self.send_json({"error":"no matching local evidence","kiwix_query":question},404)
-            sources=[]; chunks=[]
-            for i,h in enumerate(hits,1):
-                sid=f"S{i}"
+            context=int(os.getenv("ENDWORLD_AI_CONTEXT","4096"))
+            max_chars=int(os.getenv("ENDWORLD_RAG_MAX_CHARS","12000"))
+            budget=min(max_chars,max(4000,context*3-8000))
+            sources=[];chunks=[];used=0
+            for h in hits:
+                remaining=budget-used
+                if remaining<500:break
+                body=h.get("_body","")[:min(2400,remaining)]
+                if not body:continue
+                sid=f"S{len(sources)+1}"
                 sources.append({"id":sid,**{k:v for k,v in h.items() if k!="_body"}})
-                chunks.append(f"[{sid}] {h['title']}\nSOURCE: {h['source']}\n{h['_body'][:3000]}")
+                chunk=f"[{sid}] {h['title']}\nSOURCE: {h['source']}\n{body}"
+                chunks.append(chunk);used+=len(chunk)
+            user_content="QUESTION:\n"+question+"\n\nLOCAL EVIDENCE:\n\n"+"\n\n".join(chunks)
+            if os.getenv("ENDWORLD_AI_THINKING","0")!="1":user_content+="\n\n/no_think"
             msgs=[{"role":"system","content":"You are THE ARK offline assistant. Answer only from supplied local evidence. Cite claims with [S1], [S2], etc. Say when evidence is insufficient."},
-                  {"role":"user","content":"QUESTION:\n"+question+"\n\nLOCAL EVIDENCE:\n\n"+"\n\n".join(chunks)}]
+                  {"role":"user","content":user_content}]
             req=urllib.request.Request("http://127.0.0.1:8082/v1/chat/completions",
-                data=json.dumps({"model":"local","messages":msgs,"temperature":0.2,"max_tokens":900,"stream":False}).encode(),
+                data=json.dumps({"model":"local","messages":msgs,"temperature":0.2,
+                                 "max_tokens":int(os.getenv("ENDWORLD_AI_MAX_TOKENS","1024")),"stream":False}).encode(),
                 headers={"Content-Type":"application/json"},method="POST")
             try:
                 with urllib.request.urlopen(req,timeout=180) as r:data=json.load(r)
@@ -260,8 +278,13 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:return self.send_json({"error":"invalid json"},400)
         messages=payload.get("messages")
         if not isinstance(messages,list) or not messages:return self.send_json({"error":"messages required"},400)
-        llm_payload={"model":"local","messages":messages[-20:],"temperature":float(payload.get("temperature",0.3)),
-        "max_tokens":int(payload.get("max_tokens",700)),"stream":False}
+        messages=[dict(m) for m in messages[-20:] if isinstance(m,dict)]
+        if os.getenv("ENDWORLD_AI_THINKING","0")!="1":
+            for m in reversed(messages):
+                if m.get("role")=="user" and isinstance(m.get("content"),str):
+                    m["content"]=m["content"]+"\n/no_think";break
+        llm_payload={"model":"local","messages":messages,"temperature":float(payload.get("temperature",0.3)),
+        "max_tokens":int(payload.get("max_tokens",os.getenv("ENDWORLD_AI_MAX_TOKENS","1024"))),"stream":False}
         req=urllib.request.Request("http://127.0.0.1:8082/v1/chat/completions",data=json.dumps(llm_payload).encode(),
         headers={"Content-Type":"application/json"},method="POST")
         try:

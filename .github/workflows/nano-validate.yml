@@ -33,7 +33,7 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Compile every Python entrypoint
-        run: python -m py_compile scripts/*.py runtime/server.py
+        run: python -m py_compile scripts/*.py runtime/*.py
 
       - name: Parse every shell entrypoint
         run: |
@@ -73,12 +73,13 @@ jobs:
       - name: Test ENDWORLD HTTP server and byte ranges
         run: |
           tmp="$(mktemp -d)"
-          mkdir -p "$tmp/portal" "$tmp/vault/maps/tiles" "$tmp/vault/lock" "$tmp/vault/apps/android"
+          mkdir -p "$tmp/portal" "$tmp/vault/maps/tiles" "$tmp/vault/lock" "$tmp/vault/apps/android" "$tmp/vault/state/private"
           printf '<h1>ENDWORLD TEST</h1>' > "$tmp/portal/index.html"
           python - <<PY
           from pathlib import Path
           Path("$tmp/vault/maps/tiles/spain.pmtiles").write_bytes(bytes(range(256))*4096)
           Path("$tmp/vault/lock/nano.lock.json").write_text('{"schema":1}')
+          Path("$tmp/vault/state/private/secret.txt").write_text("DO-NOT-SERVE")
           PY
           python runtime/server.py --bind 127.0.0.1 --port 18080 --portal "$tmp/portal" --vault "$tmp/vault" >"$tmp/server.log" 2>&1 &
           pid=$!
@@ -88,6 +89,40 @@ jobs:
           code="$(curl -sS -o "$tmp/range.bin" -w '%{http_code}' -H 'Range: bytes=100-199' http://127.0.0.1:18080/maps/spain.pmtiles)"
           test "$code" = "206"
           test "$(stat -c %s "$tmp/range.bin")" = "100"
+          state_code="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:18080/vault/state/private/secret.txt)"
+          test "$state_code" = "403"
+
+      - name: Test Kiwix federation parser
+        run: |
+          tmp="$(mktemp -d)"
+          mkdir -p "$tmp/zims"
+          touch "$tmp/zims/wikipedia_es_all_maxi_test.zim"
+          cat > "$tmp/fake_kiwix.py" <<'PY'
+          from http.server import BaseHTTPRequestHandler,HTTPServer
+          class H(BaseHTTPRequestHandler):
+              def do_GET(self):
+                  if self.path.startswith("/search?"):
+                      body=b'<a href="/content/wikipedia_es_all_maxi_test/A/Quemadura">Quemadura</a>'
+                  elif self.path.startswith("/content/"):
+                      body=b'<html><head><title>Quemadura</title></head><body><h1>Quemadura</h1><p>Enfriar la quemadura con agua corriente limpia durante varios minutos.</p></body></html>'
+                  else:
+                      self.send_response(404);self.end_headers();return
+                  self.send_response(200);self.send_header("Content-Length",str(len(body)));self.end_headers();self.wfile.write(body)
+              def log_message(self,*a): pass
+          HTTPServer(("127.0.0.1",18081),H).serve_forever()
+          PY
+          python "$tmp/fake_kiwix.py" &
+          kp=$!
+          trap 'kill $kp 2>/dev/null || true' EXIT
+          sleep .2
+          python - "$tmp/zims" <<'PY'
+          import pathlib,sys
+          from runtime.kiwix_client import search_kiwix
+          hits=search_kiwix("quemadura",pathlib.Path(sys.argv[1]),base_url="http://127.0.0.1:18081",limit=2)
+          assert hits and hits[0]["kind"]=="kiwix-article"
+          assert "agua corriente" in hits[0]["_body"]
+          print(hits[0]["title"])
+          PY
 
       - name: Required source resolution smoke test
         env:

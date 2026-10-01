@@ -22,7 +22,7 @@ for rec in lock.get(sys.argv[2],[]):
 PY
 }
 artifact_path(){ local rel; rel="$(lock_field artifacts "$1" path)"; [[ -n "$rel" ]] || return 1; printf '%s/%s\n' "$VAULT" "$rel"; }
-load_image(){ local id="$1" image rel tar; image="$(lock_field containers "$id" image)"; rel="$(lock_field containers "$id" path)"; [[ -n "$image" && -n "$rel" ]] || return 1; tar="$VAULT/$rel"; [[ -f "$tar" ]] || { echo "Frozen container missing: $tar" >&2; return 1; }; echo "Loading frozen container $id" >&2; docker load -i "$tar" >/dev/null; printf '%s\n' "$image"; }
+load_image(){ local id="$1" image rel tar; image="$(lock_field containers "$id" image)"; rel="$(lock_field containers "$id" path)"; [[ -n "$image" && -n "$rel" ]] || return 1; tar="$VAULT/$rel"; [[ -f "$tar" ]] || { echo "Frozen container missing: $tar" >&2; return 1; }; if [[ "${ENDWORLD_RELOAD_CONTAINERS:-0}" != "1" ]] && docker image inspect "$image" >/dev/null 2>&1; then echo "Using already loaded frozen image $id" >&2; else echo "Loading frozen container $id" >&2; docker load -i "$tar" >/dev/null; fi; printf '%s\n' "$image"; }
 
 KIWIX_IMAGE="$(load_image kiwix)" || exit 2
 LLAMA_IMAGE="$(load_image llama-server)" || exit 2
@@ -40,7 +40,7 @@ docker run -d --name endworld-ai --restart unless-stopped --network host -v "$VA
 mkdir -p "$VAULT/state/runtime"; printf '%s\n' "${ENDWORLD_AI_MODE:-default}" > "$VAULT/state/runtime/ai-mode"
 
 WHISPER_ID="${ENDWORLD_WHISPER_MODEL_ID:-whisper-small}"; WHISPER_MODEL="$(artifact_path "$WHISPER_ID")" || exit 2
-docker run -d --name endworld-whisper --restart unless-stopped --network host -v "$VAULT/ai/models:/models:ro" "$WHISPER_IMAGE" whisper-server --host 0.0.0.0 --port 8083 -m "/models/$(basename "$WHISPER_MODEL")" >/dev/null
+docker run -d --name endworld-whisper --restart unless-stopped --network host -v "$VAULT/ai/models:/models:ro" --entrypoint whisper-server "$WHISPER_IMAGE" --host 0.0.0.0 --port 8083 -m "/models/$(basename "$WHISPER_MODEL")" -l "${ENDWORLD_WHISPER_LANGUAGE:-auto}" >/dev/null
 
 if [[ "${ENDWORLD_ENABLE_SYNCTHING:-0}" == "1" ]]; then
   I="$(load_image syncthing)" || exit 2; mkdir -p "$VAULT/state/syncthing"; chown 1000:1000 "$VAULT/state/syncthing" 2>/dev/null || true
