@@ -1,0 +1,95 @@
+name: Validate THE ARK frontiers
+on:
+  push:
+    paths:
+      - "builder/**"
+      - "scripts/**"
+      - "runtime/**"
+      - "manifests/**"
+      - "docs/guides/**"
+      - "Makefile"
+      - ".github/workflows/frontier-validate.yml"
+  pull_request:
+    paths:
+      - "builder/**"
+      - "scripts/**"
+      - "runtime/**"
+      - "manifests/**"
+      - "docs/guides/**"
+      - "Makefile"
+      - ".github/workflows/frontier-validate.yml"
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Compile and parse
+        run: |
+          python -m py_compile scripts/*.py runtime/server.py builder/ark_builder.py
+          for f in scripts/*.sh runtime/*.sh runtime/network/*.sh; do bash -n "$f"; done
+          node --check builder/app.js
+          node --check runtime/portal/app.js
+      - name: Existing profile self-tests
+        run: |
+          python scripts/endworld.py --profile nano selftest
+          python scripts/endworld.py --profile family selftest
+          python scripts/endworld.py --profile nomad selftest
+          python scripts/endworld.py --profile civilization selftest
+      - name: Zero-touch contracts
+        run: |
+          python builder/ark_builder.py --check
+          python scripts/first_boot_wizard.py --check
+      - name: Seven package ecosystems
+        run: |
+          python scripts/snapshot_packages.py --profile profiles/civilization.yml --vault /tmp/no-vault --manifest manifests/civilization-packages.yml --dry-run > /tmp/packages.json
+          python - <<'PY'
+          import json
+          x=json.load(open("/tmp/packages.json"))
+          assert set(x["snapshots"])=={"apt","pypi","npm","maven","cargo","go","oci"}
+          PY
+      - name: Search index
+        run: |
+          mkdir -p /tmp/ark-vault/lock
+          printf '{"profile":"nano","artifacts":[{"id":"demo","family":"docs","path":"demo.txt","sha256":"x"}],"containers":[]}' > /tmp/ark-vault/lock/nano.lock.json
+          echo 'solar battery water reticulum' > /tmp/ark-vault/demo.txt
+          python scripts/build_search_index.py --vault /tmp/ark-vault --repo . --max-text-mb 16
+          python - <<'PY'
+          import sqlite3
+          db=sqlite3.connect("/tmp/ark-vault/state/search/ark-search.sqlite")
+          assert db.execute("select count(*) from ark_fts").fetchone()[0] > 5
+          assert db.execute("select count(*) from ark_fts where ark_fts match 'reticulum'").fetchone()[0] > 0
+          PY
+      - name: Trusted release signature
+        run: |
+          mkdir -p /tmp/trust/vault/lock
+          echo image > /tmp/trust/image.img
+          echo '{"profile":"nano"}' > /tmp/trust/vault/lock/nano.lock.json
+          echo '{"bomFormat":"CycloneDX"}' > /tmp/trust/vault/lock/nano.cdx.json
+          python scripts/release_trust.py keygen --private /tmp/trust/private.pem --public /tmp/trust/public.pem --bits 2048
+          python scripts/release_trust.py create --profile nano --image /tmp/trust/image.img --vault /tmp/trust/vault --out /tmp/trust/release.json
+          python scripts/release_trust.py sign --file /tmp/trust/release.json --key /tmp/trust/private.pem --signature /tmp/trust/release.sig
+          python scripts/release_trust.py verify --file /tmp/trust/release.json --public-key /tmp/trust/public.pem --signature /tmp/trust/release.sig
+      - name: Offline update bundle
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib
+          for name,body in [("base","old"),("new","new")]:
+              v=pathlib.Path("/tmp")/name
+              (v/"lock").mkdir(parents=True,exist_ok=True)
+              (v/"data").mkdir(exist_ok=True)
+              p=v/"data/demo.txt"; p.write_text(body)
+              rec={"id":"demo","path":"data/demo.txt","sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"bytes":p.stat().st_size}
+              (v/"lock/nano.lock.json").write_text(json.dumps({"profile":"nano","artifacts":[rec],"containers":[]}))
+              (v/"lock/nano.cdx.json").write_text('{"bomFormat":"CycloneDX"}')
+          PY
+          python scripts/update_bundle.py create --base-vault /tmp/base --new-vault /tmp/new --profile nano --out /tmp/update.tar
+          python scripts/update_bundle.py verify /tmp/update.tar
+          cp -a /tmp/base /tmp/target
+          python scripts/update_bundle.py apply /tmp/update.tar --target-vault /tmp/target
+          test "$(cat /tmp/target/data/demo.txt)" = "new"
