@@ -1,6 +1,10 @@
 <div align="center">
 
-<img src="docs/assets/the-ark-hero.jpg" alt="THE ARK — the offline computer for knowledge, AI, maps, communications and rebuilding" width="900" />
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/ark-hero-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/ark-hero-light.svg">
+  <img src="docs/assets/ark-hero-light.svg" alt="THE ARK — an offline computer for knowledge, AI, maps, communications and rebuilding" width="100%">
+</picture>
 
 # THE ARK
 
@@ -355,29 +359,44 @@ CIVILIZATION additionally preserves selected APT/PyPI/npm dependency closure and
 
 # 🧩 What are we still missing?
 
-THE ARK is ambitious, but the honest frontier list matters more than pretending it is finished.
+THE ARK already has working software profiles. The next frontier is making it **easier, more trustworthy, more complete and harder to kill**.
 
-| Frontier | Why it matters | State |
+Instead of hiding 17 loose TODOs in this README, the remaining work is organized into **7 engineering epics**:
+
+| Frontier epic | What a human gets when it is done | Track it |
 |---|---|---|
-| 🖱️ no-terminal desktop builder | ordinary users should click, not type | ⬜ |
-| 📀 signed prebuilt images/releases | build once, download safely | ⬜ |
-| 🪟 Windows/macOS builder | much broader adoption | ⬜ |
-| 🔐 Secure Boot | stronger boot-chain trust | ⬜ |
-| 🔑 first-boot credential wizard | remove public development defaults | ⬜ |
-| 🔎 one search over every library/code/doc | true unified offline knowledge | ⬜ |
-| 🧠 automated local RAG ingestion | ask questions over all saved material | ⬜ |
-| 📦 Maven/Cargo/Go/OCI deeper closure | more complete software rebuilding | ⬜ |
-| 🔄 offline update bundles/deltas | update an Ark using another disk | ⬜ |
-| 🤝 Ark-to-Ark replication | exchange verified capability packs | ⬜ |
-| 🧬 content-addressed deduplication | reduce multi-profile duplication | ⬜ |
-| 🔌 UPS/solar/power layer | resilience includes electricity | ⬜ |
-| 📻 deeper SDR/radio workflows | communications beyond IP networks | ⬜ |
-| 🌍 multilingual portal/docs | useful beyond English/Spanish | ⬜ |
-| 🧪 physical hardware matrix | prove Wi-Fi/GPU/boot combinations | ⬜ |
-| 🧯 repeated disconnected recovery drills | prove disaster-readiness | ⬜ |
-| 🗄️ multi-node final ARK tier | survive loss of a single machine | ⬜ |
+| 🖱️ **Zero-touch Ark** | choose a profile, click, flash, boot | [#8](https://github.com/jandromani/endoftheworld/issues/8) |
+| 🔐 **Trusted Ark** | signed images, stronger boot chain, safe promotion | [#9](https://github.com/jandromani/endoftheworld/issues/9) |
+| 🔎 **Ask the whole Ark** | one local search/RAG over books, code and docs | [#10](https://github.com/jandromani/endoftheworld/issues/10) |
+| 📦 **Rebuild more software** | deeper package closure + offline updates | [#11](https://github.com/jandromani/endoftheworld/issues/11) |
+| 🤝 **Arks can save Arks** | peer replication, deltas, multi-node final ARK | [#12](https://github.com/jandromani/endoftheworld/issues/12) |
+| 🔌 **Survive without normal infrastructure** | power telemetry + radio/beyond-IP workflows | [#13](https://github.com/jandromani/endoftheworld/issues/13) |
+| 🧪 **Prove it in the real world** | hardware matrix + repeated disconnected drills | [#14](https://github.com/jandromani/endoftheworld/issues/14) |
 
-Full frontier map → **[docs/frontiers.md](docs/frontiers.md)**.
+<details>
+<summary><strong>Show the full checklist of remaining frontiers</strong></summary>
+
+- [ ] no-terminal desktop builder
+- [ ] signed prebuilt images/releases
+- [ ] Windows/macOS builder
+- [ ] Secure Boot
+- [ ] first-boot credential wizard
+- [ ] one search over every library/code/doc
+- [ ] automated local RAG ingestion
+- [ ] Maven/Cargo/Go/OCI deeper closure
+- [ ] offline update bundles/deltas
+- [ ] Ark-to-Ark replication
+- [ ] content-addressed deduplication
+- [ ] UPS/solar/power layer
+- [ ] deeper SDR/radio workflows
+- [ ] multilingual portal/docs
+- [ ] physical hardware matrix
+- [ ] repeated disconnected recovery drills
+- [ ] multi-node final ARK tier
+
+</details>
+
+**[Read the complete frontier map](docs/frontiers.md)** · **[See the roadmap](ROADMAP.md)**
 
 ---
 

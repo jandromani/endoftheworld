@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="620" viewBox="0 0 1600 620" role="img" aria-labelledby="t d">
+<title id="t">THE ARK</title><desc id="d">Offline knowledge, AI, maps, communications and reconstruction platform.</desc>
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#061724"/><stop offset=".55" stop-color="#0b2535"/><stop offset="1" stop-color="#1f2937"/></linearGradient>
+ <linearGradient id="sea" x1="0" x2="1"><stop stop-color="#075985"/><stop offset="1" stop-color="#0e7490"/></linearGradient>
+ <linearGradient id="wood" x1="0" x2="1"><stop stop-color="#8b451f"/><stop offset=".5" stop-color="#d18445"/><stop offset="1" stop-color="#75401d"/></linearGradient>
+ <filter id="sh"><feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity=".45"/></filter>
+</defs>
+<rect width="1600" height="620" rx="28" fill="url(#bg)"/>
+<circle cx="1430" cy="105" r="58" fill="#ffd166" opacity=".86"/>
+<path d="M0 500 C280 445 520 555 800 500 C1080 445 1320 555 1600 500 V620 H0Z" fill="url(#sea)" opacity=".9"/>
+<g font-family="Arial,Helvetica,sans-serif">
+ <text x="92" y="126" font-size="70" font-weight="900" fill="#e0f2fe">THE ARK</text>
+ <text x="94" y="172" font-size="27" font-weight="700" fill="#7dd3fc">THE COMPUTER YOU CAN STILL USE WHEN THE INTERNET IS GONE.</text>
+ <text x="94" y="215" font-size="21" fill="#cbd5e1">Knowledge · AI · Maps · Communications · Repair · Coding · Reconstruction</text>
+</g>
+<g transform="translate(720 135)" filter="url(#sh)">
+ <path d="M62 310 H780 L710 430 Q455 488 160 430 Z" fill="url(#wood)" stroke="#2a160b" stroke-width="8"/>
+ <rect x="150" y="250" width="550" height="58" rx="12" fill="#f0c98b" stroke="#8a5429" stroke-width="5"/>
+ <rect x="130" y="183" width="590" height="58" rx="12" fill="#e6b974" stroke="#8a5429" stroke-width="5"/>
+ <rect x="110" y="116" width="630" height="58" rx="12" fill="#dca35e" stroke="#8a5429" stroke-width="5"/>
+ <rect x="260" y="48" width="340" height="58" rx="12" fill="#c77c3e" stroke="#8a5429" stroke-width="5"/>
+ <g font-family="Arial,Helvetica,sans-serif" font-weight="900" fill="#29180e" text-anchor="middle">
+  <text x="425" y="289" font-size="25">NANO</text><text x="425" y="222" font-size="25">FAMILY</text>
+  <text x="425" y="155" font-size="25">NOMAD</text><text x="430" y="87" font-size="25">CIVILIZATION</text>
+ </g>
+ <g fill="#0f172a" stroke="#e2e8f0" stroke-width="3">
+  <circle cx="210" cy="279" r="16"/><circle cx="255" cy="279" r="16"/><circle cx="300" cy="279" r="16"/>
+  <circle cx="190" cy="212" r="16"/><circle cx="235" cy="212" r="16"/><circle cx="280" cy="212" r="16"/><circle cx="325" cy="212" r="16"/>
+  <circle cx="170" cy="145" r="16"/><circle cx="215" cy="145" r="16"/><circle cx="260" cy="145" r="16"/><circle cx="305" cy="145" r="16"/><circle cx="350" cy="145" r="16"/>
+  <circle cx="320" cy="77" r="16"/><circle cx="365" cy="77" r="16"/><circle cx="410" cy="77" r="16"/><circle cx="455" cy="77" r="16"/><circle cx="500" cy="77" r="16"/>
+ </g>
+ <g font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="800" fill="#e2e8f0" text-anchor="middle">
+  <text x="210" y="284">K</text><text x="255" y="284">AI</text><text x="300" y="284">MAP</text>
+  <text x="190" y="217">SYNC</text><text x="235" y="217">GIT</text><text x="280" y="217">AI</text><text x="325" y="217">COM</text>
+  <text x="170" y="150">DEV</text><text x="215" y="150">RAG</text><text x="260" y="150">IDE</text><text x="305" y="150">DIY</text><text x="350" y="150">NMD</text>
+  <text x="320" y="82">CAD</text><text x="365" y="82">SCI</text><text x="410" y="82">PKG</text><text x="455" y="82">GIS</text><text x="500" y="82">EU</text>
+ </g>
+</g>
+<g transform="translate(92 292)" font-family="Arial,Helvetica,sans-serif">
+ <rect width="510" height="168" rx="22" fill="#0f2433" stroke="#315064" stroke-width="2"/>
+ <text x="30" y="46" font-size="19" font-weight="800" fill="#f8fafc">ONE ENGINE · FOUR WORKING PROFILES</text>
+ <text x="30" y="82" font-size="18" fill="#cbd5e1">64 GB  →  256 GB  →  1 TB  →  4 TB</text>
+ <text x="30" y="116" font-size="18" fill="#cbd5e1">SURVIVE  →  SHARE  →  CREATE  →  RECONSTRUCT</text>
+ <text x="30" y="147" font-size="16" fill="#94a3b8">Scout → Verify → Freeze → Boot → Serve offline</text>
+</g>
+</svg>
