@@ -117,7 +117,7 @@ jobs:
           (t/"lock/nano.cdx.json").write_text('{"bomFormat":"CycloneDX"}')
           PY
           python scripts/ark_mesh.py inventory --vault /tmp/mesh/source --profile nano --store /tmp/mesh/source-store --out /tmp/mesh/source.json --chunk-bytes 1048576
-          python scripts/ark_mesh.py inventory --vault /tmp/mesh/peer --profile nano --out /tmp/mesh/peer.json --chunk-bytes 1048576
+          python scripts/ark_mesh.py inventory --vault /tmp/mesh/peer --profile nano --store /tmp/mesh/peer-store --out /tmp/mesh/peer.json --chunk-bytes 1048576
           python scripts/ark_mesh.py diff --source /tmp/mesh/source.json --target /tmp/mesh/peer.json > /tmp/mesh/diff.json
           python scripts/ark_mesh.py pack --source-inventory /tmp/mesh/source.json --target-inventory /tmp/mesh/peer.json --store /tmp/mesh/source-store --out /tmp/mesh/pack.tar
           python scripts/ark_mesh.py verify-pack /tmp/mesh/pack.tar
