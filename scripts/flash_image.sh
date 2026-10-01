@@ -27,7 +27,7 @@ if [[ -f "$IMAGE.sha256" ]]; then
   (cd "$(dirname "$IMAGE")" && sha256sum -c "$(basename "$IMAGE.sha256")")
 fi
 
-echo "Flashing ENDWORLD NANO..."
+echo "Flashing THE ARK image..."
 dd if="$IMAGE" of="$DEVICE" bs=16M iflag=fullblock oflag=direct status=progress conv=fsync
 sync
 partprobe "$DEVICE" 2>/dev/null || true

@@ -1,14 +1,21 @@
 # THE ARK Documentation
 
-This directory documents the public **THE ARK** product family and the underlying **ENDWORLD** engine.
-
 ## Start here
 
-1. [Overview](overview.md)
-2. [Philosophy](philosophy.md)
-3. [Architecture](architecture.md)
-4. [Trust & verification](trust-and-verification.md)
-5. [Storage model](storage-model.md)
+- **[I know nothing about Linux](guides/BEGINNER.md)**
+- **[🇪🇸 Empieza aquí](es/EMPIEZA-AQUI.md)**
+- [How THE ARK works](how-it-works.md)
+- [Project NOMAD inside THE ARK](project-nomad.md)
+- [Reconstruct from zero](reconstruction.md)
+- [Frontiers](frontiers.md)
+
+## Mental model
+
+- [Overview](overview.md)
+- [Philosophy](philosophy.md)
+- [Architecture](architecture.md)
+- [Trust & verification](trust-and-verification.md)
+- [Storage model](storage-model.md)
 
 ## Runtime
 
@@ -19,8 +26,10 @@ This directory documents the public **THE ARK** product family and the underlyin
 
 ## Operations
 
+- [Beginner guide](guides/BEGINNER.md)
 - [Quickstart](guides/quickstart.md)
 - [Build an image](guides/build-image.md)
+- [First boot](guides/FIRST-BOOT.md)
 - [Offline operation](guides/offline-operation.md)
 - [Troubleshooting](guides/troubleshooting.md)
 - [FAQ](guides/faq.md)
@@ -39,5 +48,3 @@ This directory documents the public **THE ARK** product family and the underlyin
 - [NOMAD](../profiles/nomad/README.md)
 - [CIVILIZATION](../profiles/civilization/README.md)
 - [ARK](../profiles/ark/README.md)
-
-Existing implementation/acceptance notes in this directory remain authoritative where they describe exact shipped behavior.
