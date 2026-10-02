@@ -201,6 +201,7 @@ EOF
 cp "$REPO"/runtime/systemd/* "$ROOTFS/etc/systemd/system/"
 chroot "$ROOTFS" systemctl disable hostapd.service dnsmasq.service 2>/dev/null || true
 chroot "$ROOTFS" systemctl enable docker.service avahi-daemon.service systemd-networkd.service systemd-resolved.service
+chroot "$ROOTFS" systemctl disable systemd-networkd-wait-online.service 2>/dev/null || true
 chroot "$ROOTFS" systemctl enable endworld-network.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-power.timer
 if [[ "$PROFILE" == "nano-mini" ]]; then
   chroot "$ROOTFS" systemctl enable endworld-ci-smoke.service
