@@ -4,6 +4,15 @@ Notable changes to THE ARK / ENDWORLD are documented here.
 
 ## Unreleased
 
+### Factory and universal knowledge
+- Added a verified offline Debian factory with debootstrap seed + local APT package closure.
+- Removed hidden Planetiler network dependencies by freezing auxiliary map datasets.
+- Added PDF, EPUB, DOCX and image OCR ingestion to the universal search index.
+- Added Poppler and Spanish/English Tesseract to rich profiles and factory closure.
+- Added frozen local embeddings, Qdrant semantic ingestion and lexical/vector/Kiwix federation.
+- Let THE ARK Agent use local semantic retrieval when available.
+
+
 ### Body, trust and seed
 - Added an evidence-only multi-hardware physical campaign gate; CI fixtures cannot by themselves claim field proof.
 - Added Debian signed shim → signed GRUB Secure Boot fallback installation.
