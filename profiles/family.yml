@@ -231,6 +231,33 @@ artifacts:
     destination: tools/planetiler
     budget_bytes: 120000000
 
+  - id: planetiler-water-polygons
+    family: maps
+    kind: url
+    required: true
+    url: https://osmdata.openstreetmap.de/download/water-polygons-split-3857.zip
+    filename: water-polygons-split-3857.zip
+    destination: tools/planetiler/sources
+    budget_bytes: 1000000000
+
+  - id: planetiler-natural-earth
+    family: maps
+    kind: url
+    required: true
+    url: https://naciscdn.org/naturalearth/packages/natural_earth_vector.sqlite.zip
+    filename: natural_earth_vector.sqlite.zip
+    destination: tools/planetiler/sources
+    budget_bytes: 600000000
+
+  - id: planetiler-lake-centerlines
+    family: maps
+    kind: url
+    required: true
+    url: https://github.com/lukasmartinelli/osm-lakelines/releases/download/v0.9/lake_centerline.shp.zip
+    filename: lake_centerline.shp.zip
+    destination: tools/planetiler/sources
+    budget_bytes: 100000000
+
   - id: maplibre-js
     family: runtime
     kind: url

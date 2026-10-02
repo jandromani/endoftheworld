@@ -11,6 +11,7 @@ OUTPUT="${2:-$REPO/dist/endworld-$PROFILE-amd64.img}"
 VAULT="${ENDWORLD_VAULT:-$REPO/vault/$PROFILE}"
 SUITE="${ENDWORLD_DEBIAN_SUITE:-trixie}"
 MIRROR="${ENDWORLD_DEBIAN_MIRROR:-http://deb.debian.org/debian}"
+FACTORY="${ENDWORLD_FACTORY_DIR:-}"
 
 read_profile(){
   python3 - "$PROFILE_FILE" "$1" <<'PY'
@@ -51,6 +52,7 @@ cleanup(){
   mountpoint -q "$ROOTFS/dev/pts" && umount -lf "$ROOTFS/dev/pts"
   mountpoint -q "$ROOTFS/dev" && umount -lf "$ROOTFS/dev"
   mountpoint -q "$ROOTFS/boot/efi" && umount -lf "$ROOTFS/boot/efi"
+  mountpoint -q "$ROOTFS/mnt/ark-apt" && umount -lf "$ROOTFS/mnt/ark-apt"
   mountpoint -q "$ROOTFS/srv/endworld" && umount -lf "$ROOTFS/srv/endworld"
   mountpoint -q "$ROOTFS" && umount -lf "$ROOTFS"
   [[ -n "$LOOP" ]] && losetup -d "$LOOP" 2>/dev/null || true
@@ -93,13 +95,25 @@ VAULT_BYTES="$(du -sb "$VAULT" | awk '{print $1}')"
 (( VAULT_BYTES < DATA_FREE )) || { echo "Vault $(numfmt --to=iec "$VAULT_BYTES") does not fit data partition $(numfmt --to=iec "$DATA_FREE")" >&2; exit 2; }
 
 echo "[3/9] Bootstrapping Debian $SUITE..."
-debootstrap --arch=amd64 --variant=minbase "$SUITE" "$ROOTFS" "$MIRROR"
-
-cat > "$ROOTFS/etc/apt/sources.list" <<EOF
+if [[ -n "$FACTORY" ]]; then
+  FACTORY="$(readlink -f "$FACTORY")"
+  python3 "$REPO/scripts/offline_factory.py" verify --factory "$FACTORY"
+  BOOTSTRAP_TAR="$FACTORY/debootstrap-$SUITE-amd64.tar"
+  [[ -f "$BOOTSTRAP_TAR" && -f "$FACTORY/apt/Packages" ]] || { echo "Incomplete offline factory: $FACTORY" >&2; exit 2; }
+  debootstrap --arch=amd64 --variant=minbase --unpack-tarball="$BOOTSTRAP_TAR" "$SUITE" "$ROOTFS" "$MIRROR"
+  mkdir -p "$ROOTFS/mnt/ark-apt"
+  mount --bind "$FACTORY/apt" "$ROOTFS/mnt/ark-apt"
+  cat > "$ROOTFS/etc/apt/sources.list" <<'EOF'
+deb [trusted=yes] file:/mnt/ark-apt ./
+EOF
+else
+  debootstrap --arch=amd64 --variant=minbase "$SUITE" "$ROOTFS" "$MIRROR"
+  cat > "$ROOTFS/etc/apt/sources.list" <<EOF
 deb $MIRROR $SUITE main contrib non-free-firmware
 deb $MIRROR $SUITE-updates main contrib non-free-firmware
 deb http://security.debian.org/debian-security $SUITE-security main contrib non-free-firmware
 EOF
+fi
 cp -L /etc/resolv.conf "$ROOTFS/etc/resolv.conf"
 
 for fs in dev proc sys run; do mkdir -p "$ROOTFS/$fs"; done
@@ -116,11 +130,21 @@ chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 
 
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   echo "Installing rebuild-and-create developer toolchain..."
-  chroot "$ROOTFS" apt-get install -y --no-install-recommends git build-essential cmake ninja-build pkg-config clang gdb python3-dev python3-venv nodejs npm default-jdk-headless maven rustc cargo golang-go sqlite3 ripgrep tmux vim
+  chroot "$ROOTFS" apt-get install -y --no-install-recommends git build-essential cmake ninja-build pkg-config clang gdb python3-dev python3-venv nodejs npm default-jdk-headless maven rustc cargo golang-go sqlite3 ripgrep tmux vim poppler-utils tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng
 fi
 if [[ "$PROFILE" == "civilization" ]]; then
   echo "Installing CIVILIZATION science/reconstruction baseline..."
   chroot "$ROOTFS" apt-get install -y --no-install-recommends python3-numpy python3-scipy python3-pandas python3-matplotlib python3-sympy ffmpeg imagemagick graphviz pandoc
+fi
+
+if [[ -n "$FACTORY" ]]; then
+  umount "$ROOTFS/mnt/ark-apt"
+  rmdir "$ROOTFS/mnt/ark-apt" 2>/dev/null || true
+  cat > "$ROOTFS/etc/apt/sources.list" <<EOF
+deb $MIRROR $SUITE main contrib non-free-firmware
+deb $MIRROR $SUITE-updates main contrib non-free-firmware
+deb http://security.debian.org/debian-security $SUITE-security main contrib non-free-firmware
+EOF
 fi
 
 HOSTNAME="endworld-$PROFILE"
@@ -215,6 +239,9 @@ chroot "$ROOTFS" systemctl disable hostapd.service dnsmasq.service 2>/dev/null |
 chroot "$ROOTFS" systemctl enable docker.service avahi-daemon.service systemd-networkd.service systemd-resolved.service
 chroot "$ROOTFS" systemctl disable systemd-networkd-wait-online.service 2>/dev/null || true
 chroot "$ROOTFS" systemctl enable endworld-network.service endworld-expand-data.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-power.timer
+if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
+  chroot "$ROOTFS" systemctl enable endworld-vector-index.service
+fi
 if [[ "$PROFILE" == "nano-mini" ]]; then
   chroot "$ROOTFS" systemctl enable endworld-ci-smoke.service
 fi
