@@ -70,6 +70,10 @@ mkdir -p "$ROOTM"; mount "$P3" "$ROOTM"
 mkdir -p "$ROOTM/boot/efi" "$ROOTM/srv/endworld"
 mount "$P2" "$ROOTM/boot/efi"; mount "$P4" "$ROOTM/srv/endworld"
 
+vault_bytes="$(du -sb /srv/endworld | awk '{print $1}')"
+data_free="$(df -B1 --output=avail "$ROOTM/srv/endworld" | tail -1 | tr -d ' ')"
+(( vault_bytes < data_free )) || { echo "Target DATA partition is too small for current Ark state." >&2; exit 2; }
+
 echo "[1/4] Copying appliance root..."
 rsync -aHAX --numeric-ids --one-file-system \
   --exclude='/dev/*' --exclude='/proc/*' --exclude='/sys/*' --exclude='/run/*' \
@@ -78,6 +82,15 @@ rsync -aHAX --numeric-ids --one-file-system \
 
 echo "[2/4] Copying frozen vault + mutable state..."
 rsync -aHAX --numeric-ids /srv/endworld/ "$ROOTM/srv/endworld/"
+
+root_uuid="$(blkid -s UUID -o value "$P3")"
+data_uuid="$(blkid -s UUID -o value "$P4")"
+efi_uuid="$(blkid -s UUID -o value "$P2")"
+cat > "$ROOTM/etc/fstab" <<EOF
+UUID=$root_uuid / ext4 defaults,noatime 0 1
+UUID=$efi_uuid /boot/efi vfat umask=0077 0 1
+UUID=$data_uuid /srv/endworld ext4 defaults,noatime 0 2
+EOF
 
 echo "[3/4] Installing BIOS + UEFI + Secure Boot chain..."
 for p in dev dev/pts proc sys run; do mkdir -p "$ROOTM/$p"; done
