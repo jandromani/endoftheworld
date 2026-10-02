@@ -90,6 +90,9 @@ def run_one(vault, row):
     jid=row["id"]; stamp=int(time.time())
     task_id=f"sched-{jid}-{stamp}"
     goal=f"[ROLE {row['role']}] {row['goal']}"
+    with connect(vault) as db:
+        db.execute("UPDATE jobs SET status='running',last_run=?,last_task_id=? WHERE id=?",
+                   (stamp,task_id,jid))
     cmd=[sys.executable,str(ROOT/"scripts/agent_runner.py"),
          "--vault",str(vault),"--profile",row["profile"],
          "--task-id",task_id,"--json",goal]
