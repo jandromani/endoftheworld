@@ -110,6 +110,9 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         "scripts/ark_mesh.py", "scripts/power_policy.py", "scripts/field_comms.py",
         "scripts/field_drill.py", "scripts/field_campaign.py", "scripts/hardware_matrix.py",
         "scripts/agent_runner.py", "scripts/ark_clone.sh", "scripts/install_secure_boot.sh",
+        "scripts/offline_factory.py", "scripts/vector_index.py",
+        "runtime/vector_client.py", "runtime/vector-index.sh", "runtime/systemd/endworld-vector-index.service",
+        "manifests/appliance-os-packages.yml",
         "runtime/expand-data.sh", "runtime/systemd/endworld-expand-data.service",
         "config/ark-cluster.yml", "config/field-comms.yml",
     ):
@@ -119,6 +122,7 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         "wikipedia-es", "wikipedia-medicine-es", "spain-osm", "planetiler",
         "maplibre-js", "maplibre-css", "pmtiles-js", "bitchat-android",
         "meshtastic-android", "reticulum-source", "project-nomad-source",
+        "planetiler-water-polygons", "planetiler-natural-earth", "planetiler-lake-centerlines",
         "kiwix", "llama-server", "whisper-server",
     }
     require(expected_common.issubset(ids), f"{pid}: common wiring missing {sorted(expected_common - ids)}")
@@ -149,6 +153,7 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         expected={"wikipedia-en-nopic","wikipedia-medicine-en","wikibooks-en","stackoverflow-en","qwen3-8b-q4","qwen3-30b-a3b-q4","qwen3-coder-30b-a3b-q4s","whisper-medium","france-osm","ifixit-en","ifixit-es","appropriate-tech-cd3wd","electronics-stackexchange","arduino-stackexchange","raspberrypi-stackexchange","project-nomad-source","llama-cpp-source","qdrant-source","code-server-source","platformio-source","arduino-cli-source","esp32-source","satdump-source","syncthing","forgejo","qdrant","code-server","project-nomad-admin","project-nomad-mysql","project-nomad-redis"}
         require(expected.issubset(ids), f"NOMAD wiring missing ids: {sorted(expected-ids)}")
         require(target==1_000_000_000_000,"NOMAD target must stay exactly 1 TB decimal")
+        require("nomic-embed-text-v1.5-q4" in ids, "NOMAD embedding model missing")
         require((ROOT/"config/nomad.env").is_file(),"NOMAD runtime env missing")
         require((ROOT/"runtime/switch-ai.sh").is_file(),"NOMAD AI switcher missing")
         require({m["id"] for m in (data.get("prepare") or {}).get("maps",[])}=={"spain-pmtiles","portugal-pmtiles","france-pmtiles"},"NOMAD map contract changed")
@@ -159,6 +164,7 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         require(reserve==700_000_000_000,"CIVILIZATION reserve contract changed")
         require(headroom==400_000_000_000,"CIVILIZATION acquisition headroom changed")
         require(root_mib==65536,"CIVILIZATION root boundary must stay 65536 MiB")
+        require("nomic-embed-text-v1.5-q4" in ids, "CIVILIZATION embedding model missing")
         require((ROOT/"config/civilization.env").is_file(),"CIVILIZATION runtime env missing")
         require((ROOT/"manifests/civilization-packages.yml").is_file(),"CIVILIZATION package snapshot manifest missing")
         require((ROOT/"scripts/snapshot_packages.py").is_file(),"CIVILIZATION package snapshot engine missing")
@@ -215,6 +221,11 @@ def validate_runtime(profile: dict) -> None:
             "Debian Secure Boot packages are not wired")
     require("endworld-expand-data.service" in builder and "ark-clone" in builder,
             "clone/expand-to-fill wiring missing")
+    require("ENDWORLD_FACTORY_DIR" in builder and "offline_factory.py" in builder,
+            "offline factory rebuild path missing")
+    manifest=(ROOT/"manifests/appliance-os-packages.yml").read_text(encoding="utf-8")
+    require("poppler-utils" in manifest and "tesseract-ocr-spa" in manifest,
+            "PDF/OCR runtime closure missing")
 
 
 def validate_vault(vault: pathlib.Path, profile: dict) -> dict:
