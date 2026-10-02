@@ -126,7 +126,7 @@ mount --bind /run "$ROOTFS/run"
 echo "[4/9] Installing appliance OS packages..."
 export DEBIAN_FRONTEND=noninteractive
 chroot "$ROOTFS" apt-get update
-chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub-efi-amd64-signed shim-signed grub2-common efibootmgr mokutil sbsigntool   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io docker-cli hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client parted e2fsprogs   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros firmware-mediatek firmware-amd-graphics firmware-nvidia-graphics esptool unzip
+chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub-efi-amd64-signed shim-signed grub2-common efibootmgr mokutil sbsigntool   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io docker-cli hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client rtl-sdr parted e2fsprogs   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros firmware-mediatek firmware-amd-graphics firmware-nvidia-graphics esptool unzip
 
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   echo "Installing rebuild-and-create developer toolchain..."
@@ -195,7 +195,31 @@ cat > "$ROOTFS/usr/local/bin/ark-clone" <<'EOF'
 #!/bin/sh
 exec /opt/endworld/scripts/ark_clone.sh "$@"
 EOF
-chmod 0755 "$ROOTFS/usr/local/bin/endworld" "$ROOTFS/usr/local/bin/endworld-firstboot" "$ROOTFS/usr/local/bin/ark-mesh" "$ROOTFS/usr/local/bin/ark-field-test" "$ROOTFS/usr/local/bin/ark-clone"
+cat > "$ROOTFS/usr/local/bin/ark-radio" <<'EOF'
+#!/bin/sh
+exec python3 /opt/endworld/scripts/field_radio.py "$@"
+EOF
+cat > "$ROOTFS/usr/local/bin/ark-generations" <<'EOF'
+#!/bin/sh
+exec python3 /opt/endworld/scripts/ark_generations.py "$@"
+EOF
+cat > "$ROOTFS/usr/local/bin/ark-evolution" <<'EOF'
+#!/bin/sh
+exec python3 /opt/endworld/scripts/evolution.py "$@"
+EOF
+cat > "$ROOTFS/usr/local/bin/ark-orchestrator" <<'EOF'
+#!/bin/sh
+exec python3 /opt/endworld/scripts/ark_orchestrator.py "$@"
+EOF
+cat > "$ROOTFS/usr/local/bin/ark-agent-scheduler" <<'EOF'
+#!/bin/sh
+exec python3 /opt/endworld/scripts/agent_scheduler.py "$@"
+EOF
+cat > "$ROOTFS/usr/local/bin/ark-cluster" <<'EOF'
+#!/bin/sh
+exec python3 /opt/endworld/scripts/ark_cluster.py "$@"
+EOF
+chmod 0755 "$ROOTFS/usr/local/bin/endworld" "$ROOTFS/usr/local/bin/endworld-firstboot" "$ROOTFS/usr/local/bin/ark-mesh" "$ROOTFS/usr/local/bin/ark-field-test" "$ROOTFS/usr/local/bin/ark-clone" "$ROOTFS/usr/local/bin/ark-radio" "$ROOTFS/usr/local/bin/ark-generations" "$ROOTFS/usr/local/bin/ark-evolution" "$ROOTFS/usr/local/bin/ark-orchestrator" "$ROOTFS/usr/local/bin/ark-agent-scheduler" "$ROOTFS/usr/local/bin/ark-cluster"
 
 RETICULUM_TAR="$(find "$ROOTFS/srv/endworld/source/comms" -maxdepth 1 -type f -name 'reticulum-source-*.tar.gz' | head -1 || true)"
 if [[ -n "$RETICULUM_TAR" ]]; then
@@ -238,7 +262,7 @@ cp "$REPO"/runtime/systemd/* "$ROOTFS/etc/systemd/system/"
 chroot "$ROOTFS" systemctl disable hostapd.service dnsmasq.service 2>/dev/null || true
 chroot "$ROOTFS" systemctl enable docker.service avahi-daemon.service systemd-networkd.service systemd-resolved.service
 chroot "$ROOTFS" systemctl disable systemd-networkd-wait-online.service 2>/dev/null || true
-chroot "$ROOTFS" systemctl enable endworld-network.service endworld-expand-data.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-power.timer
+chroot "$ROOTFS" systemctl enable endworld-network.service endworld-expand-data.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-power.timer endworld-agent-scheduler.timer
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   chroot "$ROOTFS" systemctl enable endworld-vector-index.service
 fi
