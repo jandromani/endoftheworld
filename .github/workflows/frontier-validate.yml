@@ -154,6 +154,17 @@ jobs:
           cp /tmp/nano.img /tmp/nano-2.img
           python scripts/trust_audit.py compare /tmp/nano.img /tmp/nano-2.img --label fixture | grep -q '"reproducible": true'
           python scripts/trust_audit.py lock /tmp/release-vault/lock/nano.lock.json
+          cat > /tmp/vuln.json <<'EOF'
+          {"Results":[{"Vulnerabilities":[{"VulnerabilityID":"CVE-CI-1","Severity":"HIGH","PkgName":"fixture","InstalledVersion":"1"}]}]}
+          EOF
+          python scripts/trust_audit.py vulnerabilities /tmp/vuln.json
+          cat > /tmp/vuln-critical.json <<'EOF'
+          {"Results":[{"Vulnerabilities":[{"VulnerabilityID":"CVE-CI-CRITICAL","Severity":"CRITICAL","PkgName":"fixture","InstalledVersion":"1"}]}]}
+          EOF
+          if python scripts/trust_audit.py vulnerabilities /tmp/vuln-critical.json; then
+            echo "critical vulnerability policy unexpectedly passed"
+            exit 1
+          fi
 
       - name: Signed offline update bundle
         run: |
