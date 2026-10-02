@@ -122,7 +122,9 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
     require(expected_common.issubset(ids), f"{pid}: common wiring missing {sorted(expected_common - ids)}")
 
     if pid == "nano":
-        expected = {"qwen3-4b-q4", "whisper-small"}
+        expected = {"qwen3-4b-q4", "whisper-small","sideband-android","lxmf-source",
+                    "meshtastic-firmware-esp32s3","meshtastic-firmware-nrf52840",
+                    "meshtastic-firmware-rp2040","meshtastic-firmware-rp2350"}
         require(expected.issubset(ids), f"NANO wiring missing ids: {sorted(expected - ids)}")
         require(target == 64_000_000_000, "NANO target must stay exactly 64,000,000,000 bytes")
     elif pid == "nano-mini":
@@ -177,6 +179,8 @@ def validate_runtime(profile: dict) -> None:
     require('path=="/vault/state"' in server_text,"mutable state is not blocked from /vault")
     require("kiwix_hits" in server_text and "ENDWORLD_RAG_MAX_CHARS" in server_text,
             "Kiwix federation/RAG budget is not wired")
+    mapjs=(ROOT/"runtime/portal/map.js").read_text(encoding="utf-8")
+    require('type:"symbol"' in mapjs and '"text-field"' in mapjs,"offline map labels are not wired")
 
     samples = {
         "wikipedia-es": ("knowledge", "knowledge/zim/wiki.zim", "service"),
