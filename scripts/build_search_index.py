@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, json, pathlib, re, shutil, sqlite3, subprocess, tarfile, tempfile, zipfile
+import argparse, ast, json, pathlib, re, shutil, sqlite3, subprocess, tarfile, tempfile, zipfile
 from html.parser import HTMLParser
 
 TEXT_EXT={".md",".txt",".rst",".py",".js",".ts",".tsx",".jsx",".java",".rs",".go",".c",".h",".cpp",".hpp",".sh",".yml",".yaml",".json",".toml",".ini",".cfg",".html",".css",".sql",".xml"}
@@ -96,6 +96,54 @@ class Budget:
         if self.used+n>self.max:return False
         self.used+=n;return True
 
+def code_symbols(body,suffix):
+    rows=[]
+    if not body:return rows
+    if suffix==".py":
+        try:
+            tree=ast.parse(body)
+            for node in ast.walk(tree):
+                if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef,ast.ClassDef)):
+                    kind="class" if isinstance(node,ast.ClassDef) else "function"
+                    sig=node.name
+                    if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)):
+                        args=[x.arg for x in list(node.args.posonlyargs)+list(node.args.args)+list(node.args.kwonlyargs)]
+                        sig=node.name+"("+", ".join(args[:12])+")"
+                    rows.append((kind,node.name,int(getattr(node,"lineno",1)),sig))
+        except SyntaxError:pass
+        return rows[:500]
+    patterns={
+      ".js":[("class",r"\bclass\s+([A-Za-z_$][\w$]*)"),("function",r"\bfunction\s+([A-Za-z_$][\w$]*)\s*\("),("function",r"\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>")],
+      ".ts":[("class",r"\bclass\s+([A-Za-z_$][\w$]*)"),("interface",r"\binterface\s+([A-Za-z_$][\w$]*)"),("function",r"\bfunction\s+([A-Za-z_$][\w$]*)\s*\(")],
+      ".tsx":[("function",r"\bfunction\s+([A-Za-z_$][\w$]*)\s*\("),("component",r"\b(?:const|let)\s+([A-Z][A-Za-z0-9_$]*)\s*=")],
+      ".jsx":[("function",r"\bfunction\s+([A-Za-z_$][\w$]*)\s*\("),("component",r"\b(?:const|let)\s+([A-Z][A-Za-z0-9_$]*)\s*=")],
+      ".java":[("class",r"\b(?:class|interface|enum|record)\s+([A-Za-z_]\w*)"),("method",r"\b(?:public|protected|private|static|final|synchronized|abstract|native|\s)+[\w<>\[\], ?]+\s+([A-Za-z_]\w*)\s*\([^;{}]*\)\s*\{")],
+      ".rs":[("struct",r"\bstruct\s+([A-Za-z_]\w*)"),("enum",r"\benum\s+([A-Za-z_]\w*)"),("trait",r"\btrait\s+([A-Za-z_]\w*)"),("function",r"\bfn\s+([A-Za-z_]\w*)\s*\(")],
+      ".go":[("type",r"\btype\s+([A-Za-z_]\w*)\s+(?:struct|interface)\b"),("function",r"\bfunc\s+(?:\([^)]*\)\s*)?([A-Za-z_]\w*)\s*\(")],
+      ".c":[("function",r"(?m)^[A-Za-z_][\w\s\*]*\s+([A-Za-z_]\w*)\s*\([^;]*\)\s*\{")],
+      ".cpp":[("class",r"\bclass\s+([A-Za-z_]\w*)"),("function",r"(?m)^[A-Za-z_:~][\w:\s<>,~\*&]*\s+([A-Za-z_~]\w*)\s*\([^;]*\)\s*\{")],
+      ".hpp":[("class",r"\bclass\s+([A-Za-z_]\w*)")],
+      ".h":[("function",r"(?m)^[A-Za-z_][\w\s\*]*\s+([A-Za-z_]\w*)\s*\([^;]*\)\s*;")],
+      ".sh":[("function",r"(?m)^(?:function\s+)?([A-Za-z_]\w*)\s*\(\)\s*\{")],
+    }
+    for kind,pat in patterns.get(suffix,[]):
+        for m in re.finditer(pat,body):
+            line=body.count("\n",0,m.start())+1
+            rows.append((kind,m.group(1),line,m.group(0).strip()[:300]))
+            if len(rows)>=500:return rows
+    return rows
+
+def index_symbols(db,source,title,body,suffix,url=""):
+    count=0
+    for kind,name,line,signature in code_symbols(body,suffix):
+        db.execute("INSERT INTO ark_symbols(source,language,kind,name,line,signature,url) VALUES(?,?,?,?,?,?,?)",
+                   (source,suffix.lstrip("."),kind,name,line,signature,url))
+        insert(db,source+"#L"+str(line),name,
+               f"{kind} {name} line {line}. Signature: {signature}. File: {title}",
+               "code-symbol",url)
+        count+=1
+    return count
+
 def insert(db,source,title,body,kind,url=""):
     if not body or not body.strip():return 0
     db.execute("INSERT INTO ark_fts(source,title,body,kind,url) VALUES(?,?,?,?,?)",(source,title,body.strip(),kind,url));return 1
@@ -104,7 +152,12 @@ def plain(db,p,source,url,budget):
     try:
         n=p.stat().st_size
         if n>MAX_FILE or not budget.take(n):return 0
-        return insert(db,source,p.name,decode(p.read_bytes()),"file",url)
+        body=decode(p.read_bytes())
+        if not body:return 0
+        count=insert(db,source,p.name,body,"file",url)
+        if p.suffix.lower() in {".py",".js",".ts",".tsx",".jsx",".java",".rs",".go",".c",".cpp",".h",".hpp",".sh"}:
+            count+=index_symbols(db,source,p.name,body,p.suffix.lower(),url)
+        return count
     except OSError:return 0
 
 def tar_archive(db,p,rel,budget,max_members):
@@ -144,6 +197,8 @@ def main():
     db=sqlite3.connect(tmp);db.execute("PRAGMA journal_mode=OFF");db.execute("PRAGMA synchronous=OFF")
     db.execute("CREATE VIRTUAL TABLE ark_fts USING fts5(source UNINDEXED,title,body,kind UNINDEXED,url UNINDEXED,tokenize='unicode61 remove_diacritics 2')")
     db.execute("CREATE TABLE meta(key TEXT PRIMARY KEY,value TEXT)")
+    db.execute("CREATE TABLE ark_symbols(source TEXT,language TEXT,kind TEXT,name TEXT,line INTEGER,signature TEXT,url TEXT)")
+    db.execute("CREATE INDEX ark_symbols_name ON ark_symbols(name)")
     budget=Budget(a.max_text_mb*1024*1024);count=0
     for rootname in ("docs","profiles","manifests","scripts","runtime"):
         root=repo/rootname
@@ -173,7 +228,8 @@ def main():
         elif rel.startswith("source/") and low.endswith(".zip"):
             count+=zip_archive(db,p,rel,budget,a.max_members_per_archive)
     db.execute("INSERT INTO meta VALUES('documents',?)",(str(count),));db.execute("INSERT INTO meta VALUES('indexed_text_bytes',?)",(str(budget.used),))
-    db.execute("INSERT INTO meta VALUES('universal_formats',?)",("text,code,pdf,epub,docx,ocr-image,kiwix-federated",))
+    db.execute("INSERT INTO meta VALUES('universal_formats',?)",("text,code,code-symbols,pdf,epub,docx,ocr-image,kiwix-federated",))
+    db.execute("INSERT INTO meta VALUES('code_symbols',?)",(str(db.execute("SELECT count(*) FROM ark_symbols").fetchone()[0]),))
     db.commit();db.close();tmp.replace(out)
     print(json.dumps({"index":str(out),"documents":count,"indexed_text_bytes":budget.used},indent=2))
     return 0
