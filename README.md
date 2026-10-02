@@ -26,6 +26,7 @@
 [How it works](docs/how-it-works.md) ·
 [Project NOMAD inside](docs/project-nomad.md) ·
 [Offline Agent](docs/AGENT.md) ·
+[Ark Organism](docs/guides/ARK-ORGANISM.md) ·
 [What is still missing?](docs/frontiers.md)
 
 </div>
@@ -55,7 +56,7 @@ Then THE ARK makes that SSD **bootable**.
 
 You can plug it into a compatible PC, boot from it and open a local website. The important services run on the machine itself.
 
-> **Internet is needed while building the Ark. Internet is not required to use the finished Ark.**
+> **Internet is needed for initial acquisition/factory creation. A verified frozen factory can rebuild an Ark image without public mirrors, and the finished Ark runs without Internet.**
 
 ---
 
@@ -200,7 +201,7 @@ There is no supported shared/default field password after first-boot setup.
 | 🏠 **FAMILY** | 256 GB | house library/server | family files, stronger AI, local Git |
 | 🧭 **NOMAD** | 1 TB | mobile workshop | developers, makers, field teams |
 | 🏛️ **CIVILIZATION** | 4 TB | reconstruction workshop | package dependencies, CAD, science, Europe |
-| 🛶 **ARK** | maximum | preservation network | planned multi-node preservation tier |
+| 🛶 **ARK** | distributed | preservation network | software control plane implemented; physical multi-site evidence pending |
 
 If you are unsure: **build NANO first**.
 
@@ -381,11 +382,11 @@ Instead of hiding 17 loose TODOs in this README, the remaining work is organized
 | Frontier epic | What a human gets | State | Track it |
 |---|---|---|---|
 | 🖱️ **Zero-touch Ark** | local browser builder + hardened first boot | 🟨 MVP shipped | [#8](https://github.com/jandromani/endoftheworld/issues/8) |
-| 🔐 **Trusted Ark** | release manifest + detached signatures | 🟨 MVP shipped | [#9](https://github.com/jandromani/endoftheworld/issues/9) |
-| 🔎 **Ask the whole Ark** | local FTS/RAG over docs, metadata and source | 🟨 MVP shipped | [#10](https://github.com/jandromani/endoftheworld/issues/10) |
-| 📦 **Rebuild more software** | 7 ecosystems + verified offline update bundles | 🟨 MVP shipped | [#11](https://github.com/jandromani/endoftheworld/issues/11) |
-| 🤝 **Arks can save Arks** | content-addressed peer packs + verified restore | 🟨 MVP shipped | [#12](https://github.com/jandromani/endoftheworld/issues/12) |
-| 🔌 **Survive without normal infrastructure** | power policy + Reticulum/Meshtastic/SDR field plan | 🟨 MVP shipped | [#13](https://github.com/jandromani/endoftheworld/issues/13) |
+| 🔐 **Trusted Ark** | Secure Boot + signed release/update chain | 🟨 software shipped · release operations remain | [#9](https://github.com/jandromani/endoftheworld/issues/9) |
+| 🔎 **Ask the whole Ark** | lexical/vector/Kiwix + PDF/EPUB/DOCX/OCR | 🟨 software shipped · corpus proof remains | [#10](https://github.com/jandromani/endoftheworld/issues/10) |
+| 📦 **Rebuild more software** | offline factory + 7 ecosystems + signed updates | 🟨 software shipped · broader closure remains | [#11](https://github.com/jandromani/endoftheworld/issues/11) |
+| 🤝 **Arks can save Arks** | signed packs + generations + cold restore + cluster planner | 🟨 software shipped · real multi-site deployment remains | [#12](https://github.com/jandromani/endoftheworld/issues/12) |
+| 🔌 **Survive without normal infrastructure** | power events + Reticulum/Meshtastic + receive-only SDR | 🟨 software shipped · real power/radio evidence remains | [#13](https://github.com/jandromani/endoftheworld/issues/13) |
 | 🧪 **Prove it in the real world** | field-report harness + evidence-only matrix | 🟨 harness shipped · evidence pending | [#14](https://github.com/jandromani/endoftheworld/issues/14) |
 
 <details>
@@ -394,20 +395,25 @@ Instead of hiding 17 loose TODOs in this README, the remaining work is organized
 - [ ] no-terminal desktop builder
 - [ ] signed prebuilt images/releases
 - [ ] Windows/macOS builder
-- [ ] Secure Boot
-- [ ] first-boot credential wizard
-- [ ] one search over every library/code/doc
-- [ ] automated local RAG ingestion
-- [ ] Maven/Cargo/Go/OCI deeper closure
-- [ ] offline update bundles/deltas
+- [x] Secure Boot chain
+- [x] first-boot credential wizard
+- [x] one federated search over indexed local docs/code + Kiwix
+- [x] local vector/RAG ingestion on rich profiles
+- [x] Maven/Cargo/Go/OCI selected dependency closure
+- [x] signed offline update bundles
 - [x] Ark-to-Ark replication MVP
 - [x] content-addressed deduplication MVP
-- [ ] UPS/solar/power layer
-- [ ] deeper SDR/radio workflows
-- [ ] multilingual portal/docs
-- [ ] physical hardware matrix
-- [ ] repeated disconnected recovery drills
-- [x] multi-node final ARK protocol MVP
+- [x] UPS/NUT telemetry + low-power policy/events
+- [x] receive-only SDR field workflow
+- [x] persistent scheduler + event queue + reboot recovery
+- [x] approval-gated capability evolution
+- [x] cold generations + geographic redundancy planner
+- [ ] Windows/macOS builder
+- [ ] signed prebuilt release distribution
+- [ ] multilingual portal/docs parity
+- [ ] real physical hardware matrix evidence
+- [ ] repeated disconnected recovery drills on real hardware
+- [ ] real UPS/solar/radio and multi-site deployment evidence
 
 </details>
 
@@ -433,7 +439,7 @@ NANO            64 GB     SURVIVE             ✅
 FAMILY         256 GB     LIVE + SHARE        ✅
 NOMAD            1 TB     REBUILD + CREATE    ✅
 CIVILIZATION     4 TB     RECONSTRUCT         ✅
-ARK            maximum    PRESERVE            🚧
+ARK         distributed   PRESERVE + EVOLVE   ✅ software · ⬜ physical multi-site proof
 ```
 
 We do not call a profile “physically field-proven” until the final offline hardware stages happen.
@@ -484,11 +490,12 @@ make nomad-ai-coder
 | Area | Docs |
 |---|---|
 | Start | [Beginner](docs/guides/BEGINNER.md) · [Español](docs/es/EMPIEZA-AQUI.md) · [FAQ](docs/guides/faq.md) |
-| Mental model | [How it works](docs/how-it-works.md) · [Architecture](docs/architecture.md) · [Storage](docs/storage-model.md) |
+| Mental model | [How it works](docs/how-it-works.md) · [Architecture](docs/ARCHITECTURE.md) · [Storage](docs/storage-model.md) |
 | Trust | [Trust & verification](docs/trust-and-verification.md) · [Security](SECURITY.md) |
 | Components | [Runtime](docs/runtime-services.md) · [AI](docs/ai.md) · [Networking](docs/networking.md) · [Developer mode](docs/developer-mode.md) |
 | Project NOMAD | [How NOMAD sits inside THE ARK](docs/project-nomad.md) |
-| Operations | [Build image](docs/guides/build-image.md) · [Offline operation](docs/guides/offline-operation.md) · [Troubleshooting](docs/guides/troubleshooting.md) |
+| Operations | [Build image](docs/guides/build-image.md) · [Offline factory](docs/guides/OFFLINE-FACTORY.md) · [Field proof](docs/guides/FIELD-PROOF.md) · [Field radio](docs/guides/FIELD-RADIO.md) · [Troubleshooting](docs/guides/troubleshooting.md) |
+| Autonomy | [Agent](docs/AGENT.md) · [Ark Organism](docs/guides/ARK-ORGANISM.md) · [Universal knowledge](docs/guides/UNIVERSAL-KNOWLEDGE.md) · [Trust + Seed](docs/guides/TRUST-SEED.md) |
 | Reference | [CLI](docs/reference/cli.md) · [Environment](docs/reference/environment-variables.md) · [Ports](docs/reference/ports-and-services.md) |
 | Future | [Frontiers](docs/frontiers.md) · [Roadmap](ROADMAP.md) |
 
