@@ -4,6 +4,13 @@ Notable changes to THE ARK / ENDWORLD are documented here.
 
 ## Unreleased
 
+### Cross-platform release flasher
+- Added signed-release verification and streaming zstd flashing on Linux, Windows and macOS.
+- Added system/root/mounted/capacity guards plus exact destructive confirmation.
+- Added raw-image SHA-256 verification during decompression/write.
+- Added Tk desktop UI and PyInstaller packaging.
+- Added three-OS source + packaged-binary self-tests and artifact packaging workflow.
+
 ### Pre-hardware release closure
 - Hardened local Builder disk selection by blocking root, mounted and undersized targets.
 - Added builder storage/download-envelope estimates before acquisition.
