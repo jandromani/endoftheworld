@@ -23,6 +23,7 @@ HEAVY_STOP = [
     "endworld-forgejo",
     "endworld-syncthing",
     "endworld-ai",
+    "endworld-embed",
     "endworld-whisper",
     "endworld-nomad-redis",
     "endworld-nomad-mysql",
@@ -35,6 +36,7 @@ RECOVER_ORDER = [
     "endworld-qdrant",
     "endworld-code-server",
     "endworld-ai",
+    "endworld-embed",
     "endworld-whisper",
     "endworld-nomad-admin",
 ]
