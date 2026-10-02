@@ -17,6 +17,13 @@ DEFAULT_VAULT = pathlib.Path(os.getenv("ENDWORLD_VAULT", "/srv/endworld"))
 LLAMA_URL = os.getenv("ENDWORLD_AGENT_LLM_URL", "http://127.0.0.1:8082/v1/chat/completions")
 MAX_TEXT = 12000
 
+ROLE_GUIDANCE = {
+    "field": "Prioritize immediate offline operability, concise steps, local evidence and resource constraints.",
+    "research": "Prioritize source-grounded synthesis, citations, uncertainty and cross-checking local evidence.",
+    "engineer": "Prioritize reproducible technical diagnosis, architecture and safe non-destructive implementation steps.",
+    "coordinator": "Reconcile specialist findings, resolve conflicts, track evidence and produce one bounded execution plan.",
+}
+
 class AgentError(RuntimeError): pass
 class PolicyDenied(AgentError): pass
 
@@ -41,6 +48,7 @@ class State:
     task_dir: pathlib.Path
     evidence: dict = field(default_factory=dict)
     step: int = 0
+    role: str = "field"
 
     @property
     def workspace(self):
@@ -56,7 +64,7 @@ class State:
     def persist(self, status="running", answer=None):
         payload = {
             "schema": 1, "task_id": self.task_id, "goal": self.goal,
-            "profile": self.profile, "status": status, "step": self.step,
+            "profile": self.profile, "role": self.role, "status": status, "step": self.step,
             "updated_at": now(), "workspace": str(self.workspace),
             "evidence": [{k:v for k,v in x.items() if k != "_body"} for x in self.evidence.values()],
         }
@@ -171,13 +179,17 @@ class Tools:
         raise PolicyDenied("playbook not allowlisted: "+name)
 
 class Agent:
-    def __init__(self,vault,profile,goal,task_id,max_steps=8,timeout_s=240):
-        self.state=State(task_id,goal,profile,vault/"state/agent/tasks"/task_id)
+    def __init__(self,vault,profile,goal,task_id,max_steps=8,timeout_s=240,role="field"):
+        if role not in ROLE_GUIDANCE: raise AgentError("unknown role: "+str(role))
+        self.state=State(task_id,goal,profile,vault/"state/agent/tasks"/task_id,role=role)
         self.tools=Tools(vault,profile,self.state); self.max_steps=max(1,min(max_steps,16))
         self.deadline=time.monotonic()+max(30,timeout_s)
 
     def system(self):
+        role_line = ROLE_GUIDANCE[self.state.role]
         return """You are THE ARK offline field agent.
+Current specialist role: %s
+Role guidance: %s
 Return exactly one JSON object and no markdown.
 Tool action: {"action":"tool","tool":"ark.search","args":{"query":"..."}}
 Final action: {"action":"final","answer":"..."}
@@ -187,7 +199,7 @@ ark.playbook(name) where name is integrity-summary or field-readiness.
 Only cite source ids returned by tools, such as [E1].
 There is no arbitrary shell, package installation, disk flashing, trust-root
 change or silent WAN fallback. Frozen vault data is read-only. If a request
-needs a forbidden action, say so rather than inventing a capability."""
+needs a forbidden action, say so rather than inventing a capability.""" % (self.state.role, role_line)
 
     def model(self,messages):
         payload={"model":"local","messages":messages,"temperature":.1,
@@ -208,7 +220,7 @@ needs a forbidden action, say so rather than inventing a capability."""
 
     def run(self):
         self.state.workspace.mkdir(parents=True,exist_ok=True)
-        self.state.event("task_started",goal=self.state.goal)
+        self.state.event("task_started",goal=self.state.goal,role=self.state.role)
         messages=[{"role":"system","content":self.system()},{"role":"user","content":self.state.goal}]
         try:
             for step in range(1,self.max_steps+1):
@@ -254,13 +266,14 @@ def main():
     ap=argparse.ArgumentParser(prog="endworld-agent"); ap.add_argument("goal",nargs="?")
     ap.add_argument("--vault",default=str(DEFAULT_VAULT)); ap.add_argument("--profile",default=os.getenv("ENDWORLD_PROFILE","nano"))
     ap.add_argument("--task-id"); ap.add_argument("--max-steps",type=int,default=8); ap.add_argument("--timeout",type=int,default=240)
+    ap.add_argument("--role",choices=sorted(ROLE_GUIDANCE),default="field")
     ap.add_argument("--json",action="store_true"); ap.add_argument("--policy-selftest",action="store_true")
     a=ap.parse_args(); vault=pathlib.Path(a.vault).resolve()
     if a.policy_selftest:
         r=policy_selftest(vault,a.profile); print(json.dumps(r)); return 0 if r["ok"] else 2
     if not a.goal: ap.error("goal is required")
     tid=a.task_id or make_task_id(a.goal)
-    try: r=Agent(vault,a.profile,a.goal,tid,a.max_steps,a.timeout).run()
+    try: r=Agent(vault,a.profile,a.goal,tid,a.max_steps,a.timeout,a.role).run()
     except Exception as e:
         r={"ok":False,"task_id":tid,"error":str(e)}; print(json.dumps(r) if a.json else "ERROR: "+str(e)); return 2
     print(json.dumps(r,ensure_ascii=False) if a.json else r["answer"]); return 0
