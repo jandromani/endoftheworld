@@ -71,18 +71,25 @@ Implemented foundation:
 
 The design goal is **rebuild practical infrastructure**, not preserve every byte on the Internet.
 
-## 🚧 ARK — maximum — PRESERVE
+## ✅ ARK software architecture — DISTRIBUTE + EVOLVE
 
-Candidate goals:
+Implemented software foundation:
 
-- multi-node content-addressed replication;
-- cold-storage export sets;
-- geographic redundancy;
-- preservation manifests independent of a single filesystem;
-- long-term media refresh procedures;
-- source + toolchain + build-dependency closure for selected critical software;
-- broader cultural/scientific/educational archives;
-- reproducible recovery plans from bare hardware.
+- bounded offline Agent with audited allowlisted tool use;
+- persistent scheduler, local event queue and reboot recovery;
+- specialist roles plus coordinator without permission escalation;
+- signed content-addressed Ark Mesh capability packs;
+- immutable generation metadata, cold-storage exports and rollback metadata;
+- multi-node redundancy planner with copy/site/role requirements;
+- receive-only RTL-SDR field workflow and radio inventory;
+- power-policy events feeding the offline scheduler;
+- Scout → untrusted proposal → static inspection → local Agent analysis → explicit human approval;
+- verified offline factory and dependency closure;
+- universal lexical/vector/Kiwix knowledge federation.
+
+The remaining ARK gap is **physical deployment evidence**, not a missing software
+control plane: multiple real nodes, distinct sites, storage/media refresh and
+real power/radio hardware must still be exercised and documented.
 
 ## Roadmap R2–R4 milestone
 
@@ -110,6 +117,18 @@ Software on the factory/knowledge branch adds:
 - Poppler + Spanish/English Tesseract in NOMAD/CIVILIZATION and in factory closure;
 - a frozen local embedding model, local embedding endpoint and Qdrant ingestion for rich profiles;
 - portal and agent retrieval federated across lexical, vector and Kiwix evidence.
+
+## Roadmap R7–R10 milestone
+
+Software adds:
+
+- **R7 FIELD:** receive-only RTL-SDR inventory/capture plan, retained SatDump/Reticulum/Meshtastic layers and power transitions as local events;
+- **R8 MESH:** optionally mandatory signed capability packs, generations, cold export/restore and geographic redundancy planning;
+- **R9 EVOLUTION:** discovery remains untrusted; static inspection + local Agent analysis + explicit human approval are required before manifest review;
+- **R10 ARK:** persistent offline scheduler, event queue, reboot recovery, bounded specialist roles, coordinator and a read-only organism status surface.
+
+No software test may convert simulated hardware/sites into a physical
+field-proof claim.
 
 ## Cross-cutting work
 
