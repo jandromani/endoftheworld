@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Controlled capability evolution: discover -> assess -> quarantine -> approve."""
 from __future__ import annotations
-import argparse, datetime as dt, hashlib, json, pathlib, re, tarfile, zipfile
+import argparse, datetime as dt, hashlib, json, pathlib, re, tarfile, zipfile, sys
 
 def load(path):return json.loads(path.read_text(encoding="utf-8"))
 def age_days(value):
@@ -94,16 +94,54 @@ def agent_prompt(path,out):
           json.dumps(brief,ensure_ascii=False,indent=2))
     out.parent.mkdir(parents=True,exist_ok=True);out.write_text(text+"\n",encoding="utf-8");print(out)
 
+def analyze(proposal,vault,profile,out,max_steps):
+    sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent))
+    from agent_runner import Agent
+    d=load(proposal)
+    brief=[{"repo":x.get("repo"),"family":x.get("family"),"description":x.get("description"),
+            "license":x.get("license"),"score":x.get("score"),"risks":x.get("risks")} for x in d.get("candidates",[])]
+    goal=("Analyze this THE ARK evolution proposal using only local trusted evidence and the supplied untrusted metadata. "
+          "Identify overlap, offline value, maintenance/licensing/supply-chain risks, and evidence required before promotion. "
+          "Do not execute candidate code and do not mark any candidate trusted.\n\n"+json.dumps(brief,ensure_ascii=False,indent=2))
+    tid="evolution-"+hashlib.sha256(proposal.read_bytes()).hexdigest()[:12]
+    result=Agent(vault,profile,goal,tid,max_steps,300,"research").run()
+    data={"schema":1,"protocol":"ark-evolution-agent-analysis-v1","proposal_sha256":hashlib.sha256(proposal.read_bytes()).hexdigest(),
+          "task_id":tid,"answer":result["answer"],"policy":{"candidate_execution":False,"trust_granted":False}}
+    out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(data,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
+    print(out)
+
+def approve(proposal,repo,sandbox,analysis,approved_by,out):
+    p=load(proposal);s=load(sandbox);a=load(analysis)
+    cand=next((x for x in p.get("candidates",[]) if x.get("repo")==repo),None)
+    if not cand:raise SystemExit("candidate not found in proposal")
+    if s.get("protocol")!="ark-evolution-sandbox-v1" or s.get("passed") is not True or s.get("executed") is not False:
+        raise SystemExit("sandbox evidence is not a static PASS")
+    if a.get("protocol")!="ark-evolution-agent-analysis-v1" or a.get("proposal_sha256")!=hashlib.sha256(proposal.read_bytes()).hexdigest():
+        raise SystemExit("agent analysis does not bind this proposal")
+    if not approved_by.strip():raise SystemExit("approved-by is required")
+    data={"schema":1,"protocol":"ark-evolution-approval-v1","repo":repo,
+          "approved_by":approved_by.strip(),"approved_at":dt.datetime.now(dt.timezone.utc).isoformat(),
+          "trust_state":"APPROVED_FOR_MANIFEST_REVIEW","auto_execute":False,"auto_promote":False,
+          "proposal_sha256":hashlib.sha256(proposal.read_bytes()).hexdigest(),
+          "sandbox_sha256":hashlib.sha256(sandbox.read_bytes()).hexdigest(),
+          "analysis_sha256":hashlib.sha256(analysis.read_bytes()).hexdigest(),
+          "candidate":cand}
+    out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(data,indent=2,ensure_ascii=False)+"\n",encoding="utf-8");print(out)
+
 def main():
     ap=argparse.ArgumentParser();sub=ap.add_subparsers(dest="cmd",required=True)
     p=sub.add_parser("propose");p.add_argument("--scout",required=True);p.add_argument("--out",required=True);p.add_argument("--per-family",type=int,default=3)
     v=sub.add_parser("validate");v.add_argument("proposal")
     s=sub.add_parser("inspect-archive");s.add_argument("archive");s.add_argument("--out",required=True);s.add_argument("--max-bytes",type=int,default=2*1024**3);s.add_argument("--max-files",type=int,default=100000)
     g=sub.add_parser("agent-prompt");g.add_argument("proposal");g.add_argument("--out",required=True)
+    an=sub.add_parser("analyze");an.add_argument("proposal");an.add_argument("--vault",required=True);an.add_argument("--profile",default="nano");an.add_argument("--out",required=True);an.add_argument("--max-steps",type=int,default=8)
+    apv=sub.add_parser("approve");apv.add_argument("proposal");apv.add_argument("--repo",required=True);apv.add_argument("--sandbox",required=True);apv.add_argument("--analysis",required=True);apv.add_argument("--approved-by",required=True);apv.add_argument("--out",required=True)
     a=ap.parse_args()
     if a.cmd=="propose":propose(pathlib.Path(a.scout),pathlib.Path(a.out),a.per_family)
     elif a.cmd=="validate":validate(pathlib.Path(a.proposal))
     elif a.cmd=="inspect-archive":return inspect(pathlib.Path(a.archive),pathlib.Path(a.out),a.max_bytes,a.max_files)
-    else:agent_prompt(pathlib.Path(a.proposal),pathlib.Path(a.out))
+    elif a.cmd=="agent-prompt":agent_prompt(pathlib.Path(a.proposal),pathlib.Path(a.out))
+    elif a.cmd=="analyze":analyze(pathlib.Path(a.proposal),pathlib.Path(a.vault).resolve(),a.profile,pathlib.Path(a.out),max(1,min(a.max_steps,12)))
+    else:approve(pathlib.Path(a.proposal),a.repo,pathlib.Path(a.sandbox),pathlib.Path(a.analysis),a.approved_by,pathlib.Path(a.out))
     return 0
 if __name__=="__main__":raise SystemExit(main())
