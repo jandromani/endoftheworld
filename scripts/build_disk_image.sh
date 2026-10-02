@@ -112,7 +112,7 @@ mount --bind /run "$ROOTFS/run"
 echo "[4/9] Installing appliance OS packages..."
 export DEBIAN_FRONTEND=noninteractive
 chroot "$ROOTFS" apt-get update
-chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub2-common efibootmgr   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io docker-cli hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros
+chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub2-common efibootmgr   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io docker-cli hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros firmware-mediatek firmware-amd-graphics firmware-nvidia-graphics esptool unzip
 
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   echo "Installing rebuild-and-create developer toolchain..."
@@ -174,6 +174,12 @@ if [[ -n "$RETICULUM_TAR" ]]; then
 else
   echo "Frozen Reticulum source archive not found" >&2
   exit 2
+fi
+
+LXMF_TAR="$(find "$ROOTFS/srv/endworld/source/comms" -maxdepth 1 -type f -name 'lxmf-source-*.tar.gz' | head -1 || true)"
+if [[ -n "$LXMF_TAR" ]]; then
+  LXMF_CHROOT="${LXMF_TAR#"$ROOTFS"}"
+  chroot "$ROOTFS" python3 -m pip install --break-system-packages --no-build-isolation --no-deps "$LXMF_CHROOT"
 fi
 
 mkdir -p "$ROOTFS/srv/endworld/state/field" "$ROOTFS/home/endworld/.reticulum"
