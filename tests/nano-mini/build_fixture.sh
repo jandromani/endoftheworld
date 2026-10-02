@@ -82,7 +82,7 @@ class H(BaseHTTPRequestHandler):
                 out={"action":"final","answer":"Offline confirmed. Burn guidance was read from frozen source [E1] and field note was written."}
             elif '"written": true' in transcript:
                 out={"action":"tool","tool":"ark.status","args":{}}
-            elif "Enfriar la quemadura" in transcript:
+            elif '"text":' in transcript and "Enfriar la quemadura" in transcript:
                 out={"action":"tool","tool":"ark.write_note","args":{"name":"burn-field-note","text":"# Burn field note\n\nLocal frozen guidance: Enfriar la quemadura con agua corriente limpia durante varios minutos. Source [E1]."}}
             elif '"id": "E1"' in transcript:
                 out={"action":"tool","tool":"ark.read_source","args":{"id":"E1"}}
