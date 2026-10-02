@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, json, pathlib, re, subprocess, sys, threading, time, webbrowser
+import argparse, json, pathlib, re, shutil, subprocess, sys, threading, time, webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 import yaml
 
 ROOT=pathlib.Path(__file__).resolve().parents[1]
@@ -19,6 +19,15 @@ def cards():
                     "target_bytes":int(meta["target_bytes"]),
                     "description":str(meta.get("description") or "").strip()})
     return out
+
+def profile_meta(pid):
+    if pid not in PROFILES: raise ValueError("unknown profile")
+    data=yaml.safe_load((ROOT/"profiles"/f"{pid}.yml").read_text(encoding="utf-8"))
+    return data["profile"]
+
+def mounted_tree(node):
+    if any(x for x in (node.get("mountpoints") or []) if x): return True
+    return any(mounted_tree(ch) for ch in (node.get("children") or []))
 
 def root_disk():
     try:
@@ -40,7 +49,8 @@ def disks():
         path=str(d.get("path") or "")
         rows.append({"path":path,"size":int(d.get("size") or 0),
                      "model":(d.get("model") or "").strip(),"transport":d.get("tran"),
-                     "removable":bool(d.get("rm")),"root_related":bool(root and (path==root or root.startswith(path)))})
+                     "removable":bool(d.get("rm")),"mounted":mounted_tree(d),
+                     "root_related":bool(root and (path==root or root.startswith(path)))})
     return {"root_disk":root,"items":rows}
 
 class Runner:
@@ -107,6 +117,26 @@ class Handler(BaseHTTPRequestHandler):
         if path=="/api/profiles": return self.send_json(cards())
         if path=="/api/state": return self.send_json(RUNNER.state())
         if path=="/api/disks": return self.send_json(disks())
+        if path=="/api/estimate":
+            q=urlparse(self.path).query
+            params=parse_qs(q)
+            pid=(params.get("profile") or ["nano"])[0]
+            try:
+                meta=profile_meta(pid); target=int(meta["target_bytes"])
+                reserve=int(meta.get("reserve_bytes") or 0);headroom=int(meta.get("acquisition_headroom_bytes") or 0)
+                acquisition=max(0,target-reserve-headroom)
+                free=shutil.disk_usage(ROOT).free
+                vault=ROOT/"vault"/pid
+                existing=sum(p.stat().st_size for p in vault.rglob("*") if p.is_file()) if vault.exists() else 0
+                eta={}
+                remaining=max(0,acquisition-existing)
+                for mbps in (100,300,1000):
+                    eta[str(mbps)]=round((remaining*8)/(mbps*1_000_000*60),1)
+                return self.send_json({"profile":pid,"target_bytes":target,"acquisition_envelope_bytes":acquisition,
+                    "builder_free_bytes":free,"existing_vault_bytes":existing,"remaining_envelope_bytes":remaining,
+                    "recommended_builder_free_bytes":target*2,"enough_builder_space":free>=target*2,
+                    "estimated_download_minutes_at_mbps":eta})
+            except Exception as exc:return self.send_json({"error":str(exc)},400)
         rel="index.html" if path=="/" else path.lstrip("/")
         f=(WEB/rel).resolve()
         try:f.relative_to(WEB.resolve())
@@ -127,6 +157,10 @@ class Handler(BaseHTTPRequestHandler):
                 row=next((x for x in disks().get("items",[]) if x["path"]==device),None)
                 if not row: raise ValueError("device is not a current disk")
                 if row.get("root_related"): raise ValueError("refusing the running root disk")
+                if row.get("mounted"): raise ValueError("refusing a disk with mounted filesystems; unmount it first")
+                target=int(profile_meta(profile)["target_bytes"])
+                if int(row.get("size") or 0) < target:
+                    raise ValueError(f"disk is too small for {profile}: need at least {target} bytes")
                 RUNNER.start(profile,"flash",device); return self.send_json({"ok":True},202)
             return self.send_json({"error":"not found"},404)
         except RuntimeError as exc:return self.send_json({"error":str(exc)},409)
@@ -138,7 +172,8 @@ def main():
     args=ap.parse_args()
     if args.check:
         assert [x["id"] for x in cards()]==list(PROFILES)
-        print(json.dumps({"ok":True,"profiles":list(PROFILES)})); return 0
+        assert int(profile_meta("nano")["target_bytes"])>0
+        print(json.dumps({"ok":True,"profiles":list(PROFILES),"safe_flash_checks":["root","mounted","capacity","confirmation"]})); return 0
     url=f"http://{args.bind}:{args.port}/"; print("THE ARK Builder:",url,flush=True)
     if not args.no_browser: threading.Timer(.5,lambda:webbrowser.open(url)).start()
     srv=ThreadingHTTPServer((args.bind,args.port),Handler); srv.serve_forever()

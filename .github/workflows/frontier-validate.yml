@@ -82,6 +82,8 @@ jobs:
           db=sqlite3.connect("/tmp/ark-vault/state/search/ark-search.sqlite")
           assert db.execute("select count(*) from ark_fts").fetchone()[0] > 5
           assert db.execute("select count(*) from ark_fts where ark_fts match 'reticulum'").fetchone()[0] > 0
+          assert db.execute("select count(*) from ark_symbols").fetchone()[0] > 10
+          assert db.execute("select count(*) from ark_fts where kind='code-symbol'").fetchone()[0] > 10
           PY
 
       - name: Offline factory and frozen map closure
@@ -135,6 +137,34 @@ jobs:
           python scripts/release_trust.py verify --file /tmp/trust/release.json --public-key /tmp/trust/public.pem --signature /tmp/trust/release.sig
           python scripts/release_trust.py fingerprint --public-key /tmp/trust/public.pem | grep -E '^[0-9a-f]{64}$'
           python scripts/release_trust.py verify-materials --manifest /tmp/trust/release.json --image /tmp/trust/image.img --lock /tmp/trust/vault/lock/nano.lock.json --bom /tmp/trust/vault/lock/nano.cdx.json
+
+      - name: Public release bundle and trust policy
+        run: |
+          rm -rf /tmp/public-release /tmp/release-vault
+          mkdir -p /tmp/release-vault/lock
+          echo raw-image-fixture > /tmp/nano.img
+          echo '{"profile":"nano","artifacts":[{"id":"fixture","sha256":"abc"}],"containers":[]}' > /tmp/release-vault/lock/nano.lock.json
+          echo '{"bomFormat":"CycloneDX","specVersion":"1.5"}' > /tmp/release-vault/lock/nano.cdx.json
+          python scripts/release_trust.py keygen --private /tmp/release-private.pem --public /tmp/release-public.pem --bits 2048
+          python scripts/release_bundle.py create --profile nano --version 1.0.0-rc1 --image /tmp/nano.img --vault /tmp/release-vault --out /tmp/public-release --private-key /tmp/release-private.pem --public-key /tmp/release-public.pem --no-compress
+          python scripts/release_bundle.py verify --dir /tmp/public-release | tee /tmp/release-verify.txt
+          grep -q "THE_ARK_PUBLIC_RELEASE=VERIFIED" /tmp/release-verify.txt
+          MANIFEST="$(find /tmp/public-release -name '*.release.json' | head -1)"
+          python scripts/trust_audit.py release "$MANIFEST"
+          cp /tmp/nano.img /tmp/nano-2.img
+          python scripts/trust_audit.py compare /tmp/nano.img /tmp/nano-2.img --label fixture | grep -q '"reproducible": true'
+          python scripts/trust_audit.py lock /tmp/release-vault/lock/nano.lock.json
+          cat > /tmp/vuln.json <<'EOF'
+          {"Results":[{"Vulnerabilities":[{"VulnerabilityID":"CVE-CI-1","Severity":"HIGH","PkgName":"fixture","InstalledVersion":"1"}]}]}
+          EOF
+          python scripts/trust_audit.py vulnerabilities /tmp/vuln.json
+          cat > /tmp/vuln-critical.json <<'EOF'
+          {"Results":[{"Vulnerabilities":[{"VulnerabilityID":"CVE-CI-CRITICAL","Severity":"CRITICAL","PkgName":"fixture","InstalledVersion":"1"}]}]}
+          EOF
+          if python scripts/trust_audit.py vulnerabilities /tmp/vuln-critical.json; then
+            echo "critical vulnerability policy unexpectedly passed"
+            exit 1
+          fi
 
       - name: Signed offline update bundle
         run: |

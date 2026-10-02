@@ -21,6 +21,8 @@ The appliance installs `endworld` as a wrapper around the same CLI.
 - `stop` — stop runtime
 - `status` — health checks
 - `build-image` — build raw bootable image
+- `release-create` — package + sign a distributable release from a built image
+- `release-verify` — verify a public release directory and its detached signature
 - `flash <device>` — write image to target device
 - `doctor` — builder/runtime prerequisites
 - `scout` — capability scouting
@@ -41,7 +43,9 @@ Each implemented profile also has Make aliases such as `nomad-plan`, `nomad-acqu
 ## Additional operator tools
 
 - `bash scripts/ark-gui.sh` — local browser builder
-- `python scripts/release_trust.py ...` — release manifests and detached signatures
+- `python scripts/release_trust.py ...` — low-level release manifests, key fingerprints and detached signatures
+- `python scripts/release_bundle.py ...` — public release packaging/verification
+- `python scripts/trust_audit.py ...` — lock, vulnerability-policy and reproducibility audits
 - `python scripts/update_bundle.py ...` — create, sign, verify and apply offline update bundles
 - `ark-clone /dev/<disk>` — human-approved destructive offline clone to another disk
 - `ark-field-test ...` — collect real hardware/offline evidence

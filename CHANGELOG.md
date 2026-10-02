@@ -4,6 +4,16 @@ Notable changes to THE ARK / ENDWORLD are documented here.
 
 ## Unreleased
 
+### Pre-hardware release closure
+- Hardened local Builder disk selection by blocking root, mounted and undersized targets.
+- Added builder storage/download-envelope estimates before acquisition.
+- Added signed public release bundles binding image, lock, CycloneDX SBOM, Git revision and release-key fingerprint.
+- Added release verification and main-CLI release-create/release-verify commands.
+- Added static trust policy, vulnerability-report enforcement and byte-for-byte reproducibility comparison.
+- Added code-aware symbol extraction/search for Python plus common JS/TS/Java/Rust/Go/C/C++/shell sources, including frozen source archives.
+- Corrected beginner documentation to match secure first-boot credential behavior.
+
+
 ### Field, mesh, evolution and distributed ARK
 - Added receive-only RTL-SDR inventory/plan/capture tooling and appliance package closure.
 - Added signed Ark Mesh capability packs with optional mandatory signature verification.
