@@ -1,0 +1,21 @@
+[Unit]
+Description=Run due THE ARK offline agent jobs
+After=endworld-stack.service
+Wants=endworld-stack.service
+ConditionPathExists=/srv/endworld
+
+[Service]
+Type=oneshot
+User=endworld
+Group=endworld
+Environment=ENDWORLD_VAULT=/srv/endworld
+ExecStart=/usr/bin/python3 /opt/endworld/scripts/agent_scheduler.py --vault /srv/endworld run-due --limit 2
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/srv/endworld
+ReadWritePaths=/srv/endworld/state/agent
+PrivateTmp=true
