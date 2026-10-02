@@ -4,6 +4,11 @@ from __future__ import annotations
 import argparse, datetime as dt, hashlib, json, pathlib, re, tarfile, zipfile, sys
 
 def load(path):return json.loads(path.read_text(encoding="utf-8"))
+def sha256_file(path):
+    h=hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda:f.read(8*1024*1024),b""):h.update(chunk)
+    return h.hexdigest()
 def age_days(value):
     if not value:return 99999
     try:return (dt.datetime.now(dt.timezone.utc)-dt.datetime.fromisoformat(value.replace("Z","+00:00"))).days
@@ -66,7 +71,7 @@ def inspect(path,out,max_bytes,max_files):
         if low in ("setup.py","package.json","pyproject.toml","pom.xml","build.rs","makefile"):hooks.append(name)
         if files>max_files or total>max_bytes:break
     passed=not unsafe and files<=max_files and total<=max_bytes
-    data={"schema":1,"protocol":"ark-evolution-sandbox-v1","archive":path.name,"sha256":hashlib.sha256(path.read_bytes()).hexdigest(),
+    data={"schema":1,"protocol":"ark-evolution-sandbox-v1","archive":path.name,"sha256":sha256_file(path),
           "static_only":True,"executed":False,"passed":passed,"files":files,"bytes":total,
           "unsafe_paths":unsafe[:50],"symlinks":links[:50],"executables":execs[:100],"license_files":licenses[:50],
           "build_or_install_metadata":hooks[:100]}
@@ -105,7 +110,7 @@ def analyze(proposal,vault,profile,out,max_steps):
           "Do not execute candidate code and do not mark any candidate trusted.\n\n"+json.dumps(brief,ensure_ascii=False,indent=2))
     tid="evolution-"+hashlib.sha256(proposal.read_bytes()).hexdigest()[:12]
     result=Agent(vault,profile,goal,tid,max_steps,300,"research").run()
-    data={"schema":1,"protocol":"ark-evolution-agent-analysis-v1","proposal_sha256":hashlib.sha256(proposal.read_bytes()).hexdigest(),
+    data={"schema":1,"protocol":"ark-evolution-agent-analysis-v1","proposal_sha256":sha256_file(proposal),
           "task_id":tid,"answer":result["answer"],"policy":{"candidate_execution":False,"trust_granted":False}}
     out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(data,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
     print(out)
@@ -116,15 +121,15 @@ def approve(proposal,repo,sandbox,analysis,approved_by,out):
     if not cand:raise SystemExit("candidate not found in proposal")
     if s.get("protocol")!="ark-evolution-sandbox-v1" or s.get("passed") is not True or s.get("executed") is not False:
         raise SystemExit("sandbox evidence is not a static PASS")
-    if a.get("protocol")!="ark-evolution-agent-analysis-v1" or a.get("proposal_sha256")!=hashlib.sha256(proposal.read_bytes()).hexdigest():
+    if a.get("protocol")!="ark-evolution-agent-analysis-v1" or a.get("proposal_sha256")!=sha256_file(proposal):
         raise SystemExit("agent analysis does not bind this proposal")
     if not approved_by.strip():raise SystemExit("approved-by is required")
     data={"schema":1,"protocol":"ark-evolution-approval-v1","repo":repo,
           "approved_by":approved_by.strip(),"approved_at":dt.datetime.now(dt.timezone.utc).isoformat(),
           "trust_state":"APPROVED_FOR_MANIFEST_REVIEW","auto_execute":False,"auto_promote":False,
-          "proposal_sha256":hashlib.sha256(proposal.read_bytes()).hexdigest(),
-          "sandbox_sha256":hashlib.sha256(sandbox.read_bytes()).hexdigest(),
-          "analysis_sha256":hashlib.sha256(analysis.read_bytes()).hexdigest(),
+          "proposal_sha256":sha256_file(proposal),
+          "sandbox_sha256":sha256_file(sandbox),
+          "analysis_sha256":sha256_file(analysis),
           "candidate":cand}
     out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(data,indent=2,ensure_ascii=False)+"\n",encoding="utf-8");print(out)
 
