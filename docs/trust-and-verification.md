@@ -80,3 +80,56 @@ A fully mature supply-chain pipeline could additionally include:
 - maintainer/repository reputation metadata.
 
 Those controls should complement, not replace, offline functional testing.
+
+
+## Boot-chain trust
+
+Built amd64 images install Debian's signed Secure Boot chain when the signed
+packages are available:
+
+```text
+UEFI firmware trust store
+  -> Debian/Microsoft-trusted shim
+  -> Debian-signed GRUB
+  -> Debian-signed kernel
+  -> THE ARK runtime + frozen vault
+```
+
+The removable-media fallback path is `EFI/BOOT/BOOTX64.EFI`. BIOS boot remains
+available separately for older hardware.
+
+Secure Boot establishes boot-code provenance; it does not authenticate the
+multi-gigabyte vault by itself. Vault identity remains bound by the lock/BOM and
+release metadata.
+
+## Signed release material
+
+`release_trust.py` can:
+
+- generate an offline signing key pair;
+- create release metadata binding image + lock + CycloneDX BOM + Git revision;
+- sign and verify the metadata;
+- publish a SHA-256 fingerprint of the public key;
+- verify that supplied image/lock/BOM bytes exactly match the signed manifest.
+
+The private release key must not live on a field Ark.
+
+## Signed offline updates
+
+`update_bundle.py` creates changed-artifact bundles tied to an exact base lock.
+Bundles can be signed and application can require a valid detached signature
+before staging any payload.
+
+Recommended promotion path:
+
+```text
+Scout -> review -> acquire -> tests -> frozen generation
+      -> signed update/release -> offline verification -> apply
+```
+
+## Key rotation and recovery
+
+Keep at least two offline copies of the release public key fingerprint outside
+the Ark media. A replacement signing key is a new trust epoch: publish the new
+fingerprint through an already trusted channel and never silently overwrite a
+field node's trust root.

@@ -1,0 +1,11 @@
+[Unit]
+Description=Expand THE ARK DATA partition to fill device
+After=local-fs.target
+Before=endworld-stack.service endworld-portal.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/endworld/runtime/expand-data.sh
+
+[Install]
+WantedBy=multi-user.target

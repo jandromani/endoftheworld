@@ -84,6 +84,21 @@ Candidate goals:
 - broader cultural/scientific/educational archives;
 - reproducible recovery plans from bare hardware.
 
+## Roadmap R2–R4 milestone
+
+Software shipped on the roadmap branch:
+
+- evidence-only multi-hardware physical campaign gate;
+- Debian signed shim → signed GRUB Secure Boot fallback path;
+- release material verification and public-key fingerprints;
+- signed offline update bundles with enforced verification;
+- `ark-clone` for human-approved offline Ark-to-Ark disk replication;
+- NANO distribution image reduced to 58 GB while preserving the previous 52 GB usable payload envelope;
+- first-boot DATA expand-to-fill.
+
+These are software gates. **Physical field proof remains unclaimed** until real
+reports from actual machines are committed.
+
 ## Cross-cutting work
 
 - stronger first-boot provisioning;

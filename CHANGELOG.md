@@ -4,6 +4,17 @@ Notable changes to THE ARK / ENDWORLD are documented here.
 
 ## Unreleased
 
+### Body, trust and seed
+- Added an evidence-only multi-hardware physical campaign gate; CI fixtures cannot by themselves claim field proof.
+- Added Debian signed shim → signed GRUB Secure Boot fallback installation.
+- Added release material binding verification and public-key fingerprints.
+- Added signed offline update bundles with optional mandatory signature enforcement.
+- Added `ark-clone` to reproduce an Ark onto another local disk without public Internet.
+- Added target UUID regeneration and capacity checks during cloning.
+- Changed NANO's distribution image target to 58 GB while preserving its 52 GB usable payload envelope.
+- Added first-boot DATA expand-to-fill.
+
+
 ### Agent runtime
 - Added a bounded offline planner/executor using the existing local llama.cpp service.
 - Added allowlisted local tools for search, frozen-source reading, node/maps/mesh status, field notes and safe playbooks.

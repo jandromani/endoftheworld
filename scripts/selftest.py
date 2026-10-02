@@ -108,7 +108,9 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         "scripts/build_search_index.py", "scripts/release_trust.py", "scripts/update_bundle.py",
         "scripts/first_boot_wizard.py", "builder/ark_builder.py",
         "scripts/ark_mesh.py", "scripts/power_policy.py", "scripts/field_comms.py",
-        "scripts/field_drill.py", "scripts/hardware_matrix.py",
+        "scripts/field_drill.py", "scripts/field_campaign.py", "scripts/hardware_matrix.py",
+        "scripts/agent_runner.py", "scripts/ark_clone.sh", "scripts/install_secure_boot.sh",
+        "runtime/expand-data.sh", "runtime/systemd/endworld-expand-data.service",
         "config/ark-cluster.yml", "config/field-comms.yml",
     ):
         require((ROOT / rel).is_file(), f"missing wired runtime file: {rel}")
@@ -126,7 +128,8 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
                     "meshtastic-firmware-esp32s3","meshtastic-firmware-nrf52840",
                     "meshtastic-firmware-rp2040","meshtastic-firmware-rp2350"}
         require(expected.issubset(ids), f"NANO wiring missing ids: {sorted(expected - ids)}")
-        require(target == 64_000_000_000, "NANO target must stay exactly 64,000,000,000 bytes")
+        require(target == 58_000_000_000, "NANO distribution image target must stay 58,000,000,000 bytes")
+        require(reserve == 6_000_000_000, "NANO reserve must preserve a 52 GB usable envelope")
     elif pid == "nano-mini":
         expected={"qwen3-4b-q4","whisper-small"}
         require(expected.issubset(ids), f"NANO-MINI wiring missing ids: {sorted(expected-ids)}")
@@ -208,6 +211,10 @@ def validate_runtime(profile: dict) -> None:
     builder = (ROOT / "scripts" / "build_disk_image.sh").read_text(encoding="utf-8")
     require("exec python3 /opt/endworld/scripts/endworld.py" in builder,
             "appliance endworld CLI wrapper is not installed")
+    require("grub-efi-amd64-signed" in builder and "shim-signed" in builder,
+            "Debian Secure Boot packages are not wired")
+    require("endworld-expand-data.service" in builder and "ark-clone" in builder,
+            "clone/expand-to-fill wiring missing")
 
 
 def validate_vault(vault: pathlib.Path, profile: dict) -> dict:
