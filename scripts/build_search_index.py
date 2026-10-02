@@ -1,9 +1,89 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, json, pathlib, sqlite3, tarfile, zipfile
+import argparse, json, pathlib, re, shutil, sqlite3, subprocess, tarfile, tempfile, zipfile
+from html.parser import HTMLParser
 
 TEXT_EXT={".md",".txt",".rst",".py",".js",".ts",".tsx",".jsx",".java",".rs",".go",".c",".h",".cpp",".hpp",".sh",".yml",".yaml",".json",".toml",".ini",".cfg",".html",".css",".sql",".xml"}
 MAX_FILE=512*1024
+
+MAX_DOC_TEXT=2*1024*1024
+IMAGE_EXT={".png",".jpg",".jpeg",".tif",".tiff",".webp"}
+
+class MarkupText(HTMLParser):
+    def __init__(self):
+        super().__init__();self.parts=[];self.skip=0
+    def handle_starttag(self,tag,attrs):
+        if tag in ("script","style","svg","noscript"):self.skip+=1
+        if not self.skip and tag in ("p","br","div","li","h1","h2","h3","h4","tr"):self.parts.append("\n")
+    def handle_endtag(self,tag):
+        if tag in ("script","style","svg","noscript") and self.skip:self.skip-=1
+    def handle_data(self,data):
+        if not self.skip:self.parts.append(data)
+    def text(self):
+        x=" ".join("".join(self.parts).split())
+        return x[:MAX_DOC_TEXT]
+
+def command_text(args,timeout=120):
+    try:
+        p=subprocess.run(args,text=True,capture_output=True,timeout=timeout)
+        if p.returncode==0:return p.stdout[:MAX_DOC_TEXT]
+    except Exception:pass
+    return ""
+
+def pdf_text(path):
+    body=command_text(["pdftotext","-layout",str(path),"-"],180) if shutil.which("pdftotext") else ""
+    if len(body.strip())>=120:return body
+    if not (shutil.which("pdftoppm") and shutil.which("tesseract")):return body
+    chunks=[]
+    with tempfile.TemporaryDirectory(prefix="ark-ocr-") as td:
+        prefix=str(pathlib.Path(td)/"page")
+        try:subprocess.run(["pdftoppm","-f","1","-l","12","-jpeg","-r","160",str(path),prefix],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=180)
+        except Exception:return body
+        for img in sorted(pathlib.Path(td).glob("page-*.jpg")):
+            text=command_text(["tesseract",str(img),"stdout","-l","spa+eng"],90)
+            if text:chunks.append(text)
+    return ("\n".join(chunks) or body)[:MAX_DOC_TEXT]
+
+def image_ocr(path):
+    if not shutil.which("tesseract"):return ""
+    return command_text(["tesseract",str(path),"stdout","-l","spa+eng"],120)
+
+def epub_text(path):
+    parts=[]
+    try:
+        with zipfile.ZipFile(path) as z:
+            for info in z.infolist():
+                if info.is_dir():continue
+                if pathlib.PurePosixPath(info.filename).suffix.lower() not in (".xhtml",".html",".htm"):continue
+                if sum(len(x) for x in parts)>=MAX_DOC_TEXT:break
+                p=MarkupText()
+                try:p.feed(z.read(info).decode("utf-8","replace"))
+                except Exception:continue
+                t=p.text()
+                if t:parts.append(t)
+    except (zipfile.BadZipFile,OSError):pass
+    return "\n".join(parts)[:MAX_DOC_TEXT]
+
+def docx_text(path):
+    try:
+        with zipfile.ZipFile(path) as z:
+            raw=z.read("word/document.xml").decode("utf-8","replace")
+    except Exception:return ""
+    raw=re.sub(r"</w:p>", "\n", raw)
+    raw=re.sub(r"<[^>]+>", " ", raw)
+    return " ".join(raw.split())[:MAX_DOC_TEXT]
+
+def rich_document(db,p,rel,budget):
+    ext=p.suffix.lower();body=""
+    try:n=p.stat().st_size
+    except OSError:return 0
+    if not budget.take(min(n,MAX_DOC_TEXT)):return 0
+    if ext==".pdf":body=pdf_text(p);kind="pdf"
+    elif ext==".epub":body=epub_text(p);kind="epub"
+    elif ext==".docx":body=docx_text(p);kind="docx"
+    elif ext in IMAGE_EXT:body=image_ocr(p);kind="ocr-image"
+    else:return 0
+    return insert(db,rel,p.name,body,kind,"/vault/"+rel)
 
 def decode(data):
     if not data or b"\x00" in data[:4096]:return None
@@ -86,11 +166,14 @@ def main():
             count+=insert(db,rel,p.stem,"Offline Kiwix collection. Use local Kiwix for collection full-text.","kiwix-collection","")
         elif p.suffix.lower() in TEXT_EXT:
             count+=plain(db,p,rel,"/vault/"+rel,budget)
+        elif p.suffix.lower() in ({".pdf",".epub",".docx"} | IMAGE_EXT):
+            count+=rich_document(db,p,rel,budget)
         elif rel.startswith("source/") and low.endswith((".tar.gz",".tgz",".tar")):
             count+=tar_archive(db,p,rel,budget,a.max_members_per_archive)
         elif rel.startswith("source/") and low.endswith(".zip"):
             count+=zip_archive(db,p,rel,budget,a.max_members_per_archive)
     db.execute("INSERT INTO meta VALUES('documents',?)",(str(count),));db.execute("INSERT INTO meta VALUES('indexed_text_bytes',?)",(str(budget.used),))
+    db.execute("INSERT INTO meta VALUES('universal_formats',?)",("text,code,pdf,epub,docx,ocr-image,kiwix-federated",))
     db.commit();db.close();tmp.replace(out)
     print(json.dumps({"index":str(out),"documents":count,"indexed_text_bytes":budget.used},indent=2))
     return 0
