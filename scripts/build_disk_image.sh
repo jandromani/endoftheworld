@@ -130,7 +130,7 @@ chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 
 
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   echo "Installing rebuild-and-create developer toolchain..."
-  chroot "$ROOTFS" apt-get install -y --no-install-recommends git build-essential cmake ninja-build pkg-config clang gdb python3-dev python3-venv nodejs npm default-jdk-headless maven rustc cargo golang-go sqlite3 ripgrep tmux vim
+  chroot "$ROOTFS" apt-get install -y --no-install-recommends git build-essential cmake ninja-build pkg-config clang gdb python3-dev python3-venv nodejs npm default-jdk-headless maven rustc cargo golang-go sqlite3 ripgrep tmux vim rtl-sdr
 fi
 if [[ "$PROFILE" == "civilization" ]]; then
   echo "Installing CIVILIZATION science/reconstruction baseline..."
