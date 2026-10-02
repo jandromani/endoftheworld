@@ -41,7 +41,7 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Compile and parse
         run: |
-          python -m py_compile scripts/*.py runtime/server.py builder/ark_builder.py
+          python -m py_compile scripts/*.py runtime/*.py builder/ark_builder.py
           for f in scripts/*.sh runtime/*.sh runtime/network/*.sh; do bash -n "$f"; done
           node --check builder/app.js
           node --check runtime/portal/app.js
@@ -74,6 +74,40 @@ jobs:
           db=sqlite3.connect("/tmp/ark-vault/state/search/ark-search.sqlite")
           assert db.execute("select count(*) from ark_fts").fetchone()[0] > 5
           assert db.execute("select count(*) from ark_fts where ark_fts match 'reticulum'").fetchone()[0] > 0
+          PY
+      - name: Offline factory and map closure
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,yaml
+          root=pathlib.Path("/tmp/factory"); root.mkdir()
+          p=root/"dummy"; p.write_text("offline")
+          (root/"factory-manifest.json").write_text(json.dumps({"schema":1,"protocol":"ark-offline-factory-v1","files":[{"path":"dummy","bytes":p.stat().st_size,"sha256":hashlib.sha256(p.read_bytes()).hexdigest()}]}))
+          for profile in ("nano","family","nomad","civilization"):
+              d=yaml.safe_load(open(f"profiles/{profile}.yml"))
+              ids={x["id"] for x in d["artifacts"]}
+              assert {"planetiler-water-polygons","planetiler-natural-earth","planetiler-lake-centerlines"} <= ids
+          assert "--download" not in open("scripts/prepare_profile.py").read()
+          PY
+          python scripts/offline_factory.py verify --factory /tmp/factory
+      - name: Universal document formats
+        run: |
+          python - <<'PY'
+          import pathlib,zipfile
+          v=pathlib.Path("/tmp/rich-vault");(v/"lock").mkdir(parents=True)
+          (v/"lock/nano.lock.json").write_text('{"profile":"nano","artifacts":[],"containers":[]}')
+          with zipfile.ZipFile(v/"manual.epub","w") as z:
+              z.writestr("OPS/ch1.xhtml","<html><body><h1>Manual de agua</h1><p>purificacion solar emergencia</p></body></html>")
+          with zipfile.ZipFile(v/"notes.docx","w") as z:
+              z.writestr("word/document.xml","<w:document><w:p><w:r><w:t>reticulum field relay</w:t></w:r></w:p></w:document>")
+          PY
+          python scripts/build_search_index.py --vault /tmp/rich-vault --repo . --max-text-mb 24
+          python - <<'PY'
+          import sqlite3
+          db=sqlite3.connect("/tmp/rich-vault/state/search/ark-search.sqlite")
+          assert db.execute("select count(*) from ark_fts where ark_fts match 'purificacion'").fetchone()[0] > 0
+          assert db.execute("select count(*) from ark_fts where ark_fts match 'relay'").fetchone()[0] > 0
+          fm=db.execute("select value from meta where key='universal_formats'").fetchone()[0]
+          assert "pdf" in fm and "epub" in fm and "ocr-image" in fm
           PY
       - name: Trusted release signature
         run: |
