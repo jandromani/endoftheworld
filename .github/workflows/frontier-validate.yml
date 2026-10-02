@@ -177,7 +177,10 @@ jobs:
           python scripts/ark_mesh.py inventory --vault /tmp/mesh/peer --profile nano --store /tmp/mesh/peer-store --out /tmp/mesh/peer.json --chunk-bytes 1048576
           python scripts/ark_mesh.py pack --source-inventory /tmp/mesh/source.json --target-inventory /tmp/mesh/peer.json --store /tmp/mesh/source-store --out /tmp/mesh/pack.tar
           python scripts/ark_mesh.py verify-pack /tmp/mesh/pack.tar
-          python scripts/ark_mesh.py apply-pack /tmp/mesh/pack.tar --store /tmp/mesh/peer-store --inventory-out /tmp/mesh/received.json
+          python scripts/release_trust.py keygen --private /tmp/mesh/private.pem --public /tmp/mesh/public.pem --bits 2048
+          python scripts/ark_mesh.py sign-pack /tmp/mesh/pack.tar --key /tmp/mesh/private.pem --signature /tmp/mesh/pack.sig
+          python scripts/ark_mesh.py verify-signed-pack /tmp/mesh/pack.tar --public-key /tmp/mesh/public.pem --signature /tmp/mesh/pack.sig
+          python scripts/ark_mesh.py apply-pack /tmp/mesh/pack.tar --store /tmp/mesh/peer-store --inventory-out /tmp/mesh/received.json --public-key /tmp/mesh/public.pem --signature /tmp/mesh/pack.sig --require-signature
           python scripts/ark_mesh.py restore --inventory /tmp/mesh/received.json --store /tmp/mesh/peer-store --target-vault /tmp/mesh/recovered
           cmp /tmp/mesh/source/data/demo.txt /tmp/mesh/recovered/data/demo.txt
 
@@ -210,3 +213,97 @@ jobs:
           python scripts/field_drill.py --fixture /tmp/field-fixture-2.json --profile nano --expect-offline --cold-boot-asserted --require-cold-boot --out /tmp/reports/ci2.json
           python scripts/field_campaign.py --reports /tmp/reports --min-hardware 2 --require-bios-and-uefi --out /tmp/campaign.json
           grep -q '"field_proven": true' /tmp/campaign.json
+
+
+      - name: Field radio receive-only contract
+        run: |
+          rm -rf /tmp/radio-vault && mkdir -p /tmp/radio-vault/source/radio /tmp/radio-vault/firmware/meshtastic
+          touch /tmp/radio-vault/source/radio/satdump-source-fixture.tar.gz
+          touch /tmp/radio-vault/firmware/meshtastic/fixture.zip
+          python scripts/field_radio.py --vault /tmp/radio-vault inventory > /tmp/radio.json
+          python scripts/field_radio.py --vault /tmp/radio-vault plan --out /tmp/radio-plan.md
+          python - <<'PY'
+          import json
+          x=json.load(open("/tmp/radio.json"))
+          assert x["receive_only"] is True
+          assert x["satdump_source"]
+          PY
+          grep -qi "never transmits" /tmp/radio-plan.md
+          grep -q "rtl-sdr" manifests/appliance-os-packages.yml
+
+      - name: Signed generations cold storage and geographic cluster
+        run: |
+          rm -rf /tmp/gens /tmp/cold-restore
+          python scripts/ark_generations.py create --inventory /tmp/mesh/source.json --root /tmp/gens --label ci
+          GEN="$(find /tmp/gens -mindepth 1 -maxdepth 1 -type d | head -1)"
+          test -n "$GEN"
+          python scripts/ark_generations.py cold-export --generation "$GEN" --store /tmp/mesh/source-store --out /tmp/cold.tar
+          python scripts/ark_generations.py cold-verify /tmp/cold.tar
+          python scripts/ark_generations.py restore /tmp/cold.tar --store /tmp/cold-store --target-vault /tmp/cold-restore
+          cmp /tmp/mesh/source/data/demo.txt /tmp/cold-restore/data/demo.txt
+          cat > /tmp/nodes.yml <<EOF
+          schema: 1
+          nodes:
+            - {id: field-a, role: field, site: site-a, inventory: /tmp/mesh/source.json, state_backup: true, cold_storage: false}
+            - {id: reconstruction-b, role: reconstruction, site: site-b, inventory: /tmp/mesh/source.json, state_backup: true, cold_storage: false}
+            - {id: cold-c, role: cold, site: site-c, inventory: /tmp/mesh/source.json, state_backup: false, cold_storage: true}
+          EOF
+          python scripts/ark_cluster.py --policy config/ark-cluster.yml --nodes /tmp/nodes.yml --out /tmp/cluster.json | tee /tmp/cluster.out
+          grep -q "THE_ARK_CLUSTER_REDUNDANCY=PASS" /tmp/cluster.out
+
+      - name: Persistent scheduler and event queue semantics
+        run: |
+          rm -rf /tmp/sched-vault /tmp/sched.db*
+          mkdir -p /tmp/sched-vault/state/agent
+          python scripts/agent_scheduler.py --vault /tmp/sched-vault --db /tmp/sched.db add --job-id health-review --goal "Review local field readiness" --profile nano --role field --every-minutes 15
+          python scripts/agent_scheduler.py --vault /tmp/sched-vault --db /tmp/sched.db on-event --job-id low-power-review --event low-power --goal "Review low-power field readiness" --profile nano --role coordinator
+          python scripts/agent_scheduler.py --vault /tmp/sched-vault --db /tmp/sched.db emit low-power --payload '{"battery_percent":15}'
+          python scripts/agent_scheduler.py --vault /tmp/sched-vault --db /tmp/sched.db list > /tmp/scheduler.json
+          python - <<'PY'
+          import json
+          x=json.load(open("/tmp/scheduler.json"))
+          assert {j["id"] for j in x["jobs"]}=={"health-review","low-power-review"}
+          assert x["events"][0]["name"]=="low-power"
+          assert x["events"][0]["payload"]["battery_percent"]==15
+          PY
+          grep -q "Persistent=true" runtime/systemd/endworld-agent-scheduler.timer
+          grep -q "ProtectSystem=strict" runtime/systemd/endworld-agent-scheduler.service
+
+      - name: Approval-gated evolution semantics
+        run: |
+          rm -rf /tmp/evolution && mkdir -p /tmp/evolution/archive
+          cat > /tmp/evolution/scout.json <<'EOF'
+          {"schema":1,"candidate_capabilities":[{"repo":"example/offline-tool","family":"offline-core","description":"offline local archive tool","stars":500,"archived":false,"pushed_at":"2026-09-01T00:00:00Z","license":"Apache-2.0"}]}
+          EOF
+          python scripts/evolution.py propose --scout /tmp/evolution/scout.json --out /tmp/evolution/proposal.json --per-family 3
+          python scripts/evolution.py validate /tmp/evolution/proposal.json
+          echo "Apache-2.0 fixture" > /tmp/evolution/archive/LICENSE
+          echo "offline tool" > /tmp/evolution/archive/README.md
+          tar -C /tmp/evolution/archive -cf /tmp/evolution/candidate.tar LICENSE README.md
+          python scripts/evolution.py inspect-archive /tmp/evolution/candidate.tar --out /tmp/evolution/sandbox.json
+          python - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path("/tmp/evolution/proposal.json")
+          pathlib.Path("/tmp/evolution/analysis.json").write_text(json.dumps({
+            "schema":1,"protocol":"ark-evolution-agent-analysis-v1",
+            "proposal_sha256":hashlib.sha256(p.read_bytes()).hexdigest(),
+            "task_id":"ci-analysis","answer":"static CI analysis fixture",
+            "policy":{"candidate_execution":False,"trust_granted":False}
+          }))
+          PY
+          python scripts/evolution.py approve /tmp/evolution/proposal.json --repo example/offline-tool --sandbox /tmp/evolution/sandbox.json --analysis /tmp/evolution/analysis.json --approved-by CI-HUMAN-BOUNDARY --out /tmp/evolution/approval.json
+          python - <<'PY'
+          import json
+          x=json.load(open("/tmp/evolution/approval.json"))
+          assert x["trust_state"]=="APPROVED_FOR_MANIFEST_REVIEW"
+          assert x["auto_execute"] is False and x["auto_promote"] is False
+          PY
+
+      - name: Final Ark architecture contracts
+        run: |
+          grep -q "ROLE_GUIDANCE" scripts/agent_runner.py
+          grep -q "research,engineer,field" scripts/endworld.py
+          grep -q "ark-orchestrator" scripts/build_disk_image.sh
+          grep -q "endworld-agent-scheduler.timer" scripts/build_disk_image.sh
+          grep -q "human_approval_required" scripts/evolution.py
+          grep -q "geographic_separation_required" config/ark-cluster.yml
