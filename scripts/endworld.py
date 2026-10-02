@@ -45,6 +45,16 @@ def main() -> int:
     sp.add_argument("--manifest")
     b = sub.add_parser("build-image")
     b.add_argument("--output")
+    rc = sub.add_parser("release-create")
+    rc.add_argument("--version", required=True)
+    rc.add_argument("--image")
+    rc.add_argument("--out")
+    rc.add_argument("--private-key", required=True)
+    rc.add_argument("--public-key", required=True)
+    rc.add_argument("--no-compress", action="store_true")
+    rv = sub.add_parser("release-verify")
+    rv.add_argument("directory")
+    rv.add_argument("--public-key")
     fl = sub.add_parser("flash")
     fl.add_argument("device")
     fl.add_argument("--image")
@@ -117,6 +127,18 @@ def main() -> int:
     if args.command == "build-image":
         output = args.output or f"dist/endworld-{args.profile}-amd64.img"
         return run("bash", "scripts/build_disk_image.sh", args.profile, output, sudo=True)
+    if args.command == "release-create":
+        image = args.image or f"dist/endworld-{args.profile}-amd64.img"
+        out = args.out or f"dist/releases/{args.profile}-{args.version}"
+        cmd=[py,"scripts/release_bundle.py","create","--profile",args.profile,"--version",args.version,
+             "--image",image,"--vault",vault,"--out",out,
+             "--private-key",args.private_key,"--public-key",args.public_key]
+        if args.no_compress: cmd.append("--no-compress")
+        return run(*cmd)
+    if args.command == "release-verify":
+        cmd=[py,"scripts/release_bundle.py","verify","--dir",args.directory]
+        if args.public_key: cmd += ["--public-key",args.public_key]
+        return run(*cmd)
     if args.command == "flash":
         image = args.image or f"dist/endworld-{args.profile}-amd64.img"
         return run("bash", "scripts/flash_image.sh", image, args.device, sudo=True)
