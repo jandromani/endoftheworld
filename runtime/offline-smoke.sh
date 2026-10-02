@@ -18,7 +18,7 @@ trap finish EXIT
 wait_url(){
   local url="$1"
   log "waiting for $url"
-  for _ in $(seq 1 180); do
+  for _ in $(seq 1 30); do
     if curl -fsS --max-time 2 "$url" >/dev/null 2>&1; then
       log "ready $url"
       return 0
@@ -26,7 +26,16 @@ wait_url(){
     sleep 1
   done
   log "TIMEOUT $url"
-  systemctl --no-pager --full status endworld-portal.service endworld-stack.service docker.service || true
+  {
+    echo "===== SYSTEMD STATUS ====="
+    systemctl --no-pager --full status endworld-portal.service endworld-stack.service docker.service || true
+    echo "===== STACK JOURNAL ====="
+    journalctl -b --no-pager -n 160 -u endworld-stack.service -u docker.service || true
+    echo "===== DOCKER PS ====="
+    docker ps -a || true
+    echo "===== KIWIX LOG ====="
+    docker logs --tail 120 endworld-kiwix 2>&1 || true
+  } | while IFS= read -r line; do log "$line"; done
   return 1
 }
 
