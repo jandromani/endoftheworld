@@ -71,6 +71,10 @@ nomad:
   - ripgrep
   - tmux
   - vim
+  - poppler-utils
+  - tesseract-ocr
+  - tesseract-ocr-spa
+  - tesseract-ocr-eng
 civilization:
   - python3-numpy
   - python3-scipy
