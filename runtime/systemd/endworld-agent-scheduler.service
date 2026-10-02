@@ -1,0 +1,20 @@
+[Unit]
+Description=THE ARK offline agent scheduler tick
+After=endworld-stack.service endworld-portal.service
+Wants=endworld-stack.service endworld-portal.service
+
+[Service]
+Type=oneshot
+User=endworld
+Group=endworld
+Environment=ENDWORLD_VAULT=/srv/endworld
+EnvironmentFile=-/etc/endworld/profile.env
+ExecStart=/usr/bin/python3 /opt/endworld/scripts/agent_scheduler.py --vault /srv/endworld tick
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/endworld/state/agent
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target
