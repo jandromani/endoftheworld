@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, hashlib, io, json, os, pathlib, shutil, tarfile
+import argparse, hashlib, io, json, os, pathlib, shutil, subprocess, tarfile
 
 def sha256_path(path):
     h=hashlib.sha256()
@@ -73,7 +73,18 @@ def verify(bundle):
         if not lock or sha256_bytes(lock.read())!=m["new_lock_sha256"]:raise RuntimeError("new lock verification failed")
     print("VERIFIED");return m
 
-def apply(bundle,target):
+def sign(bundle,key,sig):
+    subprocess.run(["openssl","dgst","-sha256","-sign",str(key),"-out",str(sig),str(bundle)],check=True)
+    print(sig)
+
+def verify_signature(bundle,public,sig):
+    subprocess.run(["openssl","dgst","-sha256","-verify",str(public),"-signature",str(sig),str(bundle)],check=True)
+    print("SIGNATURE VERIFIED")
+
+def apply(bundle,target,public=None,signature=None,require_signature=False):
+    if require_signature or public or signature:
+        if not public or not signature:raise RuntimeError("signed update requires both public key and signature")
+        verify_signature(bundle,public,signature)
     m=verify(bundle);profile=m["profile"];lock_path=target/"lock"/f"{profile}.lock.json"
     if not lock_path.is_file():raise FileNotFoundError(lock_path)
     if sha256_path(lock_path)!=m["base_lock_sha256"]:raise RuntimeError("target vault is not the declared base generation")
@@ -99,10 +110,17 @@ def main():
     ap=argparse.ArgumentParser();sub=ap.add_subparsers(dest="cmd",required=True)
     c=sub.add_parser("create");c.add_argument("--base-vault",required=True);c.add_argument("--new-vault",required=True);c.add_argument("--profile",required=True);c.add_argument("--out",required=True)
     v=sub.add_parser("verify");v.add_argument("bundle")
-    a=sub.add_parser("apply");a.add_argument("bundle");a.add_argument("--target-vault",required=True)
+    s=sub.add_parser("sign");s.add_argument("bundle");s.add_argument("--key",required=True);s.add_argument("--signature",required=True)
+    vs=sub.add_parser("verify-signed");vs.add_argument("bundle");vs.add_argument("--public-key",required=True);vs.add_argument("--signature",required=True)
+    a=sub.add_parser("apply");a.add_argument("bundle");a.add_argument("--target-vault",required=True);a.add_argument("--public-key");a.add_argument("--signature");a.add_argument("--require-signature",action="store_true")
     x=ap.parse_args()
     if x.cmd=="create":create(pathlib.Path(x.base_vault).resolve(),pathlib.Path(x.new_vault).resolve(),x.profile,pathlib.Path(x.out).resolve())
     elif x.cmd=="verify":verify(pathlib.Path(x.bundle).resolve())
-    else:apply(pathlib.Path(x.bundle).resolve(),pathlib.Path(x.target_vault).resolve())
+    elif x.cmd=="sign":sign(pathlib.Path(x.bundle).resolve(),pathlib.Path(x.key).resolve(),pathlib.Path(x.signature).resolve())
+    elif x.cmd=="verify-signed":verify_signature(pathlib.Path(x.bundle).resolve(),pathlib.Path(x.public_key).resolve(),pathlib.Path(x.signature).resolve())
+    else:apply(pathlib.Path(x.bundle).resolve(),pathlib.Path(x.target_vault).resolve(),
+               pathlib.Path(x.public_key).resolve() if x.public_key else None,
+               pathlib.Path(x.signature).resolve() if x.signature else None,
+               x.require_signature)
     return 0
 if __name__=="__main__":raise SystemExit(main())
