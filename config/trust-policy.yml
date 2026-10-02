@@ -1,0 +1,20 @@
+schema: 1
+policy:
+  release_signature_required: true
+  sbom_required: true
+  public_key_fingerprint_required: true
+  reproducible_compare_required_for:
+    - bootloader
+    - release-tools
+  upstream_verification:
+    prefer_signed_release: true
+    allow_sha256_only_when_signature_unavailable: true
+    require_local_sha256_always: true
+  vulnerabilities:
+    policy: review
+    block_severity:
+      - CRITICAL
+    allowlist_file: config/vulnerability-allowlist.yml
+  licenses:
+    unknown_requires_review: true
+    deny: []
