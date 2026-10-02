@@ -1,9 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
-log(){ echo "[NANO-MINI] $*" | tee /dev/console; }
-finish(){ local rc=$?; if (( rc != 0 )); then log "THE_ARK_OFFLINE_SMOKE=FAIL rc=$rc"; fi; sync; systemctl poweroff --no-block || true; exit $rc; }
+
+log(){
+  local line="[NANO-MINI] $*"
+  printf '%s\n' "$line"
+  if [[ -w /dev/ttyS0 ]]; then printf '%s\n' "$line" > /dev/ttyS0 || true; fi
+}
+finish(){
+  local rc=$?
+  if (( rc != 0 )); then log "THE_ARK_OFFLINE_SMOKE=FAIL rc=$rc"; fi
+  sync
+  systemctl poweroff --no-block || true
+  exit "$rc"
+}
 trap finish EXIT
-wait_url(){ local url="$1"; for _ in $(seq 1 180); do curl -fsS --max-time 2 "$url" >/dev/null 2>&1 && return 0; sleep 1; done; log "TIMEOUT $url"; return 1; }
+
+wait_url(){
+  local url="$1"
+  log "waiting for $url"
+  for _ in $(seq 1 180); do
+    if curl -fsS --max-time 2 "$url" >/dev/null 2>&1; then
+      log "ready $url"
+      return 0
+    fi
+    sleep 1
+  done
+  log "TIMEOUT $url"
+  systemctl --no-pager --full status endworld-portal.service endworld-stack.service docker.service || true
+  return 1
+}
 
 log "offline smoke starting"
 wait_url http://127.0.0.1/health
