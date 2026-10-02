@@ -4,6 +4,19 @@ Notable changes to THE ARK / ENDWORLD are documented here.
 
 ## Unreleased
 
+### Agent runtime
+- Added a bounded offline planner/executor using the existing local llama.cpp service.
+- Added allowlisted local tools for search, frozen-source reading, node/maps/mesh status, field notes and safe playbooks.
+- Added persistent task state and JSONL audit trails under mutable `state/agent/`.
+- Added CLI, local API and portal interfaces.
+- Extended the NANO-MINI no-NIC QEMU gate with a real multi-step agent task and permission-denial self-test.
+
+### Trust and repository hygiene
+- Added the Apache-2.0 project license for THE ARK control-plane code.
+- Consolidated the case-colliding architecture documentation into `docs/ARCHITECTURE.md`.
+- Corrected README first-boot credential guidance.
+
+
 ### CIVILIZATION
 - Added the 4 TB CIVILIZATION reconstruction profile.
 - Added full-Europe PMTiles preparation.
