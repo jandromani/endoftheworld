@@ -41,7 +41,7 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Compile and parse
         run: |
-          python -m py_compile scripts/*.py runtime/server.py builder/ark_builder.py
+          python -m py_compile scripts/*.py runtime/*.py builder/ark_builder.py
           for f in scripts/*.sh runtime/*.sh runtime/network/*.sh; do bash -n "$f"; done
           node --check builder/app.js
           node --check runtime/portal/app.js
