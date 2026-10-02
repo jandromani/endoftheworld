@@ -32,6 +32,14 @@ def main() -> int:
     agent.add_argument("goal")
     agent.add_argument("--task-id")
     agent.add_argument("--max-steps", type=int, default=8)
+    sched = sub.add_parser("schedule-agent", help="schedule a persistent offline agent task")
+    sched.add_argument("goal")
+    sched.add_argument("--role", choices=["field","research","steward","mesh"], default="field")
+    sched.add_argument("--at")
+    sched.add_argument("--every-seconds", type=int)
+    sub.add_parser("agent-jobs", help="list persistent offline agent jobs")
+    due = sub.add_parser("run-agent-jobs", help="run due offline agent jobs now")
+    due.add_argument("--limit", type=int, default=2)
     ai=sub.add_parser("ai-mode"); ai.add_argument("mode",choices=["lite","general","coder"])
     sp = sub.add_parser("snapshot-packages")
     sp.add_argument("--manifest")
@@ -87,6 +95,18 @@ def main() -> int:
         if args.task_id:
             cmd += ["--task-id", args.task_id]
         cmd.append(args.goal)
+        return run(*cmd)
+    if args.command in ("schedule-agent","agent-jobs","run-agent-jobs"):
+        vault_path = pathlib.Path("/srv/endworld") if pathlib.Path("/srv/endworld/lock").exists() else ROOT / vault
+        cmd=[py,"scripts/agent_scheduler.py","--vault",str(vault_path)]
+        if args.command=="schedule-agent":
+            cmd += ["add",args.goal,"--profile",args.profile,"--role",args.role]
+            if args.at: cmd += ["--at",args.at]
+            if args.every_seconds is not None: cmd += ["--every-seconds",str(args.every_seconds)]
+        elif args.command=="agent-jobs":
+            cmd += ["list"]
+        else:
+            cmd += ["run-due","--limit",str(args.limit)]
         return run(*cmd)
     if args.command == "ai-mode":
         return run("bash","runtime/switch-ai.sh",args.mode)
