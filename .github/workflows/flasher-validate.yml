@@ -1,0 +1,51 @@
+name: Validate cross-platform release flasher
+
+on:
+  push:
+    paths:
+      - "flasher/**"
+      - "scripts/release_bundle.py"
+      - ".github/workflows/flasher-validate.yml"
+  pull_request:
+    paths:
+      - "flasher/**"
+      - "scripts/release_bundle.py"
+      - ".github/workflows/flasher-validate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Linux Tk runtime
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-tk
+
+      - name: Install flasher dependencies
+        run: python -m pip install -r flasher/requirements.txt pyinstaller
+
+      - name: Source self-test
+        run: python flasher/ark_flasher.py selftest
+
+      - name: Package executable
+        run: pyinstaller --noconfirm --clean --onefile --name the-ark-flasher flasher/ark_flasher.py
+
+      - name: Packaged self-test Unix
+        if: runner.os != 'Windows'
+        run: ./dist/the-ark-flasher selftest
+
+      - name: Packaged self-test Windows
+        if: runner.os == 'Windows'
+        run: .\dist\the-ark-flasher.exe selftest
