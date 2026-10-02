@@ -30,3 +30,20 @@ async function runArkAgent(){
  }catch(e){root.textContent="Agent failed: "+e.message}finally{btn.disabled=false}
 }
 $("#agentRun").addEventListener("click",runArkAgent);
+
+async function organism(){
+ try{
+  const o=await fetch("/api/organism",{cache:"no-store"}).then(r=>r.json());
+  const ready=o.scheduler?.ready;
+  $("#organismStatus").textContent=ready?"ACTIVE":"READY";
+  const roles=(o.agent?.roles||[]).length;
+  const jobs=o.scheduler?.enabled_jobs||0;
+  const tasks=o.agent?.recent_tasks||0;
+  const gen=o.mesh?.active_generation||"none";
+  $("#organismInfo").textContent=roles+" roles · "+jobs+" scheduled jobs · "+tasks+" recent tasks · generation "+gen;
+ }catch(e){
+  $("#organismStatus").textContent="DEGRADED";
+  $("#organismInfo").textContent="Organism status unavailable: "+e.message;
+ }
+}
+organism();setInterval(organism,15000);
