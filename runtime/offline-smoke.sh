@@ -84,10 +84,13 @@ state_code="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1/vault/sta
 
 
 log "running offline agent acceptance task"
-python3 /opt/endworld/scripts/agent_runner.py \
+if ! python3 /opt/endworld/scripts/agent_runner.py \
   --vault /srv/endworld --profile nano-mini --task-id nano-mini-agent-ci --json \
   "Find the local burn-treatment guidance, cite the frozen source, write a field note, and confirm whether Internet is available." \
-  >/tmp/agent.json
+  >/tmp/agent.json 2>&1; then
+  while IFS= read -r line; do log "AGENT: $line"; done </tmp/agent.json
+  exit 1
+fi
 python3 - <<'PY'
 import json,pathlib
 x=json.load(open("/tmp/agent.json"))
