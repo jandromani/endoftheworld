@@ -197,6 +197,63 @@ jobs:
           grep -q "Reticulum" /tmp/comms.md
           grep -q "AutoInterface" /tmp/reticulum.conf
 
+      - name: Offline agent scheduler persistence
+        run: |
+          rm -rf /tmp/scheduler-vault
+          mkdir -p /tmp/scheduler-vault
+          python scripts/agent_scheduler.py --vault /tmp/scheduler-vault add "Inspect local field readiness" --profile nano --role field --at 4102444800 --every-seconds 3600
+          python scripts/agent_scheduler.py --vault /tmp/scheduler-vault list > /tmp/jobs.json
+          python - <<'PY'
+          import json,sqlite3
+          rows=json.load(open("/tmp/jobs.json"))
+          assert len(rows)==1 and rows[0]["role"]=="field" and rows[0]["enabled"]==1
+          db=sqlite3.connect("/tmp/scheduler-vault/state/agent/scheduler.sqlite")
+          assert db.execute("select count(*) from jobs").fetchone()[0]==1
+          PY
+
+      - name: Approval-gated evolution
+        run: |
+          cat > /tmp/scout.json <<'EOF'
+          {"schema":1,"candidate_capabilities":[{"repo":"example/offline-tool","family":"offline-core","description":"offline local emergency archive","stars":250,"archived":false,"pushed_at":"2026-09-01T00:00:00Z","license":"Apache-2.0"}]}
+          EOF
+          python scripts/evolution.py propose --scout /tmp/scout.json --out /tmp/proposal.json --per-family 3
+          python scripts/evolution.py validate /tmp/proposal.json
+          python scripts/evolution.py agent-prompt /tmp/proposal.json --out /tmp/evolution-review.txt
+          python - <<'PY'
+          import json,tarfile,pathlib
+          p=json.load(open("/tmp/proposal.json"))
+          assert p["policy"]=={"execute_candidates":False,"auto_promote":False,"human_approval_required":True}
+          assert p["candidates"][0]["trust_state"]=="PROPOSED_UNTRUSTED"
+          root=pathlib.Path("/tmp/evolution-archive");root.mkdir(exist_ok=True)
+          (root/"LICENSE").write_text("test")
+          (root/"README.md").write_text("offline")
+          with tarfile.open("/tmp/evolution.tar","w") as tf:
+              tf.add(root/"LICENSE",arcname="pkg/LICENSE")
+              tf.add(root/"README.md",arcname="pkg/README.md")
+          PY
+          python scripts/evolution.py inspect-archive /tmp/evolution.tar --out /tmp/inspection.json
+          grep -q '"executed": false' /tmp/inspection.json
+
+      - name: Cold generations and rollback metadata
+        run: |
+          rm -rf /tmp/generations /tmp/cold-restore /tmp/cold-store
+          python scripts/ark_generations.py create --inventory /tmp/mesh/source.json --root /tmp/generations --label ci
+          GEN="$(find /tmp/generations -mindepth 1 -maxdepth 1 -type d | head -1)"
+          python scripts/ark_generations.py cold-export --generation "$GEN" --store /tmp/mesh/source-store --out /tmp/cold.tar
+          python scripts/ark_generations.py cold-verify /tmp/cold.tar
+          python scripts/ark_generations.py restore /tmp/cold.tar --store /tmp/cold-store --target-vault /tmp/cold-restore
+          cmp /tmp/mesh/source/data/demo.txt /tmp/cold-restore/data/demo.txt
+          python scripts/ark_generations.py activate --generation "$GEN" --state-root /tmp/generation-state
+
+      - name: Receive-only field radio plan
+        run: |
+          rm -rf /tmp/radio-vault && mkdir -p /tmp/radio-vault/source/radio /tmp/radio-vault/firmware/meshtastic
+          python scripts/field_radio.py --vault /tmp/radio-vault inventory > /tmp/radio.json
+          python scripts/field_radio.py --vault /tmp/radio-vault plan --out /tmp/radio-plan.md
+          grep -q '"receive_only": true' /tmp/radio.json
+          grep -q "never transmits" /tmp/radio-plan.md
+          grep -q "rtl-sdr" manifests/appliance-os-packages.yml
+
       - name: Physical evidence campaign semantics
         run: |
           mkdir -p /tmp/reports
