@@ -20,7 +20,7 @@ echo "Model: $(lsblk -ndo MODEL,SIZE "$TARGET")"
 read -r -p "Type the exact device path to continue: " answer
 [[ "$answer" == "$TARGET" ]] || { echo "Cancelled."; exit 2; }
 
-PROFILE=nanO
+PROFILE=nano
 if [[ -f /etc/endworld/profile.env ]]; then
   set -a; source /etc/endworld/profile.env; set +a
   PROFILE="\${ENDWORLD_PROFILE:-nano}"
