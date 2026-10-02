@@ -85,6 +85,91 @@ jobs:
           python scripts/release_trust.py create --profile nano --image /tmp/trust/image.img --vault /tmp/trust/vault --out /tmp/trust/release.json
           python scripts/release_trust.py sign --file /tmp/trust/release.json --key /tmp/trust/private.pem --signature /tmp/trust/release.sig
           python scripts/release_trust.py verify --file /tmp/trust/release.json --public-key /tmp/trust/public.pem --signature /tmp/trust/release.sig
+          python scripts/release_trust.py fingerprint --public-key /tmp/trust/public.pem | grep -E '^[0-9a-f]{64}      - name: Offline update bundle
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib
+          for name,body in [("base","old"),("new","new")]:
+              v=pathlib.Path("/tmp")/name
+              (v/"lock").mkdir(parents=True,exist_ok=True)
+              (v/"data").mkdir(exist_ok=True)
+              p=v/"data/demo.txt"; p.write_text(body)
+              rec={"id":"demo","path":"data/demo.txt","sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"bytes":p.stat().st_size}
+              (v/"lock/nano.lock.json").write_text(json.dumps({"profile":"nano","artifacts":[rec],"containers":[]}))
+              (v/"lock/nano.cdx.json").write_text('{"bomFormat":"CycloneDX"}')
+          PY
+          python scripts/update_bundle.py create --base-vault /tmp/base --new-vault /tmp/new --profile nano --out /tmp/update.tar
+          python scripts/update_bundle.py verify /tmp/update.tar
+          python scripts/release_trust.py keygen --private /tmp/update-private.pem --public /tmp/update-public.pem --bits 2048
+          python scripts/update_bundle.py sign /tmp/update.tar --key /tmp/update-private.pem --signature /tmp/update.sig
+          python scripts/update_bundle.py verify-signed /tmp/update.tar --public-key /tmp/update-public.pem --signature /tmp/update.sig
+          cp -a /tmp/base /tmp/target
+          python scripts/update_bundle.py apply /tmp/update.tar --target-vault /tmp/target --public-key /tmp/update-public.pem --signature /tmp/update.sig --require-signature
+          test "$(cat /tmp/target/data/demo.txt)" = "new"
+
+      - name: Ark-to-Ark content-addressed replication
+        run: |
+          rm -rf /tmp/mesh && mkdir -p /tmp/mesh/source/lock /tmp/mesh/source/data /tmp/mesh/peer/lock
+          python - <<'PY'
+          import hashlib,json,pathlib
+          s=pathlib.Path("/tmp/mesh/source")
+          p=s/"data/demo.txt";p.write_text("same chunks can save another Ark\n"*4000)
+          rec={"id":"demo","family":"test","path":"data/demo.txt","sha256":hashlib.sha256(p.read_bytes()).hexdigest(),"bytes":p.stat().st_size,"required":True}
+          (s/"lock/nano.lock.json").write_text(json.dumps({"profile":"nano","artifacts":[rec],"containers":[]}))
+          (s/"lock/nano.cdx.json").write_text('{"bomFormat":"CycloneDX"}')
+          t=pathlib.Path("/tmp/mesh/peer")
+          (t/"lock/nano.lock.json").write_text(json.dumps({"profile":"nano","artifacts":[],"containers":[]}))
+          (t/"lock/nano.cdx.json").write_text('{"bomFormat":"CycloneDX"}')
+          PY
+          python scripts/ark_mesh.py inventory --vault /tmp/mesh/source --profile nano --store /tmp/mesh/source-store --out /tmp/mesh/source.json --chunk-bytes 1048576
+          python scripts/ark_mesh.py inventory --vault /tmp/mesh/peer --profile nano --store /tmp/mesh/peer-store --out /tmp/mesh/peer.json --chunk-bytes 1048576
+          python scripts/ark_mesh.py diff --source /tmp/mesh/source.json --target /tmp/mesh/peer.json > /tmp/mesh/diff.json
+          python scripts/ark_mesh.py pack --source-inventory /tmp/mesh/source.json --target-inventory /tmp/mesh/peer.json --store /tmp/mesh/source-store --out /tmp/mesh/pack.tar
+          python scripts/ark_mesh.py verify-pack /tmp/mesh/pack.tar
+          python scripts/ark_mesh.py apply-pack /tmp/mesh/pack.tar --store /tmp/mesh/peer-store --inventory-out /tmp/mesh/received.json
+          python scripts/ark_mesh.py restore --inventory /tmp/mesh/received.json --store /tmp/mesh/peer-store --target-vault /tmp/mesh/recovered
+          cmp /tmp/mesh/source/data/demo.txt /tmp/mesh/recovered/data/demo.txt
+          cmp /tmp/mesh/source/lock/nano.lock.json /tmp/mesh/recovered/lock/nano.lock.json
+      - name: Power and communications policy
+        run: |
+          cat > /tmp/power-low.json <<'EOF'
+          {"battery_present":true,"battery_percent":10,"battery_status":"Discharging","ac_online":false,"ups":{"available":false}}
+          EOF
+          python scripts/power_policy.py --fixture /tmp/power-low.json --state /tmp/power-state.json --policy conserve --apply
+          python - <<'PY'
+          import json
+          assert json.load(open("/tmp/power-state.json"))["mode"]=="survival"
+          PY
+          cat > /tmp/power-high.json <<'EOF'
+          {"battery_present":true,"battery_percent":80,"battery_status":"Charging","ac_online":true,"ups":{"available":false}}
+          EOF
+          python scripts/power_policy.py --fixture /tmp/power-high.json --state /tmp/power-state.json --policy conserve --apply
+          python - <<'PY'
+          import json
+          assert json.load(open("/tmp/power-state.json"))["mode"]=="normal"
+          PY
+          python scripts/field_comms.py check --config config/field-comms.yml
+          python scripts/field_comms.py render --config config/field-comms.yml --out /tmp/comms.md
+          python scripts/field_comms.py reticulum-config --config config/field-comms.yml --out /tmp/reticulum.conf
+          grep -q "Reticulum" /tmp/comms.md
+          grep -q "AutoInterface" /tmp/reticulum.conf
+      - name: Physical evidence protocol
+        run: |
+          mkdir -p /tmp/reports
+          cat > /tmp/field-fixture.json <<'EOF'
+          {"profile":"nano","hardware":{"system_vendor":"CI","product_name":"fixture","bios_vendor":"fixture","bios_version":"1","boot_mode":"UEFI","cpu":"fixture CPU","memory_bytes":8589934592,"disks":[],"gpus":[],"wifi_ap_capable":true},"runtime":{"boot_id":"ci-fixture","kernel":"fixture"},"checks":{"portal":true,"kiwix":true,"ai":true,"voice":true,"wan_reachable":false}}
+          EOF
+          python scripts/field_drill.py --fixture /tmp/field-fixture.json --profile nano --expect-offline --cold-boot-asserted --require-cold-boot --out /tmp/reports/ci.json --markdown /tmp/field.md
+          python scripts/hardware_matrix.py --reports /tmp/reports --out /tmp/matrix.md
+          grep -q "PASS" /tmp/matrix.md
+          cat > /tmp/field-fixture-2.json <<'EOF'
+          {"profile":"nano","hardware":{"system_vendor":"CI2","product_name":"fixture2","bios_vendor":"fixture","bios_version":"2","boot_mode":"BIOS","cpu":"fixture CPU 2","memory_bytes":8589934592,"disks":[],"gpus":[],"wifi_ap_capable":true},"runtime":{"boot_id":"ci-fixture-2","kernel":"fixture"},"checks":{"portal":true,"kiwix":true,"ai":true,"voice":true,"wan_reachable":false}}
+          EOF
+          python scripts/field_drill.py --fixture /tmp/field-fixture-2.json --profile nano --expect-offline --cold-boot-asserted --require-cold-boot --out /tmp/reports/ci2.json
+          python scripts/field_campaign.py --reports /tmp/reports --min-hardware 2 --require-bios-and-uefi --out /tmp/campaign.json
+          grep -q '"field_proven": true' /tmp/campaign.json
+
+          python scripts/release_trust.py verify-materials --manifest /tmp/trust/release.json --image /tmp/trust/image.img --lock /tmp/trust/vault/lock/nano.lock.json --bom /tmp/trust/vault/lock/nano.cdx.json
       - name: Offline update bundle
         run: |
           python - <<'PY'
