@@ -136,7 +136,7 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         require(expected.issubset(ids), f"NANO wiring missing ids: {sorted(expected - ids)}")
         require(target == 58_000_000_000, "NANO distribution image target must stay 58,000,000,000 bytes")
         require(reserve == 6_000_000_000, "NANO reserve must preserve a 52 GB usable envelope")
-        require(headroom == 3_000_000_000, "NANO acquisition headroom must reserve 3 GB for containers/derived outputs")
+        require(headroom == 2_500_000_000, "NANO acquisition headroom must reserve 2.5 GB for containers/derived outputs")
     elif pid == "nano-mini":
         expected={"qwen3-4b-q4","whisper-small"}
         require(expected.issubset(ids), f"NANO-MINI wiring missing ids: {sorted(expected-ids)}")
