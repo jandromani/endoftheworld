@@ -39,7 +39,28 @@ wait_url(){
   return 1
 }
 
+dump_diag(){
+  {
+    echo "[NANO-MINI] ---- systemd diagnostics ----"
+    systemctl --no-pager --full status endworld-stack.service endworld-portal.service docker.service || true
+    echo "[NANO-MINI] ---- stack journal ----"
+    journalctl -u endworld-stack.service -b --no-pager -n 120 || true
+    echo "[NANO-MINI] ---- docker ps -a ----"
+    docker ps -a || true
+    echo "[NANO-MINI] ---- container logs ----"
+    for n in endworld-kiwix endworld-ai endworld-whisper; do
+      echo "### $n"
+      docker logs "$n" 2>&1 | tail -80 || true
+    done
+  } > /dev/ttyS0 2>&1 || true
+}
+
 log "offline smoke starting"
+if ! systemctl is-active --quiet endworld-stack.service; then
+  log "endworld-stack is not active"
+  dump_diag
+  exit 1
+fi
 wait_url http://127.0.0.1/health
 wait_url http://127.0.0.1:8081/
 wait_url http://127.0.0.1:8082/health
