@@ -5,7 +5,7 @@ profile:
   title: ENDWORLD NANO
   target_bytes: 58000000000
   reserve_bytes: 6000000000
-  acquisition_headroom_bytes: 4000000000
+  acquisition_headroom_bytes: 3000000000
   root_partition_mib: 8192
   description: >
     A portable offline node that prioritizes Spanish knowledge, medicine,
@@ -253,7 +253,7 @@ artifacts:
     url: https://naciscdn.org/naturalearth/packages/natural_earth_vector.sqlite.zip
     filename: natural_earth_vector.sqlite.zip
     destination: tools/planetiler/sources
-    budget_bytes: 400000000
+    budget_bytes: 600000000
 
   - id: planetiler-lake-centerlines
     family: maps
