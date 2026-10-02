@@ -5,7 +5,7 @@ profile:
   title: ENDWORLD NANO
   target_bytes: 58000000000
   reserve_bytes: 6000000000
-  acquisition_headroom_bytes: 3000000000
+  acquisition_headroom_bytes: 2500000000
   root_partition_mib: 8192
   description: >
     A portable offline node that prioritizes Spanish knowledge, medicine,
