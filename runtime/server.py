@@ -12,6 +12,7 @@ if str(_RUNTIME_DIR) not in sys.path: sys.path.insert(0,str(_RUNTIME_DIR))
 _SCRIPTS_DIR=_RUNTIME_DIR.parent/"scripts"
 if str(_SCRIPTS_DIR) not in sys.path: sys.path.insert(0,str(_SCRIPTS_DIR))
 from kiwix_client import search_kiwix
+from vector_client import vector_search
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
 
@@ -126,7 +127,7 @@ class App:
         except Exception: ai_mode="default"
         return {"node":socket.gethostname(),"profile":self.profile,"title":self.title(),"uptime_seconds":int(time.time()-self.started),
         "internet":internet_online(),"storage":{"total":usage.total,"used":usage.used,"free":usage.free},"battery":battery_status(),"ai_mode":ai_mode,
-        "search_ready":(self.vault/"state/search/ark-search.sqlite").is_file(),"field":self.field(),"services":{"portal":True,"knowledge":service_alive("http://127.0.0.1:8081/"),"ai":service_alive("http://127.0.0.1:8082/health"),"voice":service_alive("http://127.0.0.1:8083/"),"syncthing":service_alive("http://127.0.0.1:8384/"),"forgejo":service_alive("http://127.0.0.1:3000/"),"qdrant":service_alive("http://127.0.0.1:6333/healthz"),"code_server":service_alive("http://127.0.0.1:8443/"),"project_nomad":service_alive("http://127.0.0.1:8090/api/health")},"map_ready":any((self.vault/"maps/tiles").glob("*.pmtiles")) if (self.vault/"maps/tiles").exists() else False}
+        "search_ready":(self.vault/"state/search/ark-search.sqlite").is_file(),"semantic_ready":service_alive("http://127.0.0.1:8084/health") and service_alive("http://127.0.0.1:6333/healthz"),"field":self.field(),"services":{"portal":True,"knowledge":service_alive("http://127.0.0.1:8081/"),"ai":service_alive("http://127.0.0.1:8082/health"),"voice":service_alive("http://127.0.0.1:8083/"),"syncthing":service_alive("http://127.0.0.1:8384/"),"forgejo":service_alive("http://127.0.0.1:3000/"),"qdrant":service_alive("http://127.0.0.1:6333/healthz"),"code_server":service_alive("http://127.0.0.1:8443/"),"project_nomad":service_alive("http://127.0.0.1:8090/api/health")},"map_ready":any((self.vault/"maps/tiles").glob("*.pmtiles")) if (self.vault/"maps/tiles").exists() else False}
     def apps(self)->list[dict]:
         appdir=self.vault/"apps/android"
         if not appdir.exists(): return []
@@ -215,7 +216,7 @@ class Handler(BaseHTTPRequestHandler):
         if path=="/api/agent/tasks": return self.send_json(self.app.agent_tasks())
         if path=="/api/search":
             q=(parse_qs(parsed.query).get("q") or [""])[0].strip()
-            hits=self.app.search_hits(q,6)+self.app.kiwix_hits(q,4)
+            hits=self.app.search_hits(q,5)+vector_search(q,4)+self.app.kiwix_hits(q,4)
             return self.send_json({"query":q,"search_ready":(self.app.vault/"state/search/ark-search.sqlite").is_file(),
                                    "results":[{k:v for k,v in h.items() if k!="_body"} for h in hits[:10]]})
         if path=="/api/lock":
@@ -271,7 +272,7 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:return self.send_json({"error":"invalid json"},400)
             question=str(payload.get("question") or "").strip()
             if not question:return self.send_json({"error":"question required"},400)
-            hits=self.app.search_hits(question,4)+self.app.kiwix_hits(question,4)
+            hits=self.app.search_hits(question,4)+vector_search(question,4)+self.app.kiwix_hits(question,4)
             if not hits:return self.send_json({"error":"no matching local evidence","kiwix_query":question},404)
             context=int(os.getenv("ENDWORLD_AI_CONTEXT","4096"))
             max_chars=int(os.getenv("ENDWORLD_RAG_MAX_CHARS","12000"))
