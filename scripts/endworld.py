@@ -26,7 +26,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(prog="endworld")
     ap.add_argument("--profile", default="nano", help="profile id from profiles/<id>.yml")
     sub = ap.add_subparsers(dest="command", required=True)
-    for name in ("plan", "acquire", "prepare", "verify", "run", "stop", "status", "doctor", "scout", "selftest", "index"):
+    for name in ("plan", "acquire", "prepare", "verify", "run", "stop", "status", "doctor", "scout", "selftest", "index", "vector-index"):
         sub.add_parser(name)
     agent = sub.add_parser("agent", help="run a bounded offline agent task")
     agent.add_argument("goal")
@@ -62,6 +62,9 @@ def main() -> int:
         return run(py, "scripts/verify_vault.py", "--vault", vault, "--profile-id", args.profile)
     if args.command == "index":
         return run(py, "scripts/build_search_index.py", "--vault", vault, "--repo", str(ROOT))
+    if args.command == "vector-index":
+        vault_path = pathlib.Path("/srv/endworld") if pathlib.Path("/srv/endworld/lock").exists() else ROOT / vault
+        return run(py, "scripts/vector_index.py", "--vault", str(vault_path))
     if args.command == "run":
         return run("bash", "runtime/start-profile.sh", args.profile)
     if args.command == "stop":
