@@ -84,10 +84,18 @@ state_code="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1/vault/sta
 
 
 log "running offline agent acceptance task"
-if ! python3 /opt/endworld/scripts/agent_runner.py \
+if ! if ! python3 /opt/endworld/scripts/agent_runner.py \
   --vault /srv/endworld --profile nano-mini --task-id nano-mini-agent-ci --json \
   "Find the local burn-treatment guidance, cite the frozen source, write a field note, and confirm whether Internet is available." \
-  >/tmp/agent.json 2>&1; then
+  >/tmp/agent.json 2>/tmp/agent.err; then
+  log "agent runner failed"
+  while IFS= read -r line; do log "AGENT_OUT $line"; done </tmp/agent.json || true
+  while IFS= read -r line; do log "AGENT_ERR $line"; done </tmp/agent.err || true
+  if [[ -f /srv/endworld/state/agent/tasks/nano-mini-agent-ci/events.jsonl ]]; then
+    while IFS= read -r line; do log "AGENT_EVENT $line"; done </srv/endworld/state/agent/tasks/nano-mini-agent-ci/events.jsonl
+  fi
+  exit 1
+fi 2>&1; then
   while IFS= read -r line; do log "AGENT: $line"; done </tmp/agent.json
   exit 1
 fi
