@@ -19,7 +19,7 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 ReadOnlyPaths=/srv/endworld
-ReadWritePaths=/run
+ReadWritePaths=/srv/endworld/state/agent /run
 
 [Install]
 WantedBy=multi-user.target
