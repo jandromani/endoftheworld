@@ -123,12 +123,19 @@ class Handler(BaseHTTPRequestHandler):
             pid=(params.get("profile") or ["nano"])[0]
             try:
                 meta=profile_meta(pid); target=int(meta["target_bytes"])
+                reserve=int(meta.get("reserve_bytes") or 0);headroom=int(meta.get("acquisition_headroom_bytes") or 0)
+                acquisition=max(0,target-reserve-headroom)
                 free=shutil.disk_usage(ROOT).free
                 vault=ROOT/"vault"/pid
                 existing=sum(p.stat().st_size for p in vault.rglob("*") if p.is_file()) if vault.exists() else 0
-                return self.send_json({"profile":pid,"target_bytes":target,"builder_free_bytes":free,
-                    "existing_vault_bytes":existing,"recommended_builder_free_bytes":target*2,
-                    "enough_builder_space":free>=target*2})
+                eta={}
+                remaining=max(0,acquisition-existing)
+                for mbps in (100,300,1000):
+                    eta[str(mbps)]=round((remaining*8)/(mbps*1_000_000*60),1)
+                return self.send_json({"profile":pid,"target_bytes":target,"acquisition_envelope_bytes":acquisition,
+                    "builder_free_bytes":free,"existing_vault_bytes":existing,"remaining_envelope_bytes":remaining,
+                    "recommended_builder_free_bytes":target*2,"enough_builder_space":free>=target*2,
+                    "estimated_download_minutes_at_mbps":eta})
             except Exception as exc:return self.send_json({"error":str(exc)},400)
         rel="index.html" if path=="/" else path.lstrip("/")
         f=(WEB/rel).resolve()
