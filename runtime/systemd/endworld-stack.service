@@ -12,6 +12,8 @@ EnvironmentFile=-/etc/endworld/profile.env
 ExecStart=/opt/endworld/runtime/start-stack.sh
 ExecStop=/opt/endworld/runtime/stop-stack.sh
 TimeoutStartSec=0
+StandardOutput=journal+console
+StandardError=journal+console
 
 [Install]
 WantedBy=multi-user.target
