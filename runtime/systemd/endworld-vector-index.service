@@ -1,0 +1,15 @@
+[Unit]
+Description=THE ARK semantic vector index
+After=endworld-stack.service
+Requires=endworld-stack.service
+ConditionPathExists=/srv/endworld/state/search/ark-search.sqlite
+
+[Service]
+Type=oneshot
+Environment=ENDWORLD_VAULT=/srv/endworld
+ExecStart=/opt/endworld/runtime/vector-index.sh
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target
