@@ -130,6 +130,21 @@ Software adds:
 No software test may convert simulated hardware/sites into a physical
 field-proof claim.
 
+## Roadmap R11–R13 pre-hardware closure
+
+Before the first physical NANO field drive, software now additionally provides:
+
+- safer local Builder flash selection: running root, mounted disks and undersized targets are blocked;
+- pre-acquisition storage and transfer-time estimates;
+- signed public release bundle creation/verification with a release manifest, SBOM, SHA-256 set and key fingerprint;
+- an explicit trust policy with vulnerability-report enforcement and reproducibility comparison;
+- code-aware symbol indexing for Python and common systems/application languages, including frozen source archives;
+- a public release runbook that keeps cryptographic promotion separate from physical field proof.
+
+Remaining R11–R13 work is deliberately narrower: packaged Windows/macOS prebuilt-image UX,
+curated upstream signature coverage, full bilingual portal/docs parity and corpus-scale/reconstruction
+evidence from real complete profile builds.
+
 ## Cross-cutting work
 
 - stronger first-boot provisioning;
