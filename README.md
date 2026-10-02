@@ -69,7 +69,7 @@ You need:
 1. **A normal x86-64 PC running Debian/Ubuntu Linux** while you build it.
 2. **Internet access during the build.**
 3. **Free disk space for the download + the final image.**
-4. **A spare SSD/USB drive** large enough for the profile.
+4. **A spare SSD/external SSD** large enough for the profile; a real SSD is strongly preferred over a cheap USB flash drive.
 5. Time: downloading large offline libraries can take a while.
 
 > Windows/macOS are not direct image-builder targets yet. That is a frontier we still need to cross.
@@ -107,7 +107,7 @@ Which Ark do you want?
 Choose 1-4:
 ```
 
-It does **not** erase a drive without asking.
+It does **not** erase a drive without asking. The local Builder also blocks the running root disk, mounted disks and disks smaller than the selected profile, and shows a storage/download estimate before acquisition.
 
 ---
 
@@ -382,8 +382,8 @@ Instead of hiding 17 loose TODOs in this README, the remaining work is organized
 | Frontier epic | What a human gets | State | Track it |
 |---|---|---|---|
 | 🖱️ **Zero-touch Ark** | local browser builder + hardened first boot | 🟨 MVP shipped | [#8](https://github.com/jandromani/endoftheworld/issues/8) |
-| 🔐 **Trusted Ark** | Secure Boot + signed release/update chain | 🟨 software shipped · release operations remain | [#9](https://github.com/jandromani/endoftheworld/issues/9) |
-| 🔎 **Ask the whole Ark** | lexical/vector/Kiwix + PDF/EPUB/DOCX/OCR | 🟨 software shipped · corpus proof remains | [#10](https://github.com/jandromani/endoftheworld/issues/10) |
+| 🔐 **Trusted Ark** | Secure Boot + signed release/update chain | 🟨 signed public-release tooling shipped · real RC/stable publication remains | [#9](https://github.com/jandromani/endoftheworld/issues/9) |
+| 🔎 **Ask the whole Ark** | lexical/vector/Kiwix + PDF/EPUB/DOCX/OCR + code symbols | 🟨 software shipped · corpus-scale proof/i18n remain | [#10](https://github.com/jandromani/endoftheworld/issues/10) |
 | 📦 **Rebuild more software** | offline factory + 7 ecosystems + signed updates | 🟨 software shipped · broader closure remains | [#11](https://github.com/jandromani/endoftheworld/issues/11) |
 | 🤝 **Arks can save Arks** | signed packs + generations + cold restore + cluster planner | 🟨 software shipped · real multi-site deployment remains | [#12](https://github.com/jandromani/endoftheworld/issues/12) |
 | 🔌 **Survive without normal infrastructure** | power events + Reticulum/Meshtastic + receive-only SDR | 🟨 software shipped · real power/radio evidence remains | [#13](https://github.com/jandromani/endoftheworld/issues/13) |
@@ -409,7 +409,7 @@ Instead of hiding 17 loose TODOs in this README, the remaining work is organized
 - [x] approval-gated capability evolution
 - [x] cold generations + geographic redundancy planner
 - [ ] Windows/macOS builder
-- [ ] signed prebuilt release distribution
+- [ ] publish the first signed prebuilt NANO RC (packaging/verifier already implemented)
 - [ ] multilingual portal/docs parity
 - [ ] real physical hardware matrix evidence
 - [ ] repeated disconnected recovery drills on real hardware
@@ -491,7 +491,7 @@ make nomad-ai-coder
 |---|---|
 | Start | [Beginner](docs/guides/BEGINNER.md) · [Español](docs/es/EMPIEZA-AQUI.md) · [FAQ](docs/guides/faq.md) |
 | Mental model | [How it works](docs/how-it-works.md) · [Architecture](docs/ARCHITECTURE.md) · [Storage](docs/storage-model.md) |
-| Trust | [Trust & verification](docs/trust-and-verification.md) · [Security](SECURITY.md) |
+| Trust | [Trust & verification](docs/trust-and-verification.md) · [Release runbook](docs/guides/RELEASE.md) · [Security](SECURITY.md) |
 | Components | [Runtime](docs/runtime-services.md) · [AI](docs/ai.md) · [Networking](docs/networking.md) · [Developer mode](docs/developer-mode.md) |
 | Project NOMAD | [How NOMAD sits inside THE ARK](docs/project-nomad.md) |
 | Operations | [Build image](docs/guides/build-image.md) · [Offline factory](docs/guides/OFFLINE-FACTORY.md) · [Field proof](docs/guides/FIELD-PROOF.md) · [Field radio](docs/guides/FIELD-RADIO.md) · [Troubleshooting](docs/guides/troubleshooting.md) |
