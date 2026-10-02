@@ -61,8 +61,17 @@ def build_map(vault: pathlib.Path, lock: dict, spec: dict, java_memory: str) -> 
     filename = str(spec.get("filename") or f"{derived_id}.pmtiles")
     osm_rec = find_artifact(lock, source_id)
     tool_rec = find_artifact(lock, "planetiler")
+    water_rec = find_artifact(lock, "planetiler-water-polygons")
+    natural_rec = find_artifact(lock, "planetiler-natural-earth")
+    lakes_rec = find_artifact(lock, "planetiler-lake-centerlines")
     osm = vault / osm_rec["path"]
     jar = vault / tool_rec["path"]
+    water = vault / water_rec["path"]
+    natural = vault / natural_rec["path"]
+    lakes = vault / lakes_rec["path"]
+    for dep in (osm, jar, water, natural, lakes):
+        if not dep.is_file():
+            raise PrepareError(f"Frozen map dependency missing: {dep}")
     output_dir = vault / "maps" / "tiles"
     output_dir.mkdir(parents=True, exist_ok=True)
     pmtiles = output_dir / filename
@@ -82,7 +91,10 @@ def build_map(vault: pathlib.Path, lock: dict, spec: dict, java_memory: str) -> 
             cmd = [
                 "java", f"-Xmx{java_memory}", "-XX:MaxHeapFreeRatio=40",
                 "-jar", str(jar), "--osm-path", str(osm), "--output", str(pmtiles),
-                "--download", "--force", "--storage", "mmap", "--building-merge-z13=false",
+                "--water-polygons-path", str(water),
+                "--natural-earth-path", str(natural),
+                "--lake-centerlines-path", str(lakes),
+                "--force", "--storage", "mmap", "--building-merge-z13=false",
             ]
             print(f"Building {derived_id} with Planetiler...")
             print(" ".join(cmd))
@@ -95,6 +107,7 @@ def build_map(vault: pathlib.Path, lock: dict, spec: dict, java_memory: str) -> 
         "required": True,
         "source_artifact": source_id,
         "builder_artifact": "planetiler",
+        "builder_inputs": ["planetiler-water-polygons","planetiler-natural-earth","planetiler-lake-centerlines"],
         "filename": pmtiles.name,
         "path": str(pmtiles.relative_to(vault)),
         "bytes": pmtiles.stat().st_size,
