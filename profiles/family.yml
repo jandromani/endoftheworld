@@ -247,7 +247,7 @@ artifacts:
     url: https://naciscdn.org/naturalearth/packages/natural_earth_vector.sqlite.zip
     filename: natural_earth_vector.sqlite.zip
     destination: tools/planetiler/sources
-    budget_bytes: 400000000
+    budget_bytes: 600000000
 
   - id: planetiler-lake-centerlines
     family: maps
