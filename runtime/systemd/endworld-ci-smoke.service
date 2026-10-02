@@ -1,0 +1,15 @@
+[Unit]
+Description=THE ARK NANO-MINI offline boot smoke
+After=docker.service local-fs.target endworld-stack.service endworld-portal.service
+Wants=docker.service endworld-stack.service endworld-portal.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/endworld/profile.env
+ExecStart=/opt/endworld/runtime/offline-smoke.sh
+TimeoutStartSec=330
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

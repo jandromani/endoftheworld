@@ -79,7 +79,7 @@ for n in 1 2 3 4; do
 done
 
 echo "[2/9] Creating filesystems..."
-mkfs.vfat -F32 -n ENDWORLD_EFI "${LOOP}p2" >/dev/null
+mkfs.vfat -F32 -n ARK_EFI "${LOOP}p2" >/dev/null
 mkfs.ext4 -F -L ENDWORLD_ROOT "${LOOP}p3" >/dev/null
 mkfs.ext4 -F -m 0 -L ENDWORLD_DATA "${LOOP}p4" >/dev/null
 
@@ -112,7 +112,7 @@ mount --bind /run "$ROOTFS/run"
 echo "[4/9] Installing appliance OS packages..."
 export DEBIAN_FRONTEND=noninteractive
 chroot "$ROOTFS" apt-get update
-chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub2-common efibootmgr   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros
+chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub2-common efibootmgr   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io docker-cli hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros
 
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   echo "Installing rebuild-and-create developer toolchain..."
@@ -132,7 +132,7 @@ cat > "$ROOTFS/etc/hosts" <<EOF
 EOF
 cat > "$ROOTFS/etc/fstab" <<'EOF'
 LABEL=ENDWORLD_ROOT / ext4 defaults,noatime 0 1
-LABEL=ENDWORLD_EFI /boot/efi vfat umask=0077 0 1
+LABEL=ARK_EFI /boot/efi vfat umask=0077 0 1
 LABEL=ENDWORLD_DATA /srv/endworld ext4 defaults,noatime 0 2
 EOF
 
@@ -201,7 +201,11 @@ EOF
 cp "$REPO"/runtime/systemd/* "$ROOTFS/etc/systemd/system/"
 chroot "$ROOTFS" systemctl disable hostapd.service dnsmasq.service 2>/dev/null || true
 chroot "$ROOTFS" systemctl enable docker.service avahi-daemon.service systemd-networkd.service systemd-resolved.service
+chroot "$ROOTFS" systemctl disable systemd-networkd-wait-online.service 2>/dev/null || true
 chroot "$ROOTFS" systemctl enable endworld-network.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-power.timer
+if [[ "$PROFILE" == "nano-mini" ]]; then
+  chroot "$ROOTFS" systemctl enable endworld-ci-smoke.service
+fi
 
 mkdir -p "$ROOTFS/etc/systemd/system/getty@tty1.service.d"
 cat > "$ROOTFS/etc/systemd/system/getty@tty1.service.d/autologin.conf" <<'EOF'
@@ -228,6 +232,17 @@ EOF
 chroot "$ROOTFS" chown -R endworld:endworld /home/endworld
 
 echo "[7/9] Installing bootloader..."
+if [[ "$PROFILE" == "nano-mini" ]]; then
+cat > "$ROOTFS/etc/default/grub" <<EOF
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=1
+GRUB_DISTRIBUTOR="$TITLE"
+GRUB_TERMINAL="serial console"
+GRUB_SERIAL_COMMAND="serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1"
+GRUB_CMDLINE_LINUX_DEFAULT="console=ttyS0,115200n8 console=tty0 loglevel=4 systemd.show_status=true"
+GRUB_CMDLINE_LINUX=""
+EOF
+else
 cat > "$ROOTFS/etc/default/grub" <<EOF
 GRUB_DEFAULT=0
 GRUB_TIMEOUT=2
@@ -235,6 +250,7 @@ GRUB_DISTRIBUTOR="$TITLE"
 GRUB_CMDLINE_LINUX_DEFAULT="quiet loglevel=3"
 GRUB_CMDLINE_LINUX=""
 EOF
+fi
 chroot "$ROOTFS" grub-install --target=i386-pc --recheck "$LOOP"
 chroot "$ROOTFS" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ENDWORLD --removable --no-nvram --recheck
 chroot "$ROOTFS" update-grub

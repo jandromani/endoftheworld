@@ -1,0 +1,45 @@
+schema: 1
+profile:
+  id: nano-mini
+  title: THE ARK NANO-MINI CI
+  target_bytes: 7000000000
+  reserve_bytes: 1500000000
+  acquisition_headroom_bytes: 500000000
+  root_partition_mib: 4096
+  description: Test-only miniature Ark used to prove BIOS/UEFI offline boot in QEMU.
+
+runtime:
+  portal_port: 80
+  kiwix_port: 8081
+  ai_port: 8082
+  whisper_port: 8083
+
+prepare:
+  maps:
+    - id: spain-pmtiles
+      source_artifact: spain-osm
+      filename: spain.pmtiles
+
+artifacts:
+  - {id: wikipedia-es, family: knowledge, kind: url, required: true, url: "https://example.invalid/wiki.zim", filename: mini_es.zim, destination: knowledge/zim, budget_bytes: 10000000}
+  - {id: wikipedia-medicine-es, family: medical, kind: url, required: true, url: "https://example.invalid/medicine.zim", filename: medicine_es.zim, destination: knowledge/zim, budget_bytes: 10000000}
+  - {id: qwen3-4b-q4, family: ai, kind: url, required: true, url: "https://example.invalid/model.gguf", filename: mini.gguf, destination: ai/models, budget_bytes: 10000000}
+  - {id: whisper-small, family: ai, kind: url, required: true, url: "https://example.invalid/whisper.bin", filename: whisper-mini.bin, destination: ai/models, budget_bytes: 10000000}
+  - {id: spain-osm, family: maps, kind: url, required: true, url: "https://example.invalid/spain.osm.pbf", filename: spain-mini.osm.pbf, destination: maps/raw, budget_bytes: 10000000}
+  - {id: bitchat-android, family: comms, kind: url, required: true, url: "https://example.invalid/bitchat.apk", filename: bitchat.apk, destination: apps/android, budget_bytes: 10000000}
+  - {id: meshtastic-android, family: comms, kind: url, required: true, url: "https://example.invalid/meshtastic.apk", filename: meshtastic.apk, destination: apps/android, budget_bytes: 10000000}
+  - {id: reticulum-source, family: comms, kind: url, required: true, url: "https://example.invalid/reticulum.tar.gz", filename: reticulum-source-ci.tar.gz, destination: source/comms, budget_bytes: 10000000}
+  - {id: project-nomad-source, family: core, kind: url, required: true, url: "https://example.invalid/nomad.tar.gz", filename: project-nomad-source-ci.tar.gz, destination: source/core, budget_bytes: 10000000}
+  - {id: planetiler, family: maps, kind: url, required: true, url: "https://example.invalid/planetiler.jar", filename: planetiler.jar, destination: tools/planetiler, budget_bytes: 10000000}
+  - {id: maplibre-js, family: runtime, kind: url, required: true, url: "https://example.invalid/maplibre.js", filename: maplibre-gl.js, destination: web/vendor, budget_bytes: 10000000}
+  - {id: maplibre-css, family: runtime, kind: url, required: true, url: "https://example.invalid/maplibre.css", filename: maplibre-gl.css, destination: web/vendor, budget_bytes: 10000000}
+  - {id: pmtiles-js, family: runtime, kind: url, required: true, url: "https://example.invalid/pmtiles.js", filename: pmtiles.js, destination: web/vendor, budget_bytes: 10000000}
+
+containers:
+  - {id: kiwix, image: "endworld/nano-mini-kiwix:ci", required: true}
+  - {id: llama-server, image: "endworld/nano-mini-llama:ci", required: true}
+  - {id: whisper-server, image: "endworld/nano-mini-whisper:ci", required: true}
+
+policy:
+  fail_if_required_missing: true
+  immutable_field_node: true
