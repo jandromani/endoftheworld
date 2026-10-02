@@ -16,6 +16,8 @@ import uuid
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DEFAULT_VAULT = pathlib.Path(os.getenv("ENDWORLD_VAULT", "/srv/endworld"))
 
+ALLOWED_ROLES = {"field","research","steward","mesh"}
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS jobs(
   id TEXT PRIMARY KEY,
@@ -57,6 +59,8 @@ def parse_when(value: str | None) -> int:
         raise SystemExit("invalid --at; use unix seconds or ISO-8601") from exc
 
 def add(vault, goal, profile, role, at, every):
+    if role not in ALLOWED_ROLES:
+        raise SystemExit("role must be one of: "+", ".join(sorted(ALLOWED_ROLES)))
     if every is not None and every < 60:
         raise SystemExit("--every-seconds must be >= 60")
     jid = "job-" + uuid.uuid4().hex[:12]
