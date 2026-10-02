@@ -4,7 +4,7 @@ THE ARK's long-term goal is not “store more files”. It is to preserve enough
 
 The backlog is organized as seven engineering epics. The GitHub issues are the live execution layer; this document explains why each frontier exists and what “done” means.
 
-## 1. 🖱️ Zero-touch Ark — Issue #8\n\n**Status: 🟨 MVP shipped.** Local browser builder + secure first-boot setup are implemented. Desktop packaging, Windows/macOS and prebuilt image UX remain.
+## 1. 🖱️ Zero-touch Ark — Issue #8\n\n**Status: 🟨 advanced MVP shipped.** Local browser builder + secure first boot + capacity/mount/root disk guards + pre-acquisition estimates are implemented. Packaged Windows/macOS prebuilt-image UX and the first published signed image remain.
 
 **Goal:** a non-technical user can create an Ark without understanding Linux.
 
@@ -22,7 +22,7 @@ The backlog is organized as seven engineering epics. The GitHub issues are the l
 
 Track: https://github.com/jandromani/endoftheworld/issues/8
 
-## 2. 🔐 Trusted Ark — Issue #9\n\n**Status: 🟨 MVP shipped.** Release manifests bind image/lock/BOM to a Git revision and support detached offline signatures. Secure Boot and published signed images remain.
+## 2. 🔐 Trusted Ark — Issue #9\n\n**Status: 🟨 advanced software shipped.** Secure Boot, signed release/update metadata, public release bundle verification, SBOM policy, vulnerability-report blocking, reproducibility comparison and key-recovery guidance are implemented. Curated upstream signature coverage and an actual published signed RC/stable release remain.
 
 **Goal:** strengthen the trust chain from source acquisition to the machine that actually boots.
 
@@ -38,7 +38,7 @@ Track: https://github.com/jandromani/endoftheworld/issues/8
 
 Track: https://github.com/jandromani/endoftheworld/issues/9
 
-## 3. 🔎 Ask the whole Ark — Issue #10\n\n**Status: 🟨 MVP shipped.** SQLite FTS5 indexes docs, inventory and text/code from preserved sources; the portal performs grounded local retrieval with source labels. Full ZIM ingestion, OCR and semantic embeddings remain.
+## 3. 🔎 Ask the whole Ark — Issue #10\n\n**Status: 🟨 advanced software shipped.** FTS5 + Kiwix + local vectors/Qdrant cover documents, inventory, PDF/EPUB/DOCX/OCR and code; code symbols are extracted for Python and common systems/application languages, including frozen source archives. Corpus-scale evidence and full multilingual portal/docs parity remain.
 
 **Goal:** one local knowledge surface over everything preserved.
 
