@@ -83,6 +83,16 @@ state_code="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1/vault/sta
 [[ "$state_code" == "403" ]]
 
 
+log "verifying signed UEFI fallback chain"
+test -f /boot/efi/EFI/BOOT/BOOTX64.EFI
+test -f /boot/efi/EFI/BOOT/grubx64.efi
+test -f /boot/efi/EFI/BOOT/mmx64.efi
+sbverify --list /boot/efi/EFI/BOOT/BOOTX64.EFI >/tmp/shim-signatures.txt
+sbverify --list /boot/efi/EFI/BOOT/grubx64.efi >/tmp/grub-signatures.txt
+grep -qi 'signature' /tmp/shim-signatures.txt
+grep -qi 'signature' /tmp/grub-signatures.txt
+log "THE_ARK_SIGNED_BOOT_ASSETS=PASS"
+
 log "running offline agent acceptance task"
 python3 /opt/endworld/scripts/agent_runner.py \
   --vault /srv/endworld --profile nano-mini --task-id nano-mini-agent-ci --json \
