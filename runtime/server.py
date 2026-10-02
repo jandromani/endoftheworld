@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse, json, mimetypes, os, pathlib, re, shutil, socket, sqlite3, sys, time, urllib.error, urllib.request
 _RUNTIME_DIR=pathlib.Path(__file__).resolve().parent
 if str(_RUNTIME_DIR) not in sys.path: sys.path.insert(0,str(_RUNTIME_DIR))
+_SCRIPTS_DIR=_RUNTIME_DIR.parent/"scripts"
+if str(_SCRIPTS_DIR) not in sys.path: sys.path.insert(0,str(_SCRIPTS_DIR))
 from kiwix_client import search_kiwix
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
@@ -156,6 +158,16 @@ class App:
         data["comms_plan_ready"]=(self.vault/"state/field/comms-plan.md").is_file()
         data["ark_mesh_available"]=(pathlib.Path(__file__).resolve().parents[1]/"scripts/ark_mesh.py").is_file()
         return data
+    def agent_tasks(self)->list[dict]:
+        root=self.vault/"state/agent/tasks"
+        if not root.is_dir(): return []
+        rows=[]
+        for p in sorted(root.glob("*/task.json"),key=lambda x:x.stat().st_mtime,reverse=True)[:30]:
+            try:
+                d=json.loads(p.read_text(encoding="utf-8"))
+                rows.append({k:d.get(k) for k in ("task_id","goal","status","step","updated_at","answer")})
+            except Exception: pass
+        return rows
     def search_hits(self,query:str,limit:int=10)->list[dict]:
         dbp=self.vault/"state/search/ark-search.sqlite"
         if not dbp.is_file(): return []
@@ -200,6 +212,7 @@ class Handler(BaseHTTPRequestHandler):
         if path=="/api/maps": return self.send_json(self.app.maps())
         if path=="/api/capabilities": return self.send_json(self.app.capabilities())
         if path=="/api/field": return self.send_json(self.app.field())
+        if path=="/api/agent/tasks": return self.send_json(self.app.agent_tasks())
         if path=="/api/search":
             q=(parse_qs(parsed.query).get("q") or [""])[0].strip()
             hits=self.app.search_hits(q,6)+self.app.kiwix_hits(q,4)
@@ -220,6 +233,21 @@ class Handler(BaseHTTPRequestHandler):
         path=urlparse(self.path).path
         try:length=int(self.headers.get("Content-Length","0"))
         except ValueError:return self.send_json({"error":"bad content length"},400)
+
+        if path=="/api/agent/run":
+            if length<=0 or length>MAX_BODY:return self.send_json({"error":"invalid body size"},413)
+            try:payload=json.loads(self.rfile.read(length))
+            except Exception:return self.send_json({"error":"invalid json"},400)
+            goal=str(payload.get("goal") or "").strip()
+            if not goal:return self.send_json({"error":"goal required"},400)
+            try:
+                from agent_runner import Agent, make_task_id
+                task_id=str(payload.get("task_id") or make_task_id(goal))
+                steps=max(1,min(int(payload.get("max_steps",8)),16))
+                result=Agent(self.app.vault,self.app.profile,goal,task_id,steps,240).run()
+                return self.send_json(result)
+            except Exception as exc:
+                return self.send_json({"ok":False,"error":str(exc)},503)
 
         if path=="/api/transcribe":
             if length<=0 or length>MAX_AUDIO_BODY:return self.send_json({"error":"invalid audio body size"},413)
