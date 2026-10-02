@@ -4,6 +4,18 @@ Notable changes to THE ARK / ENDWORLD are documented here.
 
 ## Unreleased
 
+### Field, mesh, evolution and distributed ARK
+- Added receive-only RTL-SDR inventory/plan/capture tooling and appliance package closure.
+- Added signed Ark Mesh capability packs with optional mandatory signature verification.
+- Added immutable generation metadata, cold-storage export/verify/restore and rollback metadata.
+- Added multi-node redundancy planning across content copies, node roles and distinct physical sites.
+- Added persistent offline Agent scheduling, named local events and interrupted-task recovery.
+- Added bounded field/research/engineer/coordinator roles and multi-role orchestration without permission escalation.
+- Connected power-mode transitions to persistent local agent events.
+- Added approval-gated evolution: Scout proposal → static inspection → local Agent analysis → explicit human approval.
+- Added portal/API organism status for roles, scheduler, tasks, mesh generation, evolution and field state.
+
+
 ### Factory and universal knowledge
 - Added a verified offline Debian factory with debootstrap seed + local APT package closure.
 - Removed hidden Planetiler network dependencies by freezing auxiliary map datasets.

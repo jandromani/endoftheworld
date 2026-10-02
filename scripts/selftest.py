@@ -111,7 +111,10 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         "scripts/field_drill.py", "scripts/field_campaign.py", "scripts/hardware_matrix.py",
         "scripts/agent_runner.py", "scripts/ark_clone.sh", "scripts/install_secure_boot.sh",
         "scripts/offline_factory.py", "scripts/vector_index.py",
+        "scripts/field_radio.py", "scripts/evolution.py", "scripts/ark_generations.py",
+        "scripts/agent_scheduler.py", "scripts/ark_orchestrator.py", "scripts/ark_cluster.py",
         "runtime/vector_client.py", "runtime/vector-index.sh", "runtime/systemd/endworld-vector-index.service",
+        "runtime/systemd/endworld-agent-scheduler.service", "runtime/systemd/endworld-agent-scheduler.timer",
         "manifests/appliance-os-packages.yml",
         "runtime/expand-data.sh", "runtime/systemd/endworld-expand-data.service",
         "config/ark-cluster.yml", "config/field-comms.yml",
@@ -229,6 +232,17 @@ def validate_runtime(profile: dict) -> None:
     manifest=(ROOT/"manifests/appliance-os-packages.yml").read_text(encoding="utf-8")
     require("poppler-utils" in manifest and "tesseract-ocr-spa" in manifest,
             "PDF/OCR runtime closure missing")
+    require("rtl-sdr" in manifest, "receive-only SDR runtime closure missing")
+    require("ark-orchestrator" in builder and "endworld-agent-scheduler.timer" in builder,
+            "organism scheduler/orchestrator wiring missing")
+    agent=(ROOT/"scripts/agent_runner.py").read_text(encoding="utf-8")
+    require("ROLE_GUIDANCE" in agent and all(x in agent for x in ("field","research","engineer","coordinator")),
+            "bounded agent roles missing")
+    evolution=(ROOT/"scripts/evolution.py").read_text(encoding="utf-8")
+    require("human_approval_required" in evolution and "APPROVED_FOR_MANIFEST_REVIEW" in evolution,
+            "approval-gated evolution contract missing")
+    cluster=(ROOT/"config/ark-cluster.yml").read_text(encoding="utf-8")
+    require("geographic_separation_required: true" in cluster, "geographic redundancy policy missing")
 
 
 def validate_vault(vault: pathlib.Path, profile: dict) -> dict:

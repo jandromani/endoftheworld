@@ -18,6 +18,7 @@ import json
 import os
 import pathlib
 import shutil
+import subprocess
 import tarfile
 import tempfile
 from typing import Iterable
@@ -282,7 +283,21 @@ def verify_pack(bundle: pathlib.Path) -> dict:
     return m
 
 
-def apply_pack(bundle: pathlib.Path, store: pathlib.Path, inventory_out: pathlib.Path | None) -> dict:
+def sign_pack(bundle: pathlib.Path, key: pathlib.Path, signature: pathlib.Path) -> None:
+    subprocess.run(["openssl","dgst","-sha256","-sign",str(key),"-out",str(signature),str(bundle)],check=True)
+    print(signature)
+
+def verify_pack_signature(bundle: pathlib.Path, public_key: pathlib.Path, signature: pathlib.Path) -> None:
+    subprocess.run(["openssl","dgst","-sha256","-verify",str(public_key),"-signature",str(signature),str(bundle)],check=True)
+    print("ARK PACK SIGNATURE VERIFIED")
+
+def apply_pack(bundle: pathlib.Path, store: pathlib.Path, inventory_out: pathlib.Path | None,
+               public_key: pathlib.Path | None = None, signature: pathlib.Path | None = None,
+               require_signature: bool = False) -> dict:
+    if require_signature or public_key or signature:
+        if public_key is None or signature is None:
+            raise MeshError("signed pack requires both public key and signature")
+        verify_pack_signature(bundle,public_key,signature)
     m = verify_pack(bundle)
     with tarfile.open(bundle, "r") as tf:
         for c in m.get("chunks", []):
@@ -424,10 +439,19 @@ def main() -> int:
     v = sub.add_parser("verify-pack")
     v.add_argument("bundle")
 
+    sp = sub.add_parser("sign-pack")
+    sp.add_argument("bundle"); sp.add_argument("--key",required=True); sp.add_argument("--signature",required=True)
+
+    vp = sub.add_parser("verify-signed-pack")
+    vp.add_argument("bundle"); vp.add_argument("--public-key",required=True); vp.add_argument("--signature",required=True)
+
     a = sub.add_parser("apply-pack")
     a.add_argument("bundle")
     a.add_argument("--store", required=True)
     a.add_argument("--inventory-out")
+    a.add_argument("--public-key")
+    a.add_argument("--signature")
+    a.add_argument("--require-signature",action="store_true")
 
     r = sub.add_parser("restore")
     r.add_argument("--inventory", required=True)
@@ -455,9 +479,16 @@ def main() -> int:
              pathlib.Path(args.out).resolve(), pathlib.Path(args.target_inventory).resolve() if args.target_inventory else None)
     elif args.cmd == "verify-pack":
         verify_pack(pathlib.Path(args.bundle).resolve())
+    elif args.cmd == "sign-pack":
+        sign_pack(pathlib.Path(args.bundle).resolve(),pathlib.Path(args.key).resolve(),pathlib.Path(args.signature).resolve())
+    elif args.cmd == "verify-signed-pack":
+        verify_pack_signature(pathlib.Path(args.bundle).resolve(),pathlib.Path(args.public_key).resolve(),pathlib.Path(args.signature).resolve())
     elif args.cmd == "apply-pack":
         apply_pack(pathlib.Path(args.bundle).resolve(), pathlib.Path(args.store).resolve(),
-                   pathlib.Path(args.inventory_out).resolve() if args.inventory_out else None)
+                   pathlib.Path(args.inventory_out).resolve() if args.inventory_out else None,
+                   pathlib.Path(args.public_key).resolve() if args.public_key else None,
+                   pathlib.Path(args.signature).resolve() if args.signature else None,
+                   args.require_signature)
     elif args.cmd == "restore":
         restore(pathlib.Path(args.inventory).resolve(), pathlib.Path(args.store).resolve(), pathlib.Path(args.target_vault).resolve())
     elif args.cmd == "state-export":

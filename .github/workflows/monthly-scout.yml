@@ -31,6 +31,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/scout.py
 
+      - name: Convert discovery into an untrusted evolution proposal
+        run: |
+          python scripts/evolution.py propose --scout reports/scout-latest.json --out reports/evolution-latest.json --per-family 3
+          python scripts/evolution.py validate reports/evolution-latest.json
+          python scripts/evolution.py agent-prompt reports/evolution-latest.json --out reports/evolution-agent-review.txt
+
       - name: Publish discovery report as review PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -50,4 +56,8 @@ jobs:
           git commit -m "Scout ENDWORLD capabilities $(date -u +%Y-%m-%d)"
           git push -u origin "$BRANCH"
 
-          gh pr create             --base "${{ github.event.repository.default_branch }}"             --head "$BRANCH"             --title "ENDWORLD capability scout $(date -u +%Y-%m-%d)"             --body "Discovery metadata only. No candidate has been downloaded into the vault, executed, trusted, or promoted. The required NANO source-resolution plan passed before this report was created."
+          gh pr create \
+            --base "${{ github.event.repository.default_branch }}" \
+            --head "$BRANCH" \
+            --title "ENDWORLD capability scout $(date -u +%Y-%m-%d)" \
+            --body "Discovery + untrusted evolution proposal only. No candidate has been downloaded into the vault, executed, trusted, or promoted. Promotion still requires static quarantine evidence, local Ark analysis, explicit human approval, normal manifest review and CI."

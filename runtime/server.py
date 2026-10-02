@@ -159,6 +159,38 @@ class App:
         data["comms_plan_ready"]=(self.vault/"state/field/comms-plan.md").is_file()
         data["ark_mesh_available"]=(pathlib.Path(__file__).resolve().parents[1]/"scripts/ark_mesh.py").is_file()
         return data
+    def organism(self)->dict:
+        tasks=self.agent_tasks()
+        counts={}
+        for t in tasks:
+            status=str(t.get("status") or "unknown")
+            counts[status]=counts.get(status,0)+1
+        scheduler={"ready":False,"jobs":0,"enabled_jobs":0,"events":0}
+        dbp=self.vault/"state/agent/scheduler.sqlite"
+        if dbp.is_file():
+            try:
+                db=sqlite3.connect(f"file:{dbp}?mode=ro",uri=True)
+                scheduler={
+                    "ready":True,
+                    "jobs":int(db.execute("select count(*) from jobs").fetchone()[0]),
+                    "enabled_jobs":int(db.execute("select count(*) from jobs where enabled=1").fetchone()[0]),
+                    "events":int(db.execute("select count(*) from events").fetchone()[0]),
+                }
+                db.close()
+            except sqlite3.Error:
+                pass
+        gen=self.vault/"state/mesh/generations/active-generation.json"
+        try:active=json.loads(gen.read_text(encoding="utf-8")).get("active")
+        except Exception:active=None
+        return {
+            "schema":1,
+            "agent":{"roles":["field","research","engineer","coordinator"],"recent_tasks":len(tasks),"by_status":counts},
+            "scheduler":scheduler,
+            "mesh":{"available":(pathlib.Path(__file__).resolve().parents[1]/"scripts/ark_mesh.py").is_file(),"active_generation":active},
+            "evolution":{"approval_gated":(pathlib.Path(__file__).resolve().parents[1]/"scripts/evolution.py").is_file()},
+            "field":{"radio_receive_only":(pathlib.Path(__file__).resolve().parents[1]/"scripts/field_radio.py").is_file(),
+                     "power_mode":self.field().get("mode")},
+        }
     def agent_tasks(self)->list[dict]:
         root=self.vault/"state/agent/tasks"
         if not root.is_dir(): return []
@@ -214,6 +246,7 @@ class Handler(BaseHTTPRequestHandler):
         if path=="/api/capabilities": return self.send_json(self.app.capabilities())
         if path=="/api/field": return self.send_json(self.app.field())
         if path=="/api/agent/tasks": return self.send_json(self.app.agent_tasks())
+        if path=="/api/organism": return self.send_json(self.app.organism())
         if path=="/api/search":
             q=(parse_qs(parsed.query).get("q") or [""])[0].strip()
             hits=self.app.search_hits(q,5)+vector_search(q,4)+self.app.kiwix_hits(q,4)

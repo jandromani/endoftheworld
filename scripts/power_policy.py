@@ -186,6 +186,20 @@ def decide(status: dict, policy: str, threshold: float, recover: float, previous
     return "normal"
 
 
+def emit_agent_event(state_path: pathlib.Path, name: str, payload: dict) -> None:
+    scheduler = pathlib.Path(__file__).with_name("agent_scheduler.py")
+    try:
+        vault = state_path.resolve().parents[2]
+    except IndexError:
+        return
+    if not scheduler.is_file() or not (vault / "state").exists():
+        return
+    subprocess.run([
+        __import__("sys").executable, str(scheduler), "--vault", str(vault),
+        "emit", name, "--payload", json.dumps(payload, separators=(",", ":"))
+    ], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sysfs", default="/sys/class/power_supply")
@@ -195,6 +209,7 @@ def main() -> int:
     ap.add_argument("--policy", choices=["monitor", "conserve"], default=os.getenv("ENDWORLD_POWER_POLICY", "monitor"))
     ap.add_argument("--threshold", type=float, default=float(os.getenv("ENDWORLD_POWER_THRESHOLD", "20")))
     ap.add_argument("--recover", type=float, default=float(os.getenv("ENDWORLD_POWER_RECOVER", "35")))
+    ap.add_argument("--emit-events", action="store_true")
     args = ap.parse_args()
 
     if args.threshold >= args.recover:
@@ -234,6 +249,16 @@ def main() -> int:
     tmp = state_path.with_suffix(".tmp")
     tmp.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n")
     os.replace(tmp, state_path)
+    if args.emit_events and args.policy == "conserve" and mode != previous:
+        event = "low-power" if mode == "survival" else "power-recovered"
+        emit_agent_event(state_path, event, {
+            "mode": mode,
+            "previous_mode": previous,
+            "battery_percent": out.get("battery_percent"),
+            "ac_online": out.get("ac_online"),
+            "power_watts": out.get("power_watts"),
+            "runtime_hours_estimate": out.get("runtime_hours_estimate"),
+        })
     print(json.dumps(out, indent=2))
     return 0
 

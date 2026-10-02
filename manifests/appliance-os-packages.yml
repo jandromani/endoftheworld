@@ -39,6 +39,7 @@ base:
   - pciutils
   - smartmontools
   - nut-client
+  - rtl-sdr
   - parted
   - e2fsprogs
   - firmware-linux-free

@@ -1,0 +1,20 @@
+schema: 1
+nodes:
+  - id: field-madrid
+    role: field
+    site: site-a
+    inventory: ../state/mesh/field.inventory.json
+    state_backup: true
+    cold_storage: false
+  - id: reconstruction-secondary
+    role: reconstruction
+    site: site-b
+    inventory: ../state/mesh/reconstruction.inventory.json
+    state_backup: true
+    cold_storage: false
+  - id: cold-third-site
+    role: cold
+    site: site-c
+    inventory: ../state/mesh/cold.inventory.json
+    state_backup: false
+    cold_storage: true

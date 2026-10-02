@@ -6,4 +6,4 @@ RequiresMountsFor=/srv/endworld
 [Service]
 Type=oneshot
 EnvironmentFile=-/etc/endworld/profile.env
-ExecStart=/usr/bin/python3 /opt/endworld/scripts/power_policy.py --apply --state /srv/endworld/state/field/power.json
+ExecStart=/usr/bin/python3 /opt/endworld/scripts/power_policy.py --apply --emit-events --state /srv/endworld/state/field/power.json

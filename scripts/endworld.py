@@ -32,6 +32,14 @@ def main() -> int:
     agent.add_argument("goal")
     agent.add_argument("--task-id")
     agent.add_argument("--max-steps", type=int, default=8)
+    agent.add_argument("--role", choices=["field","research","engineer","coordinator"], default="field")
+    orch = sub.add_parser("orchestrate", help="run bounded offline specialist roles + coordinator")
+    orch.add_argument("goal")
+    orch.add_argument("--roles", default="research,engineer,field")
+    orch.add_argument("--max-steps", type=int, default=6)
+    for tool_name in ("scheduler","radio","mesh","generations","evolution","cluster"):
+        p=sub.add_parser(tool_name)
+        p.add_argument("tool_args", nargs=argparse.REMAINDER)
     ai=sub.add_parser("ai-mode"); ai.add_argument("mode",choices=["lite","general","coder"])
     sp = sub.add_parser("snapshot-packages")
     sp.add_argument("--manifest")
@@ -83,11 +91,24 @@ def main() -> int:
     if args.command == "agent":
         vault_path = pathlib.Path("/srv/endworld") if pathlib.Path("/srv/endworld/lock").exists() else ROOT / vault
         cmd = [py, "scripts/agent_runner.py", "--vault", str(vault_path), "--profile", args.profile,
-               "--max-steps", str(args.max_steps)]
+               "--max-steps", str(args.max_steps), "--role", args.role]
         if args.task_id:
             cmd += ["--task-id", args.task_id]
         cmd.append(args.goal)
         return run(*cmd)
+    if args.command == "orchestrate":
+        vault_path = pathlib.Path("/srv/endworld") if pathlib.Path("/srv/endworld/lock").exists() else ROOT / vault
+        return run(py,"scripts/ark_orchestrator.py","--vault",str(vault_path),"--profile",args.profile,
+                   "--roles",args.roles,"--max-steps",str(args.max_steps),args.goal)
+    if args.command in ("scheduler","radio","mesh","generations","evolution","cluster"):
+        scripts={
+            "scheduler":"agent_scheduler.py","radio":"field_radio.py","mesh":"ark_mesh.py",
+            "generations":"ark_generations.py","evolution":"evolution.py","cluster":"ark_cluster.py"}
+        extra=list(args.tool_args)
+        if args.command in ("scheduler","radio") and "--vault" not in extra:
+            vault_path = pathlib.Path("/srv/endworld") if pathlib.Path("/srv/endworld/lock").exists() else ROOT / vault
+            extra=["--vault",str(vault_path)]+extra
+        return run(py,"scripts/"+scripts[args.command],*extra)
     if args.command == "ai-mode":
         return run("bash","runtime/switch-ai.sh",args.mode)
     if args.command == "snapshot-packages":
