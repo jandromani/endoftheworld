@@ -22,7 +22,7 @@ Start there.
 
 - one x86-64 PC running Debian/Ubuntu Linux for the build;
 - Internet while downloading;
-- a spare SSD/USB device of at least 64 GB for NANO;
+- a spare SSD/external SSD with at least 64 GB nominal capacity for NANO (SSD is strongly preferred over a cheap USB flash drive);
 - enough free builder storage for both the downloaded vault and a raw disk image;
 - administrator (`sudo`) access.
 
@@ -141,16 +141,15 @@ Never guess.
 
 ### From the Ark computer itself
 
-The console automatically logs into the development user.
+On first boot, THE ARK runs the credential wizard before enabling its Wi-Fi
+access point. You choose the keyboard layout, hostname, private console
+password and Wi-Fi password. The supported field image has no shared/default
+post-setup password.
 
-Current default:
-
-`endworld / endworld`
-
-Change the password:
+If setup was interrupted, run:
 
 ```bash
-passwd
+sudo endworld-firstboot
 ```
 
 ### From another computer/phone on Ethernet/LAN
@@ -165,11 +164,9 @@ or the Ark machine's IP address.
 
 If the Wi-Fi chipset supports Linux AP mode, the node creates its profile network.
 
-NANO defaults:
-
-`ENDWORLD-NANO`
-
-The development password is stored in `config/nano.env`. Change it before using the node on an untrusted network.
+The default SSID suggestion is profile-specific (for example
+`THE-ARK-NANO`), but the first-boot wizard requires you to set the actual
+Wi-Fi password before the access point is enabled.
 
 ## What will I see?
 
