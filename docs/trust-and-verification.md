@@ -133,3 +133,46 @@ Keep at least two offline copies of the release public key fingerprint outside
 the Ark media. A replacement signing key is a new trust epoch: publish the new
 fingerprint through an already trusted channel and never silently overwrite a
 field node's trust root.
+
+
+## Public release bundles
+
+`scripts/release_bundle.py` turns an already-built image into a distributable
+release directory that binds:
+
+- the raw/compressed disk image;
+- the frozen lock;
+- the CycloneDX SBOM;
+- the release public key;
+- the exact Git revision;
+- a detached signature over the release manifest;
+- SHA-256 checksums for every shipped file.
+
+The private signing key is passed explicitly and must remain offline. Release
+packaging never claims physical field proof.
+
+Typical flow:
+
+```bash
+python scripts/release_bundle.py create \
+  --profile nano --version 1.0.0-rc1 \
+  --image dist/endworld-nano-amd64.img \
+  --vault vault/nano \
+  --out dist/releases/nano-1.0.0-rc1 \
+  --private-key /offline-media/release-private.pem \
+  --public-key keys/release-public.pem
+
+python scripts/release_bundle.py verify \
+  --dir dist/releases/nano-1.0.0-rc1
+```
+
+## Trust policy and reproducibility
+
+`config/trust-policy.yml` records the project's static promotion policy.
+`scripts/trust_audit.py` can audit frozen lock identity coverage, release
+manifest policy and byte-for-byte reproducibility of selected artifacts.
+
+A reproducibility PASS means two supplied outputs are byte-identical. It does
+not prove the source is benign. Vulnerability exceptions belong in
+`config/vulnerability-allowlist.yml` and should include a bounded rationale
+rather than silently weakening the release gate.
