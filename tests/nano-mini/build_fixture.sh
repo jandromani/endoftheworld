@@ -71,8 +71,27 @@ class H(BaseHTTPRequestHandler):
         self.send_response(200);self.send_header("Content-Type","application/json")
         self.send_header("Content-Length",str(len(body)));self.end_headers();self.wfile.write(body)
     def do_POST(self):
-        n=int(self.headers.get("Content-Length","0"));self.rfile.read(n)
-        body=json.dumps({"choices":[{"message":{"content":"mini-ai-ok"}}]}).encode()
+        n=int(self.headers.get("Content-Length","0"));raw=self.rfile.read(n)
+        try: req=json.loads(raw or b"{}")
+        except Exception: req={}
+        msgs=req.get("messages") or []
+        system=str(msgs[0].get("content","")) if msgs else ""
+        if "THE ARK offline field agent" in system:
+            transcript="\n".join(str(m.get("content","")) for m in msgs)
+            if '"internet": false' in transcript:
+                out={"action":"final","answer":"Offline confirmed. Burn guidance was read from frozen source [E1] and field note was written."}
+            elif '"written": true' in transcript:
+                out={"action":"tool","tool":"ark.status","args":{}}
+            elif "Enfriar la quemadura" in transcript:
+                out={"action":"tool","tool":"ark.write_note","args":{"name":"burn-field-note","text":"# Burn field note\n\nLocal frozen guidance: Enfriar la quemadura con agua corriente limpia durante varios minutos. Source [E1]."}}
+            elif '"id": "E1"' in transcript:
+                out={"action":"tool","tool":"ark.read_source","args":{"id":"E1"}}
+            else:
+                out={"action":"tool","tool":"ark.search","args":{"query":"como trato una quemadura","limit":4}}
+            content=json.dumps(out,ensure_ascii=False)
+        else:
+            content="mini-ai-ok"
+        body=json.dumps({"choices":[{"message":{"content":content}}]}).encode()
         self.send_response(200);self.send_header("Content-Type","application/json")
         self.send_header("Content-Length",str(len(body)));self.end_headers();self.wfile.write(body)
     def log_message(self,*a): pass
