@@ -2,7 +2,7 @@
 from __future__ import annotations
 import argparse, json, pathlib, re, shutil, subprocess, sys, threading, time, webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 import yaml
 
 ROOT=pathlib.Path(__file__).resolve().parents[1]
@@ -119,7 +119,7 @@ class Handler(BaseHTTPRequestHandler):
         if path=="/api/disks": return self.send_json(disks())
         if path=="/api/estimate":
             q=urlparse(self.path).query
-            params=__import__("urllib.parse").parse.parse_qs(q)
+            params=parse_qs(q)
             pid=(params.get("profile") or ["nano"])[0]
             try:
                 meta=profile_meta(pid); target=int(meta["target_bytes"])
