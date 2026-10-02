@@ -25,6 +25,7 @@
 **[🇪🇸 Guía para empezar desde cero](docs/es/EMPIEZA-AQUI.md)** ·
 [How it works](docs/how-it-works.md) ·
 [Project NOMAD inside](docs/project-nomad.md) ·
+[Offline Agent](docs/AGENT.md) ·
 [What is still missing?](docs/frontiers.md)
 
 </div>
@@ -174,20 +175,18 @@ Now:
 5. wait for the node to start;
 6. open **http://endworld-nano.local/** from another device on the same LAN, or connect to the Ark Wi-Fi if the hardware supports access-point mode.
 
-Default console account in the current development image:
+On first boot, the console wizard runs before Wi-Fi is enabled. It sets the
+keyboard layout first, then requires a private console password and an
+8–63-character Wi-Fi password. Passwordless sudo and console autologin are
+removed when setup completes.
 
-```text
-user:     endworld
-password: endworld
-```
-
-Change it after first boot:
+If setup was interrupted, run:
 
 ```bash
-passwd
+sudo endworld-firstboot
 ```
 
-The Wi-Fi defaults live in `config/<profile>.env` and should also be changed before use on an untrusted network.
+There is no supported shared/default field password after first-boot setup.
 
 **Full beginner guide → [docs/guides/BEGINNER.md](docs/guides/BEGINNER.md)**
 
@@ -302,6 +301,10 @@ offline node
 
 A field Ark does not silently mutate because an upstream `latest` tag changed.
 
+Scout is the connected discovery plane; Builder is the acquisition/freeze
+plane; THE ARK Agent is the offline reasoning/execution plane. The agent does
+not auto-promote downloaded software.
+
 ---
 
 # 🧭 Where does Project NOMAD fit?
@@ -347,7 +350,10 @@ From a phone/laptop on the local network you can open the portal and:
 - transcribe audio locally;
 - view offline maps;
 - download preserved Android apps;
-- inspect the exact frozen capability inventory.
+- inspect the exact frozen capability inventory;
+- give a bounded task to **THE ARK Agent**, which can search/read frozen
+  evidence, inspect node/map/mesh state and write field notes while remaining
+  confined to its allowlisted local tools.
 
 FAMILY additionally exposes:
 
