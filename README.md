@@ -22,6 +22,7 @@
 ![Boot](https://img.shields.io/badge/boot-BIOS%20%2B%20UEFI-7950f2?style=flat-square)
 
 **[🚀 I know nothing about Linux — start here](docs/guides/BEGINNER.md)** ·
+**[💽 Signed release flasher](docs/guides/FLASHER.md)** ·
 **[🇪🇸 Guía para empezar desde cero](docs/es/EMPIEZA-AQUI.md)** ·
 [How it works](docs/how-it-works.md) ·
 [Project NOMAD inside](docs/project-nomad.md) ·
@@ -72,7 +73,7 @@ You need:
 4. **A spare SSD/external SSD** large enough for the profile; a real SSD is strongly preferred over a cheap USB flash drive.
 5. Time: downloading large offline libraries can take a while.
 
-> Windows/macOS are not direct image-builder targets yet. That is a frontier we still need to cross.
+> Windows/macOS are not full from-source image-builder targets. For signed **prebuilt releases**, the cross-platform Ark Flasher verifies and writes the image on Windows, macOS or Linux.
 
 ### The easy path
 
@@ -394,7 +395,8 @@ Instead of hiding 17 loose TODOs in this README, the remaining work is organized
 
 - [ ] no-terminal desktop builder
 - [ ] signed prebuilt images/releases
-- [ ] Windows/macOS builder
+- [x] Windows/macOS/Linux signed-release verifier/flasher code + packaged CI
+- [ ] Windows/macOS full from-source builder
 - [x] Secure Boot chain
 - [x] first-boot credential wizard
 - [x] one federated search over indexed local docs/code + Kiwix
@@ -494,7 +496,7 @@ make nomad-ai-coder
 | Trust | [Trust & verification](docs/trust-and-verification.md) · [Release runbook](docs/guides/RELEASE.md) · [Security](SECURITY.md) |
 | Components | [Runtime](docs/runtime-services.md) · [AI](docs/ai.md) · [Networking](docs/networking.md) · [Developer mode](docs/developer-mode.md) |
 | Project NOMAD | [How NOMAD sits inside THE ARK](docs/project-nomad.md) |
-| Operations | [Build image](docs/guides/build-image.md) · [Offline factory](docs/guides/OFFLINE-FACTORY.md) · [Field proof](docs/guides/FIELD-PROOF.md) · [Field radio](docs/guides/FIELD-RADIO.md) · [Troubleshooting](docs/guides/troubleshooting.md) |
+| Operations | [Build image](docs/guides/build-image.md) · [Release flasher](docs/guides/FLASHER.md) · [Offline factory](docs/guides/OFFLINE-FACTORY.md) · [Field proof](docs/guides/FIELD-PROOF.md) · [Field radio](docs/guides/FIELD-RADIO.md) · [Troubleshooting](docs/guides/troubleshooting.md) |
 | Autonomy | [Agent](docs/AGENT.md) · [Ark Organism](docs/guides/ARK-ORGANISM.md) · [Universal knowledge](docs/guides/UNIVERSAL-KNOWLEDGE.md) · [Trust + Seed](docs/guides/TRUST-SEED.md) |
 | Reference | [CLI](docs/reference/cli.md) · [Environment](docs/reference/environment-variables.md) · [Ports](docs/reference/ports-and-services.md) |
 | Future | [Frontiers](docs/frontiers.md) · [Roadmap](ROADMAP.md) |

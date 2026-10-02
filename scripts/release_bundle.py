@@ -61,6 +61,7 @@ def create(profile,version,image,vault,outdir,private,public,compress):
         "schema":1,"protocol":"ark-public-release-v1","project":"THE ARK","profile":profile,"version":version,
         "architecture":"amd64","created_utc":dt.datetime.now(dt.timezone.utc).isoformat(),
         "git_commit":git_commit(),"release_key_sha256":pub_fingerprint(public_out),
+        "source_image":{"bytes":image.stat().st_size,"sha256":digest(image)},
         "distribution":{"compressed":compress,"format":"raw-disk-image","compression":"zstd" if compress else None},
         "files":files,
         "field_proof":{"claimed":False,"note":"Physical field proof must be established separately from release packaging."},

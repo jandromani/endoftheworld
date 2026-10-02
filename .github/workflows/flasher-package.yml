@@ -1,0 +1,43 @@
+name: Package THE ARK release flasher
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "flasher-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: the-ark-flasher-linux-x64
+            path: dist/the-ark-flasher
+          - os: windows-latest
+            artifact: the-ark-flasher-windows-x64
+            path: dist/the-ark-flasher.exe
+          - os: macos-latest
+            artifact: the-ark-flasher-macos
+            path: dist/the-ark-flasher
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Linux Tk runtime
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-tk
+      - run: python -m pip install -r flasher/requirements.txt pyinstaller
+      - run: python flasher/ark_flasher.py selftest
+      - run: pyinstaller --noconfirm --clean --onefile --name the-ark-flasher flasher/ark_flasher.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.path }}
+          if-no-files-found: error

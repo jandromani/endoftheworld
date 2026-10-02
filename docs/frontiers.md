@@ -4,7 +4,7 @@ THE ARK's long-term goal is not “store more files”. It is to preserve enough
 
 The backlog is organized as seven engineering epics. The GitHub issues are the live execution layer; this document explains why each frontier exists and what “done” means.
 
-## 1. 🖱️ Zero-touch Ark — Issue #8\n\n**Status: 🟨 advanced MVP shipped.** Local browser builder + secure first boot + capacity/mount/root disk guards + pre-acquisition estimates are implemented. Packaged Windows/macOS prebuilt-image UX and the first published signed image remain.
+## 1. 🖱️ Zero-touch Ark — Issue #8\n\n**Status: 🟨 near-complete software.** Local browser builder, secure first boot, disk guards, pre-acquisition estimates and a packaged cross-platform signed-release verifier/flasher are implemented. A full Windows/macOS from-source builder is intentionally not required for NANO distribution; the first real published signed image and physical flash validation remain.
 
 **Goal:** a non-technical user can create an Ark without understanding Linux.
 

@@ -141,9 +141,7 @@ Before the first physical NANO field drive, software now additionally provides:
 - code-aware symbol indexing for Python and common systems/application languages, including frozen source archives;
 - a public release runbook that keeps cryptographic promotion separate from physical field proof.
 
-Remaining R11–R13 work is deliberately narrower: packaged Windows/macOS prebuilt-image UX,
-curated upstream signature coverage, full bilingual portal/docs parity and corpus-scale/reconstruction
-evidence from real complete profile builds.
+R11 now also includes a cross-platform signed-release verifier/flasher with packaged-binary CI on Windows, macOS and Linux. Remaining R11–R13 work is deliberately narrower: publishing the first real signed NANO RC, curated upstream signature coverage, full bilingual portal/docs parity and corpus-scale/reconstruction evidence from real complete profile builds.
 
 ## Cross-cutting work
 
