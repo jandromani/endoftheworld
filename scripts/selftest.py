@@ -122,10 +122,12 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         "wikipedia-es", "wikipedia-medicine-es", "spain-osm", "planetiler",
         "maplibre-js", "maplibre-css", "pmtiles-js", "bitchat-android",
         "meshtastic-android", "reticulum-source", "project-nomad-source",
-        "planetiler-water-polygons", "planetiler-natural-earth", "planetiler-lake-centerlines",
         "kiwix", "llama-server", "whisper-server",
     }
     require(expected_common.issubset(ids), f"{pid}: common wiring missing {sorted(expected_common - ids)}")
+    if pid != "nano-mini":
+        map_sources={"planetiler-water-polygons","planetiler-natural-earth","planetiler-lake-centerlines"}
+        require(map_sources.issubset(ids), f"{pid}: frozen Planetiler inputs missing {sorted(map_sources-ids)}")
 
     if pid == "nano":
         expected = {"qwen3-4b-q4", "whisper-small","sideband-android","lxmf-source",
@@ -134,6 +136,7 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         require(expected.issubset(ids), f"NANO wiring missing ids: {sorted(expected - ids)}")
         require(target == 58_000_000_000, "NANO distribution image target must stay 58,000,000,000 bytes")
         require(reserve == 6_000_000_000, "NANO reserve must preserve a 52 GB usable envelope")
+        require(headroom == 3_000_000_000, "NANO acquisition headroom must reserve 3 GB for containers/derived outputs")
     elif pid == "nano-mini":
         expected={"qwen3-4b-q4","whisper-small"}
         require(expected.issubset(ids), f"NANO-MINI wiring missing ids: {sorted(expected-ids)}")
