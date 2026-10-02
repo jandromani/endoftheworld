@@ -144,6 +144,22 @@ def collect(profile: str) -> dict:
     }
 
 
+def agent_smoke(profile: str, vault: pathlib.Path) -> dict:
+    script = pathlib.Path(__file__).with_name("agent_runner.py")
+    goal = "Find local burn-treatment guidance, cite the frozen source, write a field note, and confirm offline status."
+    p = subprocess.run(
+        [__import__("sys").executable, str(script), "--vault", str(vault), "--profile", profile,
+         "--task-id", "field-agent-smoke", "--json", goal],
+        text=True, capture_output=True, timeout=300,
+    )
+    try:
+        data = json.loads(p.stdout.strip().splitlines()[-1]) if p.stdout.strip() else {}
+    except Exception:
+        data = {}
+    return {"ok": p.returncode == 0 and bool(data.get("ok")), "returncode": p.returncode,
+            "result": data, "output": (p.stdout + p.stderr)[-4000:]}
+
+
 def vault_verify(profile: str, vault: pathlib.Path) -> dict:
     script = pathlib.Path(__file__).with_name("verify_vault.py")
     p = subprocess.run(
@@ -153,7 +169,7 @@ def vault_verify(profile: str, vault: pathlib.Path) -> dict:
     return {"ok": p.returncode == 0, "returncode": p.returncode, "output": (p.stdout + p.stderr)[-4000:]}
 
 
-def assess(report: dict, expect_offline: bool, require_cold: bool) -> list[str]:
+def assess(report: dict, expect_offline: bool, require_cold: bool, require_agent: bool) -> list[str]:
     failures = []
     checks = report.get("checks") or {}
     if not checks.get("portal"):
@@ -164,6 +180,8 @@ def assess(report: dict, expect_offline: bool, require_cold: bool) -> list[str]:
         failures.append("WAN is still reachable during offline drill")
     if require_cold and not report.get("operator_assertions", {}).get("cold_boot"):
         failures.append("cold boot was not asserted by the operator")
+    if require_agent and not (report.get("agent_smoke") or {}).get("ok"):
+        failures.append("offline agent smoke failed")
     vv = report.get("vault_verification")
     if vv is not None and not vv.get("ok"):
         failures.append("vault verification failed")
@@ -194,6 +212,7 @@ def markdown(report: dict) -> str:
 - Kiwix: {c.get('kiwix')}
 - AI: {c.get('ai')}
 - Voice: {c.get('voice')}
+- Agent smoke: {(report.get('agent_smoke') or {}).get('ok', 'not requested')}
 
 ## Failures
 
@@ -213,6 +232,7 @@ def main() -> int:
     ap.add_argument("--cold-boot-asserted", action="store_true")
     ap.add_argument("--require-cold-boot", action="store_true")
     ap.add_argument("--verify-vault", action="store_true")
+    ap.add_argument("--agent-smoke", action="store_true")
     ap.add_argument("--fixture")
     args = ap.parse_args()
 
@@ -232,7 +252,9 @@ def main() -> int:
     }
     if args.verify_vault and not args.fixture:
         report["vault_verification"] = vault_verify(args.profile, pathlib.Path(args.vault))
-    failures = assess(report, args.expect_offline, args.require_cold_boot)
+    if args.agent_smoke and not args.fixture:
+        report["agent_smoke"] = agent_smoke(args.profile, pathlib.Path(args.vault))
+    failures = assess(report, args.expect_offline, args.require_cold_boot, args.agent_smoke)
     report["failures"] = failures
     report["passed"] = not failures
 
