@@ -82,4 +82,47 @@ grep -q 'mini-whisper-ok' /tmp/voice.json
 state_code="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1/vault/state/private/secret.txt)"
 [[ "$state_code" == "403" ]]
 
+
+log "running offline agent acceptance task"
+if ! if ! python3 /opt/endworld/scripts/agent_runner.py \
+  --vault /srv/endworld --profile nano-mini --task-id nano-mini-agent-ci --json \
+  "Find the local burn-treatment guidance, cite the frozen source, write a field note, and confirm whether Internet is available." \
+  >/tmp/agent.json 2>/tmp/agent.err; then
+  log "agent runner failed"
+  while IFS= read -r line; do log "AGENT_OUT $line"; done </tmp/agent.json || true
+  while IFS= read -r line; do log "AGENT_ERR $line"; done </tmp/agent.err || true
+  if [[ -f /srv/endworld/state/agent/tasks/nano-mini-agent-ci/events.jsonl ]]; then
+    while IFS= read -r line; do log "AGENT_EVENT $line"; done </srv/endworld/state/agent/tasks/nano-mini-agent-ci/events.jsonl
+  fi
+  exit 1
+fi 2>&1; then
+  while IFS= read -r line; do log "AGENT: $line"; done </tmp/agent.json
+  exit 1
+fi
+python3 - <<'PY'
+import json,pathlib
+x=json.load(open("/tmp/agent.json"))
+assert x["ok"] is True,x
+assert "[E1]" in x["answer"],x
+note=pathlib.Path("/srv/endworld/state/agent/workspace/burn-field-note.md")
+assert note.is_file(),note
+text=note.read_text(encoding="utf-8")
+assert "[E1]" in text and "quemadura" in text.lower(),text
+events=pathlib.Path("/srv/endworld/state/agent/tasks/nano-mini-agent-ci/events.jsonl").read_text(encoding="utf-8")
+assert '"tool": "ark.search"' in events,events
+assert '"tool": "ark.read_source"' in events,events
+assert '"tool": "ark.write_note"' in events,events
+assert '"tool": "ark.status"' in events,events
+assert '"internet": false' in events,events
+PY
+python3 /opt/endworld/scripts/agent_runner.py \
+  --vault /srv/endworld --profile nano-mini --policy-selftest >/tmp/agent-policy.json
+python3 - <<'PY'
+import json
+x=json.load(open("/tmp/agent-policy.json"))
+assert x["ok"] is True,x
+assert "os.shell" in x["denied"],x
+PY
+log "THE_ARK_AGENT_OFFLINE_SMOKE=PASS"
+
 log "THE_ARK_OFFLINE_SMOKE=PASS"

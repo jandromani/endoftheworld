@@ -147,6 +147,8 @@ mkdir -p "$ROOTFS/opt/endworld" "$ROOTFS/etc/endworld"
 rsync -a --delete --exclude '.git/' --exclude '.venv/' --exclude 'vault/' --exclude 'dist/' "$REPO/" "$ROOTFS/opt/endworld/"
 install -m 0644 "$REPO/config/$PROFILE.env" "$ROOTFS/etc/endworld/profile.env"
 rsync -aH --info=progress2 "$VAULT/" "$ROOTFS/srv/endworld/"
+mkdir -p "$ROOTFS/srv/endworld/state/agent/tasks" "$ROOTFS/srv/endworld/state/agent/workspace"
+chroot "$ROOTFS" chown -R endworld:endworld /srv/endworld/state/agent
 
 chmod +x "$ROOTFS"/opt/endworld/runtime/*.sh "$ROOTFS"/opt/endworld/runtime/network/*.sh "$ROOTFS"/opt/endworld/scripts/*.sh 2>/dev/null || true
 cat > "$ROOTFS/usr/local/bin/endworld" <<'EOF'

@@ -118,3 +118,37 @@ ARK           maximum preservation and redundancy
 ```
 
 The profile, not ad-hoc runtime code, should express those differences.
+
+
+## Agent plane
+
+The field-node agent is intentionally separated from Scout and Builder:
+
+```text
+connected side                         field side
+
+Scout -> review -> Builder -> Freeze  ||  Agent -> allowlisted local tools
+                                      ||      -> mutable state only
+                                      ||      -> frozen vault read-only
+```
+
+Scout discovers. Builder acquires and freezes. The Agent reasons over already
+trusted local capabilities. A field agent cannot silently promote downloaded
+software into the frozen vault.
+
+The first agent gate is part of the NANO-MINI no-NIC QEMU test and proves
+search, frozen-source reading, confined note writing, offline-status
+observation and rejection of a non-allowlisted shell tool.
+
+## Detailed trust boundaries
+
+1. Internet → discovery/quarantine.
+2. Quarantine → verified frozen vault.
+3. Frozen vault → runtime.
+4. Immutable vault → mutable `state/`.
+5. Agent → allowlisted tools only.
+6. Agent writes → `state/agent/workspace` only.
+7. Docker-socket-capable services → host (higher-trust boundary).
+
+See [trust-and-verification.md](trust-and-verification.md) and
+[AGENT.md](AGENT.md).
