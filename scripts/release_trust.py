@@ -31,7 +31,13 @@ def create(profile,image,vault,out):
     for role,p in (("image",image),("lock",lock),("bom",bom)):
         rows.append({"role":role,"path":display_path(p),"bytes":p.stat().st_size,"sha256":digest(p)})
     data={"schema":1,"project":"THE ARK","profile":profile,"git_commit":commit,
-          "created_utc":dt.datetime.now(dt.timezone.utc).isoformat(),"files":rows}
+          "created_utc":dt.datetime.now(dt.timezone.utc).isoformat(),"files":rows,
+          "boot_trust":{"strategy":"debian-shim-signed","fallback_efi":"EFI/BOOT/BOOTX64.EFI",
+                        "signed_grub":"EFI/BOOT/grubx64.efi"}}
+    pub=os.getenv("ENDWORLD_SIGNING_PUBLIC_KEY")
+    if pub and pathlib.Path(pub).is_file():
+        der=subprocess.check_output(["openssl","pkey","-pubin","-in",pub,"-outform","DER"])
+        data["release_key_sha256"]=hashlib.sha256(der).hexdigest()
     out.parent.mkdir(parents=True,exist_ok=True)
     out.write_text(json.dumps(data,indent=2,sort_keys=True)+"\n",encoding="utf-8")
     print(out)
