@@ -171,7 +171,12 @@ def tar_archive(db,p,rel,budget,max_members):
                 f=tf.extractfile(m)
                 if not f:continue
                 body=decode(f.read(MAX_FILE+1))
-                if body:count+=insert(db,rel+"::"+m.name,m.name,body,"source-archive","/vault/"+rel)
+                if body:
+                    source=rel+"::"+m.name
+                    count+=insert(db,source,m.name,body,"source-archive","/vault/"+rel)
+                    suffix=pathlib.PurePosixPath(m.name).suffix.lower()
+                    if suffix in {".py",".js",".ts",".tsx",".jsx",".java",".rs",".go",".c",".cpp",".h",".hpp",".sh"}:
+                        count+=index_symbols(db,source,m.name,body,suffix,"/vault/"+rel)
     except (tarfile.TarError,OSError):pass
     return count
 
@@ -184,7 +189,12 @@ def zip_archive(db,p,rel,budget,max_members):
                 if info.is_dir() or pathlib.PurePosixPath(info.filename).suffix.lower() not in TEXT_EXT or info.file_size>MAX_FILE:continue
                 if not budget.take(info.file_size):break
                 body=decode(z.read(info))
-                if body:count+=insert(db,rel+"::"+info.filename,info.filename,body,"source-archive","/vault/"+rel)
+                if body:
+                    source=rel+"::"+info.filename
+                    count+=insert(db,source,info.filename,body,"source-archive","/vault/"+rel)
+                    suffix=pathlib.PurePosixPath(info.filename).suffix.lower()
+                    if suffix in {".py",".js",".ts",".tsx",".jsx",".java",".rs",".go",".c",".cpp",".h",".hpp",".sh"}:
+                        count+=index_symbols(db,source,info.filename,body,suffix,"/vault/"+rel)
     except (zipfile.BadZipFile,OSError):pass
     return count
 
