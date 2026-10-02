@@ -27,7 +27,7 @@ load_image(){ local id="$1" image rel tar; image="$(lock_field containers "$id" 
 KIWIX_IMAGE="$(load_image kiwix)" || exit 2
 LLAMA_IMAGE="$(load_image llama-server)" || exit 2
 WHISPER_IMAGE="$(load_image whisper-server)" || exit 2
-docker rm -f endworld-kiwix endworld-ai endworld-whisper endworld-syncthing endworld-forgejo endworld-qdrant endworld-code-server endworld-nomad-admin endworld-nomad-mysql endworld-nomad-redis >/dev/null 2>&1 || true
+docker rm -f endworld-kiwix endworld-ai endworld-embed endworld-whisper endworld-syncthing endworld-forgejo endworld-qdrant endworld-code-server endworld-nomad-admin endworld-nomad-mysql endworld-nomad-redis >/dev/null 2>&1 || true
 
 mapfile -t ZIMS < <(find "$VAULT/knowledge/zim" -maxdepth 1 -type f -name '*.zim' -printf '%f\n' | sort)
 (( ${#ZIMS[@]} > 0 )) || { echo "No ZIM files found" >&2; exit 2; }
@@ -38,6 +38,14 @@ MODEL_ID="${ENDWORLD_AI_MODEL_ID:-qwen3-4b-q4}"; MODEL="$(artifact_path "$MODEL_
 [[ -f "$MODEL" ]] || { echo "AI model missing: $MODEL" >&2; exit 2; }
 docker run -d --name endworld-ai --restart unless-stopped --network host -v "$VAULT/ai/models:/models:ro" "$LLAMA_IMAGE" -m "/models/$(basename "$MODEL")" --host 0.0.0.0 --port 8082 -c "${ENDWORLD_AI_CONTEXT:-4096}" --threads "${ENDWORLD_AI_THREADS:-$(nproc)}" >/dev/null
 mkdir -p "$VAULT/state/runtime"; printf '%s\n' "${ENDWORLD_AI_MODE:-default}" > "$VAULT/state/runtime/ai-mode"
+
+EMBED_MODEL="$(artifact_path nomic-embed-text-v1.5-q4 2>/dev/null || true)"
+if [[ -n "$EMBED_MODEL" && -f "$EMBED_MODEL" ]]; then
+  docker run -d --name endworld-embed --restart unless-stopped --network host \
+    -v "$VAULT/ai/models:/models:ro" "$LLAMA_IMAGE" \
+    -m "/models/$(basename "$EMBED_MODEL")" --host 127.0.0.1 --port 8084 \
+    --embedding --pooling mean --threads "${ENDWORLD_AI_THREADS:-$(nproc)}" >/dev/null
+fi
 
 WHISPER_ID="${ENDWORLD_WHISPER_MODEL_ID:-whisper-small}"; WHISPER_MODEL="$(artifact_path "$WHISPER_ID")" || exit 2
 docker run -d --name endworld-whisper --restart unless-stopped --network host -v "$VAULT/ai/models:/models:ro" --entrypoint whisper-server "$WHISPER_IMAGE" --host 0.0.0.0 --port 8083 -m "/models/$(basename "$WHISPER_MODEL")" -l "${ENDWORLD_WHISPER_LANGUAGE:-auto}" >/dev/null
