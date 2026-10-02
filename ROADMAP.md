@@ -99,6 +99,18 @@ Software shipped on the roadmap branch:
 These are software gates. **Physical field proof remains unclaimed** until real
 reports from actual machines are committed.
 
+## Roadmap R5–R6 milestone
+
+Software on the factory/knowledge branch adds:
+
+- a hashed offline Debian factory containing a debootstrap seed and local APT closure;
+- image rebuild through `ENDWORLD_FACTORY_DIR` without public package mirrors;
+- frozen Planetiler auxiliary datasets so PMTiles preparation does not fetch hidden inputs;
+- universal lexical indexing for text/code, PDF, EPUB, DOCX and OCR images;
+- Poppler + Spanish/English Tesseract in NOMAD/CIVILIZATION and in factory closure;
+- a frozen local embedding model, local embedding endpoint and Qdrant ingestion for rich profiles;
+- portal and agent retrieval federated across lexical, vector and Kiwix evidence.
+
 ## Cross-cutting work
 
 - stronger first-boot provisioning;
