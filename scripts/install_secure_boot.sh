@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOTFS="\${1:-/}"
+ROOTFS="${1:-/}"
 ESP="$ROOTFS/boot/efi"
 shim="$ROOTFS/usr/lib/shim/shimx64.efi.signed"
 mm="$ROOTFS/usr/lib/shim/mmx64.efi.signed"
