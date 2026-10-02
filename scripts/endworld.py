@@ -28,6 +28,10 @@ def main() -> int:
     sub = ap.add_subparsers(dest="command", required=True)
     for name in ("plan", "acquire", "prepare", "verify", "run", "stop", "status", "doctor", "scout", "selftest", "index"):
         sub.add_parser(name)
+    agent = sub.add_parser("agent", help="run a bounded offline agent task")
+    agent.add_argument("goal")
+    agent.add_argument("--task-id")
+    agent.add_argument("--max-steps", type=int, default=8)
     ai=sub.add_parser("ai-mode"); ai.add_argument("mode",choices=["lite","general","coder"])
     sp = sub.add_parser("snapshot-packages")
     sp.add_argument("--manifest")
@@ -72,6 +76,14 @@ def main() -> int:
         cmd = [py, "scripts/selftest.py", "--profile", str(profile_path)]
         if (ROOT / vault / "lock" / f"{args.profile}.lock.json").exists():
             cmd += ["--vault", vault]
+        return run(*cmd)
+    if args.command == "agent":
+        vault_path = pathlib.Path("/srv/endworld") if pathlib.Path("/srv/endworld/lock").exists() else ROOT / vault
+        cmd = [py, "scripts/agent_runner.py", "--vault", str(vault_path), "--profile", args.profile,
+               "--max-steps", str(args.max_steps)]
+        if args.task_id:
+            cmd += ["--task-id", args.task_id]
+        cmd.append(args.goal)
         return run(*cmd)
     if args.command == "ai-mode":
         return run("bash","runtime/switch-ai.sh",args.mode)
