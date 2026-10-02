@@ -17,3 +17,16 @@ function renderArkSources(root,rows){for(const r of rows){const d=document.creat
 async function arkSearch(){const q=$("#arkQuery").value.trim();if(!q)return;const root=$("#arkResults");root.textContent="Searching locally…";try{const data=await fetch("/api/search?q="+encodeURIComponent(q)).then(r=>r.json());root.replaceChildren();renderArkSources(root,data.results||[]);const a=document.createElement("a");a.className="cap-action";a.href=serviceUrl(8081)+"search?pattern="+encodeURIComponent(q);a.textContent="Search all Kiwix collections →";root.append(a)}catch(e){root.textContent="Search unavailable: "+e.message}}
 async function arkAsk(){const q=$("#arkQuery").value.trim();if(!q)return;const root=$("#arkResults");root.textContent="Retrieving local evidence…";try{const r=await fetch("/api/ask",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})});const data=await r.json();if(!r.ok)throw new Error(data.error||r.statusText);root.replaceChildren();const ans=document.createElement("div");ans.className="msg";ans.textContent=data.answer;root.append(ans);renderArkSources(root,data.sources||[])}catch(e){root.textContent="Ask unavailable: "+e.message}}
 $("#arkSearch").addEventListener("click",arkSearch);$("#arkAsk").addEventListener("click",arkAsk);$("#arkQuery").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();arkSearch()}});
+
+async function runArkAgent(){
+ const goal=$("#agentGoal").value.trim();if(!goal)return;
+ const btn=$("#agentRun"),root=$("#agentResult");btn.disabled=true;root.textContent="Planning and using local tools…";
+ try{
+  const r=await fetch("/api/agent/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({goal,max_steps:8})});
+  const data=await r.json();if(!r.ok||!data.ok)throw new Error(data.error||r.statusText);
+  root.replaceChildren();
+  const ans=document.createElement("div");ans.className="msg";ans.textContent=data.answer;root.append(ans);
+  const meta=document.createElement("div");meta.className="cap-meta";meta.textContent="Task "+data.task_id+" · "+data.steps+" steps · workspace "+data.workspace;root.append(meta);
+ }catch(e){root.textContent="Agent failed: "+e.message}finally{btn.disabled=false}
+}
+$("#agentRun").addEventListener("click",runArkAgent);
