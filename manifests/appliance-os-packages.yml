@@ -71,6 +71,7 @@ nomad:
   - ripgrep
   - tmux
   - vim
+  - rtl-sdr
   - poppler-utils
   - tesseract-ocr
   - tesseract-ocr-spa
