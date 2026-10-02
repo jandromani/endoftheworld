@@ -11,6 +11,7 @@ RUNTIME = ROOT / "runtime"
 if str(RUNTIME) not in sys.path:
     sys.path.insert(0, str(RUNTIME))
 from kiwix_client import search_kiwix
+from vector_client import vector_search
 
 DEFAULT_VAULT = pathlib.Path(os.getenv("ENDWORLD_VAULT", "/srv/endworld"))
 LLAMA_URL = os.getenv("ENDWORLD_AGENT_LLM_URL", "http://127.0.0.1:8082/v1/chat/completions")
@@ -102,7 +103,8 @@ class Tools:
         q = str(args.get("query") or "").strip()
         if not q: raise AgentError("query required")
         limit = max(1,min(int(args.get("limit",6)),10))
-        hits = self._fts(q, limit)
+        hits = self._fts(q, max(1,limit//2))
+        hits += vector_search(q,max(1,limit//3))
         if len(hits) < limit:
             hits += search_kiwix(q, self.vault/"knowledge/zim", limit=limit-len(hits))
         out=[]
