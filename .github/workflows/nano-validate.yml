@@ -58,7 +58,7 @@ jobs:
           assert p["schema"] == 1
           meta = p["profile"]
           assert meta["id"] == "nano"
-          assert int(meta["target_bytes"]) == 58_000_000_000
+          assert int(meta["target_bytes"]) == 62_000_000_000
           assert 0 < int(meta["reserve_bytes"]) < int(meta["target_bytes"])
           assert int(meta["target_bytes"]) - int(meta["reserve_bytes"]) == 52_000_000_000
           ids = [x["id"] for x in p["artifacts"]]
