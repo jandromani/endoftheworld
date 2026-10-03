@@ -53,7 +53,8 @@ The flasher:
 - rejects mounted Linux targets;
 - rejects targets smaller than the signed raw image;
 - requires the literal \`ERASE <device>\` confirmation;
-- verifies the decompressed raw image hash while writing.
+- verifies the decompressed raw image hash while writing;
+- rereads the written image bytes from the target and verifies SHA-256 again.
 
 macOS targets are unmounted with \`diskutil\` immediately before write. Windows
 targets are temporarily taken offline before write and brought back online
@@ -68,5 +69,5 @@ The repository has two workflows:
 - \`flasher-package.yml\`: creates downloadable one-file executables manually or
   from a \`flasher-v*\` tag.
 
-These tests prove packaging and byte-stream correctness. They do not replace a
+These tests prove packaging, byte-stream and readback-verification logic. They do not replace a
 real destructive-flash test on physical media.
