@@ -40,6 +40,13 @@ wait_url(){
 }
 
 log "offline smoke starting"
+for _ in $(seq 1 30); do
+  systemctl is-active --quiet endworld-reticulum.service && break
+  sleep 1
+done
+systemctl is-active --quiet endworld-reticulum.service
+rnstatus --version >/tmp/rnstatus.txt 2>&1 || rnstatus >/tmp/rnstatus.txt 2>&1
+log "THE_ARK_RETICULUM_SERVICE=PASS"
 wait_url http://127.0.0.1/health
 wait_url http://127.0.0.1:8081/
 wait_url http://127.0.0.1:8082/health
