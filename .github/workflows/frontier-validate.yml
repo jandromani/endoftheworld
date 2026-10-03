@@ -62,6 +62,18 @@ jobs:
           python builder/ark_builder.py --check
           python scripts/first_boot_wizard.py --check
 
+      - name: Pre-hardware destructive and credential contracts
+        run: |
+          grep -Fq 'TARGET="${1:-}"' scripts/ark_clone.sh
+          grep -Fq 'PROFILE="${ENDWORLD_PROFILE:-nano}"' scripts/ark_clone.sh
+          grep -Fq '"${ROOT_END_MIB}MiB"' scripts/ark_clone.sh
+          if grep -Fq 'TARGET="\${1:-}"' scripts/ark_clone.sh; then
+            echo "ark-clone contains literal escaped parameter expansion"
+            exit 1
+          fi
+          grep -Fq 'os.chmod(ENV,0o600)' scripts/first_boot_wizard.py
+          grep -Fq 'install -m 0600 "$REPO/config/$PROFILE.env"' scripts/build_disk_image.sh
+
       - name: Seven package ecosystems
         run: |
           python scripts/snapshot_packages.py --profile profiles/civilization.yml --vault /tmp/no-vault --manifest manifests/civilization-packages.yml --dry-run > /tmp/packages.json
