@@ -1,0 +1,78 @@
+name: NANO real PMTiles preparation gate
+
+on:
+  pull_request:
+    paths:
+      - "profiles/nano.yml"
+      - "scripts/prepare_profile.py"
+      - ".github/workflows/nano-real-map.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+
+      - name: Download real Planetiler + frozen auxiliary inputs
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/map-vault/{maps/raw,tools/planetiler/sources,tools/planetiler,lock}
+          curl -fL --retry 4 https://github.com/onthegomap/planetiler/releases/download/v0.10.2/planetiler.jar \
+            -o /tmp/map-vault/tools/planetiler/planetiler.jar
+          curl -fL --retry 4 https://osmdata.openstreetmap.de/download/water-polygons-split-3857.zip \
+            -o /tmp/map-vault/tools/planetiler/sources/water-polygons-split-3857.zip
+          curl -fL --retry 4 https://naciscdn.org/naturalearth/packages/natural_earth_vector.sqlite.zip \
+            -o /tmp/map-vault/tools/planetiler/sources/natural_earth_vector.sqlite.zip
+          curl -fL --retry 4 https://github.com/lukasmartinelli/osm-lakelines/releases/download/v0.9/lake_centerline.shp.zip \
+            -o /tmp/map-vault/tools/planetiler/sources/lake_centerline.shp.zip
+          curl -fL --retry 4 https://download.geofabrik.de/europe/andorra-latest.osm.pbf \
+            -o /tmp/map-vault/maps/raw/andorra.osm.pbf
+
+      - name: Build fixture lock using the real files
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib
+          v=pathlib.Path("/tmp/map-vault")
+          rows=[
+            ("spain-osm","maps/raw/andorra.osm.pbf"),
+            ("planetiler","tools/planetiler/planetiler.jar"),
+            ("planetiler-water-polygons","tools/planetiler/sources/water-polygons-split-3857.zip"),
+            ("planetiler-natural-earth","tools/planetiler/sources/natural_earth_vector.sqlite.zip"),
+            ("planetiler-lake-centerlines","tools/planetiler/sources/lake_centerline.shp.zip"),
+          ]
+          arts=[]
+          for i,rel in rows:
+              p=v/rel;h=hashlib.sha256(p.read_bytes()).hexdigest()
+              arts.append({"id":i,"family":"maps","kind":"fixture-real","required":True,"path":rel,"bytes":p.stat().st_size,"sha256":h})
+          lock={"schema":1,"profile":"nano","target_bytes":62_000_000_000,"reserve_bytes":10_000_000_000,
+                "artifacts":arts,"containers":[]}
+          (v/"lock/nano.lock.json").write_text(json.dumps(lock,indent=2))
+          PY
+
+      - name: Execute THE ARK prepare map code with real Planetiler
+        env:
+          ENDWORLD_BUILD_TMP: /tmp
+        run: |
+          python scripts/prepare_profile.py --profile profiles/nano.yml --vault /tmp/map-vault --java-memory 5g
+          test -s /tmp/map-vault/maps/tiles/spain.pmtiles
+          python - <<'PY'
+          import json
+          d=json.load(open("/tmp/map-vault/lock/nano.lock.json"))
+          r=next(x for x in d["artifacts"] if x["id"]=="spain-pmtiles")
+          assert r["kind"]=="derived" and r["bytes"]>10000 and len(r["sha256"])==64,r
+          print("REAL_PM_TILES_BYTES",r["bytes"])
+          PY
+          echo "THE_ARK_NANO_REAL_MAP=PASS"
