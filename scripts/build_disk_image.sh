@@ -84,6 +84,9 @@ echo "[2/9] Creating filesystems..."
 mkfs.vfat -F32 -n ARK_EFI "${LOOP}p2" >/dev/null
 mkfs.ext4 -F -L ENDWORLD_ROOT "${LOOP}p3" >/dev/null
 mkfs.ext4 -F -m 0 -L ENDWORLD_DATA "${LOOP}p4" >/dev/null
+EFI_UUID="$(blkid -s UUID -o value "${LOOP}p2")"
+ROOT_UUID="$(blkid -s UUID -o value "${LOOP}p3")"
+DATA_UUID="$(blkid -s UUID -o value "${LOOP}p4")"
 
 mount "${LOOP}p3" "$ROOTFS"
 mkdir -p "$ROOTFS/boot/efi" "$ROOTFS/srv/endworld"
@@ -154,10 +157,10 @@ cat > "$ROOTFS/etc/hosts" <<EOF
 127.0.1.1 $HOSTNAME
 ::1 localhost ip6-localhost ip6-loopback
 EOF
-cat > "$ROOTFS/etc/fstab" <<'EOF'
-LABEL=ENDWORLD_ROOT / ext4 defaults,noatime 0 1
-LABEL=ARK_EFI /boot/efi vfat umask=0077 0 1
-LABEL=ENDWORLD_DATA /srv/endworld ext4 defaults,noatime 0 2
+cat > "$ROOTFS/etc/fstab" <<EOF
+UUID=$ROOT_UUID / ext4 defaults,noatime 0 1
+UUID=$EFI_UUID /boot/efi vfat umask=0077 0 1
+UUID=$DATA_UUID /srv/endworld ext4 defaults,noatime 0 2
 EOF
 
 chroot "$ROOTFS" useradd -m -s /bin/bash endworld
@@ -317,7 +320,7 @@ fi
 chroot "$ROOTFS" grub-install --target=i386-pc --recheck "$LOOP"
 chroot "$ROOTFS" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ENDWORLD --removable --no-nvram --recheck
 chroot "$ROOTFS" update-grub
-chroot "$ROOTFS" /opt/endworld/scripts/install_secure_boot.sh /
+chroot "$ROOTFS" /opt/endworld/scripts/install_secure_boot.sh / "$ROOT_UUID"
 
 echo "[8/9] Cleaning image..."
 chroot "$ROOTFS" apt-get clean
