@@ -4,6 +4,16 @@ Notable changes to THE ARK / ENDWORLD are documented here.
 
 ## Unreleased
 
+### Pre-hardware audit hardening
+- Fixed broken shell parameter expansion in `ark-clone`.
+- Made first-boot Wi-Fi credential storage root-only.
+- Prevented fixture reports from ever promoting a campaign to physical field proof.
+- Added larger-disk expand-to-fill and enforced Secure Boot QEMU gates.
+- Added always-on Reticulum shared-instance service.
+- Enabled Whisper server audio conversion for browser-uploaded formats.
+- Added post-write target reread + SHA-256 verification to the cross-platform flasher.
+
+
 ### Cross-platform release flasher
 - Added signed-release verification and streaming zstd flashing on Linux, Windows and macOS.
 - Added system/root/mounted/capacity guards plus exact destructive confirmation.
@@ -49,7 +59,7 @@ Notable changes to THE ARK / ENDWORLD are documented here.
 - Added signed offline update bundles with optional mandatory signature enforcement.
 - Added `ark-clone` to reproduce an Ark onto another local disk without public Internet.
 - Added target UUID regeneration and capacity checks during cloning.
-- Changed NANO's distribution image target to 58 GB while preserving its 52 GB usable payload envelope.
+- Changed NANO's distribution image target to 62 GB while preserving its 52 GB usable payload envelope.
 - Added first-boot DATA expand-to-fill.
 
 

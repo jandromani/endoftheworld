@@ -1,0 +1,20 @@
+[Unit]
+Description=THE ARK Reticulum shared-instance daemon
+After=network.target endworld-network.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=endworld
+Group=endworld
+ExecStart=/usr/local/bin/rnsd --service
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/endworld/.reticulum
+
+[Install]
+WantedBy=multi-user.target

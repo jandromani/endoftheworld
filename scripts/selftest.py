@@ -60,6 +60,11 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
     require(0 <= reserve < target, "reserve_bytes must fit target")
     require(0 <= headroom < target - reserve, "acquisition headroom must fit usable payload")
     require(4096 <= root_mib <= 65536, "root_partition_mib outside supported envelope")
+    if pid != "nano-mini":
+        physical_data_raw = target - root_mib * 1024 * 1024
+        logical_payload = target - reserve
+        require(physical_data_raw >= logical_payload + 750_000_000,
+                f"{pid}: logical payload envelope does not physically fit DATA partition with filesystem margin")
     ceiling = target - reserve - headroom
 
     ids: set[str] = set()
@@ -111,11 +116,12 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         "scripts/field_drill.py", "scripts/field_campaign.py", "scripts/hardware_matrix.py",
         "scripts/agent_runner.py", "scripts/ark_clone.sh", "scripts/install_secure_boot.sh",
         "scripts/offline_factory.py", "scripts/vector_index.py",
-        "scripts/release_bundle.py", "scripts/trust_audit.py",
+        "scripts/release_bundle.py", "scripts/trust_audit.py", "scripts/integrity_scrub.py",
         "scripts/field_radio.py", "scripts/evolution.py", "scripts/ark_generations.py",
         "scripts/agent_scheduler.py", "scripts/ark_orchestrator.py", "scripts/ark_cluster.py",
         "runtime/vector_client.py", "runtime/vector-index.sh", "runtime/systemd/endworld-vector-index.service",
         "runtime/systemd/endworld-agent-scheduler.service", "runtime/systemd/endworld-agent-scheduler.timer",
+        "runtime/systemd/endworld-reticulum.service", "runtime/systemd/endworld-integrity.service", "runtime/systemd/endworld-integrity.timer",
         "manifests/appliance-os-packages.yml",
         "runtime/expand-data.sh", "runtime/systemd/endworld-expand-data.service",
         "config/ark-cluster.yml", "config/field-comms.yml", "config/trust-policy.yml",
@@ -138,8 +144,8 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
                     "meshtastic-firmware-esp32s3","meshtastic-firmware-nrf52840",
                     "meshtastic-firmware-rp2040","meshtastic-firmware-rp2350"}
         require(expected.issubset(ids), f"NANO wiring missing ids: {sorted(expected - ids)}")
-        require(target == 58_000_000_000, "NANO distribution image target must stay 58,000,000,000 bytes")
-        require(reserve == 6_000_000_000, "NANO reserve must preserve a 52 GB usable envelope")
+        require(target == 62_000_000_000, "NANO distribution image target must stay 62,000,000,000 bytes")
+        require(reserve == 10_000_000_000, "NANO reserve must preserve a 52 GB logical payload envelope")
         require(headroom == 2_500_000_000, "NANO acquisition headroom must reserve 2.5 GB for containers/derived outputs")
     elif pid == "nano-mini":
         expected={"qwen3-4b-q4","whisper-small"}
@@ -188,8 +194,8 @@ def validate_runtime(profile: dict) -> None:
     require(server.safe_join(base, "../escape") is None, "safe_join allowed parent traversal")
     require(server.safe_join(base, "%2e%2e/escape") is None, "safe_join allowed encoded traversal")
     start_stack=(ROOT/"runtime/start-stack.sh").read_text(encoding="utf-8")
-    require("--entrypoint whisper-server" in start_stack and "ENDWORLD_WHISPER_LANGUAGE" in start_stack,
-            "whisper server entrypoint/language is not pinned")
+    require("--entrypoint whisper-server" in start_stack and "ENDWORLD_WHISPER_LANGUAGE" in start_stack and "--convert" in start_stack,
+            "whisper server entrypoint/language/format conversion is not pinned")
     require('docker image inspect "$image"' in start_stack,"container boot cache is not wired")
     server_text=(ROOT/"runtime/server.py").read_text(encoding="utf-8")
     require('path=="/vault/state"' in server_text,"mutable state is not blocked from /vault")
@@ -239,8 +245,8 @@ def validate_runtime(profile: dict) -> None:
     require((ROOT/"scripts/release_bundle.py").is_file() and (ROOT/"config/trust-policy.yml").is_file(),
             "public release/trust policy tooling missing")
     require("rtl-sdr" in manifest, "receive-only SDR runtime closure missing")
-    require("ark-orchestrator" in builder and "endworld-agent-scheduler.timer" in builder,
-            "organism scheduler/orchestrator wiring missing")
+    require("ark-orchestrator" in builder and "endworld-agent-scheduler.timer" in builder and "endworld-reticulum.service" in builder,
+            "organism scheduler/orchestrator/Reticulum wiring missing")
     agent=(ROOT/"scripts/agent_runner.py").read_text(encoding="utf-8")
     require("ROLE_GUIDANCE" in agent and all(x in agent for x in ("field","research","engineer","coordinator")),
             "bounded agent roles missing")

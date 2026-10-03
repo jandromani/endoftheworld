@@ -27,7 +27,7 @@ permissions:
 jobs:
   build-and-boot-offline:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
 
@@ -61,3 +61,9 @@ jobs:
 
       - name: Boot UEFI with no NIC
         run: tests/nano-mini/qemu_offline_gate.sh dist/endworld-nano-mini-amd64.img uefi
+
+      - name: Boot larger virtual SSD and expand DATA
+        run: tests/nano-mini/qemu_offline_gate.sh dist/endworld-nano-mini-amd64.img uefi-expanded
+
+      - name: Boot with Secure Boot enforced and no NIC
+        run: tests/nano-mini/qemu_offline_gate.sh dist/endworld-nano-mini-amd64.img uefi-secure

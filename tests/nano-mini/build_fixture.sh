@@ -29,11 +29,15 @@ mkdir -p "$tmp/reticulum-source-ci"
 cat > "$tmp/reticulum-source-ci/setup.py" <<'PY'
 from setuptools import setup
 setup(name="ark-reticulum-ci",version="0.0.1",py_modules=["rns_stub"],
-      entry_points={"console_scripts":["rnstatus=rns_stub:main"]})
+      entry_points={"console_scripts":["rnstatus=rns_stub:main","rnsd=rns_stub:daemon"]})
 PY
 cat > "$tmp/reticulum-source-ci/rns_stub.py" <<'PY'
 def main():
     print("Reticulum CI stub")
+def daemon():
+    import signal,time
+    signal.signal(signal.SIGTERM,lambda *_: exit(0))
+    while True: time.sleep(60)
 PY
 tar -C "$tmp" -czf "$VAULT/source/comms/reticulum-source-ci.tar.gz" reticulum-source-ci
 mkdir -p "$tmp/project-nomad-ci"

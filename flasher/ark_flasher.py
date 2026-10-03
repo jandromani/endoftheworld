@@ -166,6 +166,22 @@ def write_stream(target,dist,compressed,expected_bytes,expected_sha,progress=Non
     if h.hexdigest()!=expected_sha:raise RuntimeError("raw image SHA-256 mismatch after decompression/write")
     return {"bytes":written,"sha256":h.hexdigest()}
 
+def verify_written_target(target,expected_bytes,expected_sha,progress=None):
+    h=hashlib.sha256();read=0
+    fd=os.open(target,os.O_RDONLY)
+    try:
+        with os.fdopen(fd,"rb",buffering=0,closefd=False) as source:
+            while read<expected_bytes:
+                b=source.read(min(CHUNK,expected_bytes-read))
+                if not b:raise RuntimeError("target ended before signed raw-image byte count")
+                h.update(b);read+=len(b)
+                if progress:progress(read,expected_bytes)
+    finally:
+        os.close(fd)
+    actual=h.hexdigest()
+    if actual!=expected_sha:raise RuntimeError("post-write target SHA-256 mismatch")
+    return {"bytes":read,"sha256":actual}
+
 def flash_release(directory,device,confirmation,progress=None):
     verified=verify_release(directory)
     data=verified["data"];raw=data["source_image"];dist=verified["roles"]["distribution"]
@@ -175,6 +191,8 @@ def flash_release(directory,device,confirmation,progress=None):
     try:
         result=write_stream(target,dist,bool((data.get("distribution") or {}).get("compressed")),
                             int(raw["bytes"]),str(raw["sha256"]),progress)
+        verify_written_target(target,int(raw["bytes"]),str(raw["sha256"]),progress)
+        result["readback_verified"]=True
     finally:
         finish_target(row)
     result.update(device=device,release_key_sha256=verified["fingerprint"])
@@ -203,6 +221,7 @@ def selftest():
         verify_release(d)
         out=d/"written.img";out.write_bytes(b"\0"*raw.stat().st_size)
         result=write_stream(str(out),comp,True,raw.stat().st_size,sha256(raw))
+        verify_written_target(str(out),raw.stat().st_size,sha256(raw))
         if out.read_bytes()!=raw.read_bytes():raise RuntimeError("selftest flashed bytes differ")
         print(json.dumps({"ok":True,"platform":platform.system(),"bytes":result["bytes"]}))
         print("THE_ARK_FLASHER_SELFTEST=PASS")
@@ -239,9 +258,9 @@ def gui():
         if not messagebox.askyesno("ERASE DISK","This permanently erases "+dev+". Continue?"):return
         def work():
             try:
-                def prog(n,total):root.after(0,lambda:status.set(f"Writing {n/1e9:.2f} / {total/1e9:.2f} GB to {dev}"))
+                def prog(n,total):root.after(0,lambda:status.set(f"I/O verification {n/1e9:.2f} / {total/1e9:.2f} GB on {dev}"))
                 result=flash_release(pathlib.Path(release.get()).resolve(),dev,confirm.get(),prog)
-                root.after(0,lambda:messagebox.showinfo("Complete","THE ARK image written and raw SHA-256 verified.\n"+result["sha256"]))
+                root.after(0,lambda:messagebox.showinfo("Complete","THE ARK image written, reread and SHA-256 verified.\n"+result["sha256"]))
             except Exception as e:root.after(0,lambda:messagebox.showerror("Flash failed",str(e)))
         threading.Thread(target=work,daemon=True).start()
     buttons=tk.Frame(root);buttons.pack()

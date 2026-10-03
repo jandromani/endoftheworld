@@ -22,7 +22,7 @@ Start there.
 
 - one x86-64 PC running Debian/Ubuntu Linux for the build;
 - Internet while downloading;
-- a spare SSD/external SSD with at least 64 GB nominal capacity for NANO (SSD is strongly preferred over a cheap USB flash drive);
+- a spare SSD/external SSD exposing at least 62,000,000,000 bytes for NANO; 128 GB+ is recommended and SSD is strongly preferred over a cheap USB flash drive;
 - enough free builder storage for both the downloaded vault and a raw disk image;
 - administrator (`sudo`) access.
 

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 [[ $EUID -eq 0 ]] || { echo "Run ark-clone with sudo/root." >&2; exit 2; }
-TARGET="\${1:-}"
+TARGET="${1:-}"
 [[ -b "$TARGET" ]] || { echo "Usage: ark-clone /dev/DEVICE" >&2; exit 2; }
 [[ "$(lsblk -ndo TYPE "$TARGET")" == "disk" ]] || { echo "Target must be a whole disk." >&2; exit 2; }
 
@@ -23,7 +23,7 @@ read -r -p "Type the exact device path to continue: " answer
 PROFILE=nano
 if [[ -f /etc/endworld/profile.env ]]; then
   set -a; source /etc/endworld/profile.env; set +a
-  PROFILE="\${ENDWORLD_PROFILE:-nano}"
+  PROFILE="${ENDWORLD_PROFILE:-nano}"
 else
   PROFILE=nano
 fi
@@ -57,7 +57,7 @@ parted -s "$TARGET" mkpart BIOS 1MiB 3MiB
 parted -s "$TARGET" set 1 bios_grub on
 parted -s "$TARGET" mkpart EFI fat32 3MiB 515MiB
 parted -s "$TARGET" set 2 esp on
-parted -s "$TARGET" mkpart ROOT ext4 515MiB "\${ROOT_END_MIB}MiB"
+parted -s "$TARGET" mkpart ROOT ext4 515MiB "${ROOT_END_MIB}MiB"
 parted -s "$TARGET" mkpart DATA ext4 "\${ROOT_END_MIB}MiB" 100%
 partprobe "$TARGET"; udevadm settle
 for p in "$P1" "$P2" "$P3" "$P4"; do [[ -b "$p" ]] || { echo "Partition missing: $p" >&2; exit 2; }; done
@@ -99,7 +99,7 @@ mount -t proc proc "$ROOTM/proc"; mount -t sysfs sys "$ROOTM/sys"; mount --bind 
 chroot "$ROOTM" grub-install --target=i386-pc --recheck "$TARGET"
 chroot "$ROOTM" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ENDWORLD --removable --no-nvram --recheck
 chroot "$ROOTM" update-grub
-chroot "$ROOTM" /opt/endworld/scripts/install_secure_boot.sh /
+chroot "$ROOTM" /opt/endworld/scripts/install_secure_boot.sh / "$root_uuid"
 rm -f "$ROOTM/var/lib/endworld/data-expanded"
 
 echo "[4/4] Verifying copied frozen vault..."
