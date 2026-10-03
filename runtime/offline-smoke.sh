@@ -92,6 +92,29 @@ grep -qi 'signature' /tmp/shim-signatures.txt
 grep -qi 'signature' /tmp/grub-signatures.txt
 log "THE_ARK_SIGNED_BOOT_ASSETS=PASS"
 
+if [[ -d /sys/firmware/efi/efivars ]] && mokutil --sb-state 2>/dev/null | grep -qi 'SecureBoot enabled'; then
+  log "THE_ARK_SECURE_BOOT_ENFORCED=PASS"
+fi
+
+DATA_SRC="$(findmnt -no SOURCE /srv/endworld)"
+DATA_PARENT="$(lsblk -no PKNAME "$DATA_SRC" | tr -d ' ')"
+if [[ -n "$DATA_PARENT" ]]; then
+  DISK="/dev/$DATA_PARENT"
+  DISK_BYTES="$(blockdev --getsize64 "$DISK")"
+  read -r TARGET_BYTES ROOT_MIB < <(python3 - /opt/endworld/profiles/nano-mini.yml <<'PY'
+import sys,yaml
+p=yaml.safe_load(open(sys.argv[1],encoding="utf-8"))["profile"]
+print(int(p["target_bytes"]),int(p.get("root_partition_mib") or 4096))
+PY
+)
+  if (( DISK_BYTES > TARGET_BYTES + 100000000 )); then
+    DATA_BYTES="$(blockdev --getsize64 "$DATA_SRC")"
+    EXPECTED=$(( DISK_BYTES - ROOT_MIB*1024*1024 - 100000000 ))
+    (( DATA_BYTES >= EXPECTED )) || { log "DATA expansion too small: $DATA_BYTES < $EXPECTED"; exit 1; }
+    test -f /var/lib/endworld/data-expanded
+    log "THE_ARK_DATA_EXPAND=PASS"
+  fi
+fi
 
 log "running offline agent acceptance task"
 if ! if ! python3 /opt/endworld/scripts/agent_runner.py \
