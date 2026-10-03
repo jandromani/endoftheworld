@@ -74,6 +74,20 @@ jobs:
           grep -Fq 'os.chmod(ENV,0o600)' scripts/first_boot_wizard.py
           grep -Fq 'install -m 0600 "$REPO/config/$PROFILE.env"' scripts/build_disk_image.sh
 
+      - name: Persistent integrity scrub semantics
+        run: |
+          rm -rf /tmp/integrity-vault && mkdir -p /tmp/integrity-vault/{lock,state/field}
+          echo 'frozen bytes' > /tmp/integrity-vault/demo.txt
+          python - <<'PY'
+          import hashlib,json,pathlib
+          v=pathlib.Path("/tmp/integrity-vault");p=v/"demo.txt"
+          rec={"id":"demo","path":"demo.txt","bytes":p.stat().st_size,"sha256":hashlib.sha256(p.read_bytes()).hexdigest()}
+          (v/"lock/nano.lock.json").write_text(json.dumps({"profile":"nano","artifacts":[rec],"containers":[]}))
+          PY
+          python scripts/integrity_scrub.py --vault /tmp/integrity-vault --profile nano | grep -q 'THE_ARK_INTEGRITY_SCRUB=PASS'
+          test -s /tmp/integrity-vault/state/field/integrity-last.json
+          grep -q 'OnUnitActiveSec=7d' runtime/systemd/endworld-integrity.timer
+
       - name: Seven package ecosystems
         run: |
           python scripts/snapshot_packages.py --profile profiles/civilization.yml --vault /tmp/no-vault --manifest manifests/civilization-packages.yml --dry-run > /tmp/packages.json
