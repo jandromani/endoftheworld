@@ -28,6 +28,7 @@
 [Project NOMAD inside](docs/project-nomad.md) ·
 [Offline Agent](docs/AGENT.md) ·
 [Ark Organism](docs/guides/ARK-ORGANISM.md) ·
+[Capability truth matrix](docs/CAPABILITIES.md) ·
 [What is still missing?](docs/frontiers.md)
 
 </div>
