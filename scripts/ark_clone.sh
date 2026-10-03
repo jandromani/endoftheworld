@@ -99,7 +99,7 @@ mount -t proc proc "$ROOTM/proc"; mount -t sysfs sys "$ROOTM/sys"; mount --bind 
 chroot "$ROOTM" grub-install --target=i386-pc --recheck "$TARGET"
 chroot "$ROOTM" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ENDWORLD --removable --no-nvram --recheck
 chroot "$ROOTM" update-grub
-chroot "$ROOTM" /opt/endworld/scripts/install_secure_boot.sh /
+chroot "$ROOTM" /opt/endworld/scripts/install_secure_boot.sh / "$root_uuid"
 rm -f "$ROOTM/var/lib/endworld/data-expanded"
 
 echo "[4/4] Verifying copied frozen vault..."
