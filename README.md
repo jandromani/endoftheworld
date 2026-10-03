@@ -70,7 +70,7 @@ You need:
 1. **A normal x86-64 PC running Debian/Ubuntu Linux** while you build it.
 2. **Internet access during the build.**
 3. **Free disk space for the download + the final image.**
-4. **A spare SSD/external SSD** large enough for the profile; a real SSD is strongly preferred over a cheap USB flash drive.
+4. **A spare SSD/external SSD** large enough for the profile; NANO's raw image is 62 GB and 128 GB+ media is recommended. A real SSD is strongly preferred over a cheap USB flash drive.
 5. Time: downloading large offline libraries can take a while.
 
 > Windows/macOS are not full from-source image-builder targets. For signed **prebuilt releases**, the cross-platform Ark Flasher verifies and writes the image on Windows, macOS or Linux.
