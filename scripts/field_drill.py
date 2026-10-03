@@ -244,6 +244,7 @@ def main() -> int:
 
     report["schema"] = 1
     report["protocol"] = "ark-field-test-v1"
+    report["evidence_origin"] = "fixture" if args.fixture else "physical"
     report["created_utc"] = dt.datetime.now(dt.timezone.utc).isoformat()
     report["report_id"] = report.get("runtime", {}).get("boot_id") or dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     report["operator_assertions"] = {
