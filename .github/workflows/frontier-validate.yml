@@ -241,8 +241,17 @@ jobs:
           EOF
           python scripts/field_drill.py --fixture /tmp/field-fixture.json --profile nano --expect-offline --cold-boot-asserted --require-cold-boot --out /tmp/reports/ci.json
           python scripts/field_drill.py --fixture /tmp/field-fixture-2.json --profile nano --expect-offline --cold-boot-asserted --require-cold-boot --out /tmp/reports/ci2.json
-          python scripts/field_campaign.py --reports /tmp/reports --min-hardware 2 --require-bios-and-uefi --out /tmp/campaign.json
-          grep -q '"field_proven": true' /tmp/campaign.json
+          if python scripts/field_campaign.py --reports /tmp/reports --min-hardware 2 --require-bios-and-uefi --out /tmp/campaign.json; then
+            echo "fixture-only campaign must never claim physical proof"
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          x=json.load(open("/tmp/campaign.json"))
+          assert x["field_proven"] is False
+          assert x["physical_passing_reports"] == 0
+          assert len(x["fixture_reports"]) == 2
+          PY
 
 
       - name: Field radio receive-only contract
