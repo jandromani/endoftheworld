@@ -19,7 +19,7 @@ def update_env(changes):
         out.append(line)
     for k,v in changes.items():
         if k not in seen:out.append(k+"="+shlex.quote(v))
-    tmp=ENV.with_suffix(".tmp");tmp.write_text("\n".join(out)+"\n",encoding="utf-8");os.replace(tmp,ENV)
+    tmp=ENV.with_suffix(".tmp");tmp.write_text("\n".join(out)+"\n",encoding="utf-8");os.chmod(tmp,0o600);os.replace(tmp,ENV);os.chmod(ENV,0o600)
 
 def read_env():
     result={}
