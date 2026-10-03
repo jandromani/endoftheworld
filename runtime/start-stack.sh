@@ -48,7 +48,7 @@ if [[ -n "$EMBED_MODEL" && -f "$EMBED_MODEL" ]]; then
 fi
 
 WHISPER_ID="${ENDWORLD_WHISPER_MODEL_ID:-whisper-small}"; WHISPER_MODEL="$(artifact_path "$WHISPER_ID")" || exit 2
-docker run -d --name endworld-whisper --restart unless-stopped --network host -v "$VAULT/ai/models:/models:ro" --entrypoint whisper-server "$WHISPER_IMAGE" --host 0.0.0.0 --port 8083 -m "/models/$(basename "$WHISPER_MODEL")" -l "${ENDWORLD_WHISPER_LANGUAGE:-auto}" >/dev/null
+docker run -d --name endworld-whisper --restart unless-stopped --network host -v "$VAULT/ai/models:/models:ro" --entrypoint whisper-server "$WHISPER_IMAGE" --host 0.0.0.0 --port 8083 --convert -m "/models/$(basename "$WHISPER_MODEL")" -l "${ENDWORLD_WHISPER_LANGUAGE:-auto}" >/dev/null
 
 if [[ "${ENDWORLD_ENABLE_SYNCTHING:-0}" == "1" ]]; then
   I="$(load_image syncthing)" || exit 2; mkdir -p "$VAULT/state/syncthing"; chown 1000:1000 "$VAULT/state/syncthing" 2>/dev/null || true
