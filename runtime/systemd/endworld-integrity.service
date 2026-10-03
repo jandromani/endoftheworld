@@ -1,0 +1,18 @@
+[Unit]
+Description=THE ARK frozen-vault integrity scrub
+After=local-fs.target
+RequiresMountsFor=/srv/endworld
+
+[Service]
+Type=oneshot
+User=endworld
+Group=endworld
+EnvironmentFile=-/etc/endworld/profile.env
+ExecStart=/usr/bin/python3 /opt/endworld/scripts/integrity_scrub.py --vault /srv/endworld
+Nice=15
+IOSchedulingClass=idle
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/srv/endworld/state/field
