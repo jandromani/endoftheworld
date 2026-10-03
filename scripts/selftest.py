@@ -60,6 +60,11 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
     require(0 <= reserve < target, "reserve_bytes must fit target")
     require(0 <= headroom < target - reserve, "acquisition headroom must fit usable payload")
     require(4096 <= root_mib <= 65536, "root_partition_mib outside supported envelope")
+    if pid != "nano-mini":
+        physical_data_raw = target - root_mib * 1024 * 1024
+        logical_payload = target - reserve
+        require(physical_data_raw >= logical_payload + 750_000_000,
+                f"{pid}: logical payload envelope does not physically fit DATA partition with filesystem margin")
     ceiling = target - reserve - headroom
 
     ids: set[str] = set()
@@ -139,8 +144,8 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
                     "meshtastic-firmware-esp32s3","meshtastic-firmware-nrf52840",
                     "meshtastic-firmware-rp2040","meshtastic-firmware-rp2350"}
         require(expected.issubset(ids), f"NANO wiring missing ids: {sorted(expected - ids)}")
-        require(target == 58_000_000_000, "NANO distribution image target must stay 58,000,000,000 bytes")
-        require(reserve == 6_000_000_000, "NANO reserve must preserve a 52 GB usable envelope")
+        require(target == 62_000_000_000, "NANO distribution image target must stay 62,000,000,000 bytes")
+        require(reserve == 10_000_000_000, "NANO reserve must preserve a 52 GB logical payload envelope")
         require(headroom == 2_500_000_000, "NANO acquisition headroom must reserve 2.5 GB for containers/derived outputs")
     elif pid == "nano-mini":
         expected={"qwen3-4b-q4","whisper-small"}
