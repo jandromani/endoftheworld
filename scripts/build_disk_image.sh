@@ -169,7 +169,7 @@ chmod 0440 "$ROOTFS/etc/sudoers.d/endworld"
 echo "[5/9] Copying ENDWORLD runtime and frozen vault..."
 mkdir -p "$ROOTFS/opt/endworld" "$ROOTFS/etc/endworld"
 rsync -a --delete --exclude '.git/' --exclude '.venv/' --exclude 'vault/' --exclude 'dist/' "$REPO/" "$ROOTFS/opt/endworld/"
-install -m 0644 "$REPO/config/$PROFILE.env" "$ROOTFS/etc/endworld/profile.env"
+install -m 0600 "$REPO/config/$PROFILE.env" "$ROOTFS/etc/endworld/profile.env"
 rsync -aH --info=progress2 "$VAULT/" "$ROOTFS/srv/endworld/"
 mkdir -p "$ROOTFS/srv/endworld/state/agent/tasks" "$ROOTFS/srv/endworld/state/agent/workspace"
 chroot "$ROOTFS" chown -R endworld:endworld /srv/endworld/state/agent
