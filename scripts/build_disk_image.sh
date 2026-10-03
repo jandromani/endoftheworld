@@ -265,7 +265,7 @@ cp "$REPO"/runtime/systemd/* "$ROOTFS/etc/systemd/system/"
 chroot "$ROOTFS" systemctl disable hostapd.service dnsmasq.service 2>/dev/null || true
 chroot "$ROOTFS" systemctl enable docker.service avahi-daemon.service systemd-networkd.service systemd-resolved.service
 chroot "$ROOTFS" systemctl disable systemd-networkd-wait-online.service 2>/dev/null || true
-chroot "$ROOTFS" systemctl enable endworld-network.service endworld-expand-data.service endworld-reticulum.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-power.timer endworld-agent-scheduler.timer
+chroot "$ROOTFS" systemctl enable endworld-network.service endworld-expand-data.service endworld-reticulum.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-integrity.timer endworld-power.timer endworld-agent-scheduler.timer
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   chroot "$ROOTFS" systemctl enable endworld-vector-index.service
 fi
