@@ -41,6 +41,7 @@ base:
   - nut-client
   - rtl-sdr
   - parted
+  - gdisk
   - e2fsprogs
   - firmware-linux-free
   - firmware-iwlwifi
