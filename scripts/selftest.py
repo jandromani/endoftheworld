@@ -253,6 +253,8 @@ def validate_runtime(profile: dict) -> None:
     require("rtl-sdr" in manifest, "receive-only SDR runtime closure missing")
     require("ark-orchestrator" in builder and "endworld-agent-scheduler.timer" in builder and "endworld-reticulum.service" in builder,
             "organism scheduler/orchestrator/Reticulum wiring missing")
+    require("GGML_NATIVE=OFF" in builder and "SOURCE_DATE_EPOCH=1" in builder and "whisper-server-portable" in builder,
+            "portable baseline Whisper build is not wired")
     agent=(ROOT/"scripts/agent_runner.py").read_text(encoding="utf-8")
     require("ROLE_GUIDANCE" in agent and all(x in agent for x in ("field","research","engineer","coordinator")),
             "bounded agent roles missing")
