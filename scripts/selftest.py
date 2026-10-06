@@ -132,12 +132,16 @@ def validate_profile(profile_path: pathlib.Path) -> dict:
         "wikipedia-es", "wikipedia-medicine-es", "spain-osm", "planetiler",
         "maplibre-js", "maplibre-css", "pmtiles-js", "bitchat-android",
         "meshtastic-android", "reticulum-source", "project-nomad-source",
-        "kiwix", "llama-server", "whisper-server",
+        "kiwix", "llama-server",
     }
     require(expected_common.issubset(ids), f"{pid}: common wiring missing {sorted(expected_common - ids)}")
     if pid != "nano-mini":
         map_sources={"planetiler-water-polygons","planetiler-natural-earth","planetiler-lake-centerlines"}
         require(map_sources.issubset(ids), f"{pid}: frozen Planetiler inputs missing {sorted(map_sources-ids)}")
+        require("whisper-cpp-source" in ids, f"{pid}: frozen portable Whisper source missing")
+        require("whisper-server" not in ids, f"{pid}: rolling Whisper container must not be a field dependency")
+    else:
+        require("whisper-server" in ids, "NANO-MINI Whisper fixture container missing")
 
     if pid == "nano":
         expected = {"qwen3-4b-q4", "whisper-small","sideband-android","lxmf-source",
@@ -194,8 +198,10 @@ def validate_runtime(profile: dict) -> None:
     require(server.safe_join(base, "../escape") is None, "safe_join allowed parent traversal")
     require(server.safe_join(base, "%2e%2e/escape") is None, "safe_join allowed encoded traversal")
     start_stack=(ROOT/"runtime/start-stack.sh").read_text(encoding="utf-8")
-    require("--entrypoint whisper-server" in start_stack and "ENDWORLD_WHISPER_LANGUAGE" in start_stack and "--convert" in start_stack,
-            "whisper server entrypoint/language/format conversion is not pinned")
+    require("whisper-server-portable" in start_stack and "endworld-whisper.service" in start_stack and "--convert" in start_stack,
+            "portable Whisper service/fallback conversion is not wired")
+    require((ROOT/"runtime/start-whisper.sh").is_file() and (ROOT/"runtime/systemd/endworld-whisper.service").is_file(),
+            "portable Whisper runtime files missing")
     require('docker image inspect "$image"' in start_stack,"container boot cache is not wired")
     server_text=(ROOT/"runtime/server.py").read_text(encoding="utf-8")
     require('path=="/vault/state"' in server_text,"mutable state is not blocked from /vault")
