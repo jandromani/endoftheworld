@@ -22,6 +22,9 @@ base:
   - python3-wheel
   - python3-cryptography
   - python3-serial
+  - build-essential
+  - cmake
+  - ffmpeg
   - docker.io
   - docker-cli
   - hostapd
