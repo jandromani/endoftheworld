@@ -10,7 +10,7 @@ Notable changes to THE ARK / ENDWORLD are documented here.
 - Prevented fixture reports from ever promoting a campaign to physical field proof.
 - Added larger-disk expand-to-fill and enforced Secure Boot QEMU gates.
 - Added always-on Reticulum shared-instance service.
-- Enabled Whisper server audio conversion for browser-uploaded formats.
+- Replaced the rolling Whisper container on field profiles with a frozen-source portable CPU build (`GGML_NATIVE=OFF`, conservative x86-64 ISA) and enabled browser audio conversion.
 - Added post-write target reread + SHA-256 verification to the cross-platform flasher.
 
 
