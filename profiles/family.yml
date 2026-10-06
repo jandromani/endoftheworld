@@ -120,6 +120,15 @@ artifacts:
     destination: ai/models
     budget_bytes: 2000000000
 
+  - id: whisper-cpp-source
+    family: ai
+    kind: github_snapshot
+    required: true
+    repo: ggml-org/whisper.cpp
+    ref: latest-release
+    destination: source/ai
+    budget_bytes: 150000000
+
   - id: spain-osm
     family: maps
     kind: index_latest
@@ -291,9 +300,6 @@ containers:
     required: true
   - id: llama-server
     image: ghcr.io/ggml-org/llama.cpp:server
-    required: true
-  - id: whisper-server
-    image: ghcr.io/ggml-org/whisper.cpp:main
     required: true
   - id: syncthing
     image: ghcr.io/syncthing/syncthing:2.1.5
