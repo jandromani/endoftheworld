@@ -1,0 +1,120 @@
+name: NANO real core runtime gate
+
+on:
+  pull_request:
+    paths:
+      - "profiles/nano.yml"
+      - "runtime/start-stack.sh"
+      - ".github/workflows/nano-real-core.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install audio test dependency
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Prepare exact NANO models + real tiny ZIM
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ark-real/models /tmp/ark-real/zim
+          curl -fL --retry 4 --retry-delay 3 \
+            'https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf?download=true' \
+            -o /tmp/ark-real/models/Qwen3-4B-Q4_K_M.gguf
+          curl -fL --retry 4 --retry-delay 3 \
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin?download=true' \
+            -o /tmp/ark-real/models/ggml-small.bin
+          curl -fL --retry 4 --retry-delay 3 \
+            'https://download.kiwix.org/zim/wikipedia/speedtest_en_blob-mini_2024-05.zim' \
+            -o /tmp/ark-real/zim/speedtest.zim
+          test "$(stat -c%s /tmp/ark-real/models/Qwen3-4B-Q4_K_M.gguf)" -gt 2000000000
+          test "$(stat -c%s /tmp/ark-real/models/ggml-small.bin)" -gt 400000000
+          test "$(stat -c%s /tmp/ark-real/zim/speedtest.zim)" -gt 1000000
+
+      - name: Pull exact runtime images
+        run: |
+          docker pull ghcr.io/kiwix/kiwix-serve:3.8.2
+          docker pull ghcr.io/ggml-org/llama.cpp:server
+
+      - name: Real Kiwix service
+        run: |
+          docker run -d --name ark-real-kiwix --network host -e PORT=18081 \
+            -v /tmp/ark-real/zim:/data:ro \
+            ghcr.io/kiwix/kiwix-serve:3.8.2 /data/speedtest.zim
+          for i in $(seq 1 60); do curl -fsS http://127.0.0.1:18081/ >/dev/null && break; sleep 2; done
+          curl -fsS http://127.0.0.1:18081/ >/dev/null
+          docker logs ark-real-kiwix | tail -50
+
+      - name: Real Qwen3-4B through llama.cpp OpenAI API
+        run: |
+          docker run -d --name ark-real-llama --network host \
+            -v /tmp/ark-real/models:/models:ro \
+            ghcr.io/ggml-org/llama.cpp:server \
+            -m /models/Qwen3-4B-Q4_K_M.gguf --host 127.0.0.1 --port 18082 -c 2048 --threads 2
+          for i in $(seq 1 180); do curl -fsS http://127.0.0.1:18082/health >/dev/null && break; sleep 2; done
+          curl -fsS http://127.0.0.1:18082/health
+          curl -fsS http://127.0.0.1:18082/v1/chat/completions \
+            -H 'Content-Type: application/json' \
+            -d '{"model":"local","messages":[{"role":"user","content":"Reply with exactly ARK_OK. /no_think"}],"temperature":0,"max_tokens":16,"stream":false}' \
+            > /tmp/llama.json
+          python - <<'PY'
+          import json
+          d=json.load(open("/tmp/llama.json"))
+          text=d["choices"][0]["message"]["content"].strip()
+          assert text, d
+          print("REAL_LLAMA_RESPONSE",repr(text))
+          PY
+
+      - name: Build portable Whisper server from source
+        run: |
+          git clone --depth 1 https://github.com/ggml-org/whisper.cpp /tmp/whisper-src
+          SOURCE_DATE_EPOCH=1 cmake -S /tmp/whisper-src -B /tmp/whisper-build \
+            -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DBUILD_SHARED_LIBS=OFF \
+            -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DGGML_F16C=OFF -DGGML_BMI2=OFF \
+            -DGGML_AVX512=OFF -DGGML_AMX_TILE=OFF -DGGML_AMX_INT8=OFF -DGGML_AMX_BF16=OFF
+          cmake --build /tmp/whisper-build --target whisper-server --parallel 2
+          test -x /tmp/whisper-build/bin/whisper-server
+
+      - name: Real Whisper-small multipart + ffmpeg conversion
+        run: |
+          python - <<'PY'
+          import math,struct,wave
+          rate=16000
+          with wave.open("/tmp/tone.wav","wb") as w:
+              w.setnchannels(1);w.setsampwidth(2);w.setframerate(rate)
+              w.writeframes(b"".join(struct.pack("<h",int(2500*math.sin(2*math.pi*440*i/rate))) for i in range(rate)))
+          PY
+          ffmpeg -hide_banner -loglevel error -y -i /tmp/tone.wav /tmp/tone.mp3
+          /tmp/whisper-build/bin/whisper-server \
+            --host 127.0.0.1 --port 18083 --convert \
+            -m /tmp/ark-real/models/ggml-small.bin -l auto >/tmp/whisper-server.log 2>&1 &
+          WPID=$!
+          trap 'kill $WPID 2>/dev/null || true' EXIT
+          for i in $(seq 1 120); do curl -fsS http://127.0.0.1:18083/ >/dev/null && break; kill -0 "$WPID" || { cat /tmp/whisper-server.log; exit 1; }; sleep 2; done
+          curl -fsS http://127.0.0.1:18083/ >/dev/null
+          curl -fsS -X POST http://127.0.0.1:18083/inference \
+            -F file=@/tmp/tone.mp3 -F response_format=json -F temperature=0.0 > /tmp/whisper.json
+          python - <<'PY'
+          import json
+          d=json.load(open("/tmp/whisper.json"))
+          assert isinstance(d,dict),d
+          print("REAL_WHISPER_RESPONSE",d)
+          PY
+          kill "$WPID"
+          wait "$WPID" || true
+          trap - EXIT
+
+      - name: Real core marker
+        run: echo "THE_ARK_NANO_REAL_CORE=PASS"
+
+      - name: Logs on failure
+        if: failure()
+        run: |
+          docker ps -a || true
+          for c in ark-real-kiwix ark-real-llama; do docker logs "$c" 2>&1 | tail -200 || true; done
+          tail -200 /tmp/whisper-server.log 2>/dev/null || true

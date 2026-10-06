@@ -62,6 +62,32 @@ jobs:
           python builder/ark_builder.py --check
           python scripts/first_boot_wizard.py --check
 
+      - name: Pre-hardware destructive and credential contracts
+        run: |
+          grep -Fq 'TARGET="${1:-}"' scripts/ark_clone.sh
+          grep -Fq 'PROFILE="${ENDWORLD_PROFILE:-nano}"' scripts/ark_clone.sh
+          grep -Fq '"${ROOT_END_MIB}MiB"' scripts/ark_clone.sh
+          if grep -Fq 'TARGET="\${1:-}"' scripts/ark_clone.sh; then
+            echo "ark-clone contains literal escaped parameter expansion"
+            exit 1
+          fi
+          grep -Fq 'os.chmod(ENV,0o600)' scripts/first_boot_wizard.py
+          grep -Fq 'install -m 0600 "$REPO/config/$PROFILE.env"' scripts/build_disk_image.sh
+
+      - name: Persistent integrity scrub semantics
+        run: |
+          rm -rf /tmp/integrity-vault && mkdir -p /tmp/integrity-vault/{lock,state/field}
+          echo 'frozen bytes' > /tmp/integrity-vault/demo.txt
+          python - <<'PY'
+          import hashlib,json,pathlib
+          v=pathlib.Path("/tmp/integrity-vault");p=v/"demo.txt"
+          rec={"id":"demo","path":"demo.txt","bytes":p.stat().st_size,"sha256":hashlib.sha256(p.read_bytes()).hexdigest()}
+          (v/"lock/nano.lock.json").write_text(json.dumps({"profile":"nano","artifacts":[rec],"containers":[]}))
+          PY
+          python scripts/integrity_scrub.py --vault /tmp/integrity-vault --profile nano | grep -q 'THE_ARK_INTEGRITY_SCRUB=PASS'
+          test -s /tmp/integrity-vault/state/field/integrity-last.json
+          grep -q 'OnUnitActiveSec=7d' runtime/systemd/endworld-integrity.timer
+
       - name: Seven package ecosystems
         run: |
           python scripts/snapshot_packages.py --profile profiles/civilization.yml --vault /tmp/no-vault --manifest manifests/civilization-packages.yml --dry-run > /tmp/packages.json
@@ -234,15 +260,24 @@ jobs:
         run: |
           mkdir -p /tmp/reports
           cat > /tmp/field-fixture.json <<'EOF'
-          {"profile":"nano","hardware":{"system_vendor":"CI","product_name":"fixture","board_name":"A","bios_vendor":"fixture","bios_version":"1","boot_mode":"UEFI","cpu":"fixture CPU","memory_bytes":8589934592,"disks":[],"gpus":[],"wifi_ap_capable":true},"runtime":{"boot_id":"ci-fixture","kernel":"fixture"},"checks":{"portal":true,"kiwix":true,"ai":true,"voice":true,"wan_reachable":false}}
+          {"profile":"nano","hardware":{"system_vendor":"CI","product_name":"fixture","board_name":"A","bios_vendor":"fixture","bios_version":"1","boot_mode":"UEFI","cpu":"fixture CPU","memory_bytes":8589934592,"disks":[],"gpus":[],"wifi_ap_capable":true},"runtime":{"boot_id":"ci-fixture","kernel":"fixture","firstboot_complete":true,"secure_boot":true},"checks":{"portal":true,"kiwix":true,"ai":true,"voice":true,"voice_inference":true,"maps":true,"reticulum":true,"wan_reachable":false}}
           EOF
           cat > /tmp/field-fixture-2.json <<'EOF'
-          {"profile":"nano","hardware":{"system_vendor":"CI2","product_name":"fixture2","board_name":"B","bios_vendor":"fixture","bios_version":"2","boot_mode":"BIOS","cpu":"fixture CPU 2","memory_bytes":8589934592,"disks":[],"gpus":[],"wifi_ap_capable":true},"runtime":{"boot_id":"ci-fixture-2","kernel":"fixture"},"checks":{"portal":true,"kiwix":true,"ai":true,"voice":true,"wan_reachable":false}}
+          {"profile":"nano","hardware":{"system_vendor":"CI2","product_name":"fixture2","board_name":"B","bios_vendor":"fixture","bios_version":"2","boot_mode":"BIOS","cpu":"fixture CPU 2","memory_bytes":8589934592,"disks":[],"gpus":[],"wifi_ap_capable":true},"runtime":{"boot_id":"ci-fixture-2","kernel":"fixture","firstboot_complete":true,"secure_boot":false},"checks":{"portal":true,"kiwix":true,"ai":true,"voice":true,"voice_inference":true,"maps":true,"reticulum":true,"wan_reachable":false}}
           EOF
           python scripts/field_drill.py --fixture /tmp/field-fixture.json --profile nano --expect-offline --cold-boot-asserted --require-cold-boot --out /tmp/reports/ci.json
           python scripts/field_drill.py --fixture /tmp/field-fixture-2.json --profile nano --expect-offline --cold-boot-asserted --require-cold-boot --out /tmp/reports/ci2.json
-          python scripts/field_campaign.py --reports /tmp/reports --min-hardware 2 --require-bios-and-uefi --out /tmp/campaign.json
-          grep -q '"field_proven": true' /tmp/campaign.json
+          if python scripts/field_campaign.py --reports /tmp/reports --min-hardware 2 --require-bios-and-uefi --out /tmp/campaign.json; then
+            echo "fixture-only campaign must never claim physical proof"
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          x=json.load(open("/tmp/campaign.json"))
+          assert x["field_proven"] is False
+          assert x["physical_passing_reports"] == 0
+          assert len(x["fixture_reports"]) == 2
+          PY
 
 
       - name: Field radio receive-only contract

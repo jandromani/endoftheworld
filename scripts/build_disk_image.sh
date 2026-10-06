@@ -84,6 +84,9 @@ echo "[2/9] Creating filesystems..."
 mkfs.vfat -F32 -n ARK_EFI "${LOOP}p2" >/dev/null
 mkfs.ext4 -F -L ENDWORLD_ROOT "${LOOP}p3" >/dev/null
 mkfs.ext4 -F -m 0 -L ENDWORLD_DATA "${LOOP}p4" >/dev/null
+EFI_UUID="$(blkid -s UUID -o value "${LOOP}p2")"
+ROOT_UUID="$(blkid -s UUID -o value "${LOOP}p3")"
+DATA_UUID="$(blkid -s UUID -o value "${LOOP}p4")"
 
 mount "${LOOP}p3" "$ROOTFS"
 mkdir -p "$ROOTFS/boot/efi" "$ROOTFS/srv/endworld"
@@ -126,7 +129,7 @@ mount --bind /run "$ROOTFS/run"
 echo "[4/9] Installing appliance OS packages..."
 export DEBIAN_FRONTEND=noninteractive
 chroot "$ROOTFS" apt-get update
-chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub-efi-amd64-signed shim-signed grub2-common efibootmgr mokutil sbsigntool   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io docker-cli hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client rtl-sdr parted e2fsprogs   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros firmware-mediatek firmware-amd-graphics firmware-nvidia-graphics esptool unzip
+chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub-efi-amd64-signed shim-signed grub2-common efibootmgr mokutil sbsigntool   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial build-essential cmake ffmpeg   docker.io docker-cli hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client rtl-sdr parted gdisk e2fsprogs   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros firmware-mediatek firmware-amd-graphics firmware-nvidia-graphics esptool unzip
 
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   echo "Installing rebuild-and-create developer toolchain..."
@@ -154,10 +157,10 @@ cat > "$ROOTFS/etc/hosts" <<EOF
 127.0.1.1 $HOSTNAME
 ::1 localhost ip6-localhost ip6-loopback
 EOF
-cat > "$ROOTFS/etc/fstab" <<'EOF'
-LABEL=ENDWORLD_ROOT / ext4 defaults,noatime 0 1
-LABEL=ARK_EFI /boot/efi vfat umask=0077 0 1
-LABEL=ENDWORLD_DATA /srv/endworld ext4 defaults,noatime 0 2
+cat > "$ROOTFS/etc/fstab" <<EOF
+UUID=$ROOT_UUID / ext4 defaults,noatime 0 1
+UUID=$EFI_UUID /boot/efi vfat umask=0077 0 1
+UUID=$DATA_UUID /srv/endworld ext4 defaults,noatime 0 2
 EOF
 
 chroot "$ROOTFS" useradd -m -s /bin/bash endworld
@@ -169,10 +172,32 @@ chmod 0440 "$ROOTFS/etc/sudoers.d/endworld"
 echo "[5/9] Copying ENDWORLD runtime and frozen vault..."
 mkdir -p "$ROOTFS/opt/endworld" "$ROOTFS/etc/endworld"
 rsync -a --delete --exclude '.git/' --exclude '.venv/' --exclude 'vault/' --exclude 'dist/' "$REPO/" "$ROOTFS/opt/endworld/"
-install -m 0644 "$REPO/config/$PROFILE.env" "$ROOTFS/etc/endworld/profile.env"
+install -m 0600 "$REPO/config/$PROFILE.env" "$ROOTFS/etc/endworld/profile.env"
 rsync -aH --info=progress2 "$VAULT/" "$ROOTFS/srv/endworld/"
 mkdir -p "$ROOTFS/srv/endworld/state/agent/tasks" "$ROOTFS/srv/endworld/state/agent/workspace"
 chroot "$ROOTFS" chown -R endworld:endworld /srv/endworld/state/agent
+
+WHISPER_SOURCE_REL="$(python3 - "$VAULT/lock/$PROFILE.lock.json" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1],encoding="utf-8"))
+for r in d.get("artifacts",[]):
+    if r.get("id")=="whisper-cpp-source":
+        print(r.get("path") or "")
+        break
+PY
+)"
+if [[ -n "$WHISPER_SOURCE_REL" && -f "$VAULT/$WHISPER_SOURCE_REL" ]]; then
+  echo "Building portable whisper-server from frozen source (GGML_NATIVE=OFF)..."
+  mkdir -p "$ROOTFS/tmp/whisper-src"
+  tar -xf "$VAULT/$WHISPER_SOURCE_REL" -C "$ROOTFS/tmp/whisper-src" --strip-components=1
+  chroot "$ROOTFS" env SOURCE_DATE_EPOCH=1 cmake -S /tmp/whisper-src -B /tmp/whisper-build \
+    -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DBUILD_SHARED_LIBS=OFF \
+    -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DGGML_F16C=OFF -DGGML_BMI2=OFF \
+    -DGGML_AVX512=OFF -DGGML_AMX_TILE=OFF -DGGML_AMX_INT8=OFF -DGGML_AMX_BF16=OFF
+  chroot "$ROOTFS" cmake --build /tmp/whisper-build --target whisper-server --parallel 2
+  install -m 0755 "$ROOTFS/tmp/whisper-build/bin/whisper-server" "$ROOTFS/usr/local/bin/whisper-server-portable"
+  rm -rf "$ROOTFS/tmp/whisper-src" "$ROOTFS/tmp/whisper-build"
+fi
 
 chmod +x "$ROOTFS"/opt/endworld/runtime/*.sh "$ROOTFS"/opt/endworld/runtime/network/*.sh "$ROOTFS"/opt/endworld/scripts/*.sh 2>/dev/null || true
 cat > "$ROOTFS/usr/local/bin/endworld" <<'EOF'
@@ -262,7 +287,10 @@ cp "$REPO"/runtime/systemd/* "$ROOTFS/etc/systemd/system/"
 chroot "$ROOTFS" systemctl disable hostapd.service dnsmasq.service 2>/dev/null || true
 chroot "$ROOTFS" systemctl enable docker.service avahi-daemon.service systemd-networkd.service systemd-resolved.service
 chroot "$ROOTFS" systemctl disable systemd-networkd-wait-online.service 2>/dev/null || true
-chroot "$ROOTFS" systemctl enable endworld-network.service endworld-expand-data.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-power.timer endworld-agent-scheduler.timer
+chroot "$ROOTFS" systemctl enable endworld-network.service endworld-expand-data.service endworld-reticulum.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-integrity.timer endworld-power.timer endworld-agent-scheduler.timer
+if [[ -x "$ROOTFS/usr/local/bin/whisper-server-portable" ]]; then
+  chroot "$ROOTFS" systemctl enable endworld-whisper.service
+fi
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   chroot "$ROOTFS" systemctl enable endworld-vector-index.service
 fi
@@ -317,7 +345,7 @@ fi
 chroot "$ROOTFS" grub-install --target=i386-pc --recheck "$LOOP"
 chroot "$ROOTFS" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ENDWORLD --removable --no-nvram --recheck
 chroot "$ROOTFS" update-grub
-chroot "$ROOTFS" /opt/endworld/scripts/install_secure_boot.sh /
+chroot "$ROOTFS" /opt/endworld/scripts/install_secure_boot.sh / "$ROOT_UUID"
 
 echo "[8/9] Cleaning image..."
 chroot "$ROOTFS" apt-get clean

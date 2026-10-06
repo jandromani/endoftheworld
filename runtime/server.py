@@ -158,6 +158,12 @@ class App:
                   "battery_status":b.get("status"),"ac_online":None}
         data["comms_plan_ready"]=(self.vault/"state/field/comms-plan.md").is_file()
         data["ark_mesh_available"]=(pathlib.Path(__file__).resolve().parents[1]/"scripts/ark_mesh.py").is_file()
+        ip=self.vault/"state/field/integrity-last.json"
+        try:
+            ir=json.loads(ip.read_text(encoding="utf-8"))
+            data["integrity"]={"ready":True,"ok":ir.get("ok"),"ended_utc":ir.get("ended_utc")}
+        except Exception:
+            data["integrity"]={"ready":False,"ok":None,"ended_utc":None}
         return data
     def organism(self)->dict:
         tasks=self.agent_tasks()

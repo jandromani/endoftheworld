@@ -38,9 +38,16 @@ Project NOMAD receives Docker socket access because its application-management m
 
 code-server does **not** receive the Docker socket by default.
 
-## Default credentials
+## First-boot credentials
 
-The current appliance templates include initial local credentials for convenience during development. They must be changed before use on an untrusted network. See `docs/reference/environment-variables.md`.
+Build-time templates contain bootstrap credentials, but the supported field flow
+keeps the Wi-Fi AP disabled until the console first-boot wizard requires a new
+private console password and Wi-Fi password. The resulting profile environment
+file is root-only (`0600`), and passwordless sudo/autologin are removed after
+setup.
+
+A device that has not completed first boot should be treated as unprovisioned
+and must not be left with untrusted physical access.
 
 ## Reporting a vulnerability
 
@@ -70,3 +77,22 @@ Security updates are not applied directly to a field node. They should be:
 7. deliberately promoted.
 
 This makes update latency a conscious trade-off for reproducibility and supply-chain control.
+
+
+## Current tamper/confidentiality limits
+
+Secure Boot authenticates the signed firmware-facing boot chain. THE ARK also
+hashes frozen vault artifacts and periodically scrubs them against the lock.
+Those controls do **not** currently provide full-disk confidentiality or
+dm-verity protection for the root filesystem.
+
+Therefore:
+
+- data at rest is not encrypted by default;
+- an attacker with prolonged physical media access can read unencrypted data;
+- root filesystem mutation is not cryptographically prevented after boot;
+- a passing vault scrub detects frozen-content changes but is not a TPM-backed
+  measured-boot attestation.
+
+Optional LUKS/TPM/dm-verity hardening is a future security profile, not a
+prerequisite for the portable offline NANO field mission.

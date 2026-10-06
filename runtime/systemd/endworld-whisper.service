@@ -1,0 +1,22 @@
+[Unit]
+Description=THE ARK portable local Whisper server
+After=local-fs.target
+RequiresMountsFor=/srv/endworld
+
+[Service]
+Type=simple
+User=endworld
+Group=endworld
+Environment=ENDWORLD_VAULT=/srv/endworld
+EnvironmentFile=-/etc/endworld/profile.env
+ExecStart=/opt/endworld/runtime/start-whisper.sh
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadOnlyPaths=/srv/endworld/ai/models /srv/endworld/lock
+
+[Install]
+WantedBy=multi-user.target

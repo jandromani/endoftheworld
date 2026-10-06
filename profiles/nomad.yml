@@ -77,6 +77,8 @@ artifacts:
   - {id: nomic-embed-text-v1.5-q4, family: ai, kind: url, required: true, url: "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF/resolve/main/nomic-embed-text-v1.5.Q4_K_M.gguf?download=true", filename: nomic-embed-text-v1.5.Q4_K_M.gguf, destination: ai/models, budget_bytes: 120000000}
   - {id: whisper-medium, family: ai, kind: url, required: true, url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin?download=true", filename: ggml-medium.bin, destination: ai/models, budget_bytes: 2500000000}
 
+  - {id: whisper-cpp-source, family: ai, kind: github_snapshot, required: true, repo: ggml-org/whisper.cpp, ref: latest-release, destination: source/ai, budget_bytes: 150000000}
+
   - {id: spain-osm, family: maps, kind: index_latest, required: true, index_url: "https://download.geofabrik.de/europe/spain.html", href_regex: 'spain-[0-9]{6}\.osm\.pbf', destination: maps/raw, budget_bytes: 7000000000}
   - {id: portugal-osm, family: maps, kind: index_latest, required: true, index_url: "https://download.geofabrik.de/europe/portugal.html", href_regex: 'portugal-[0-9]{6}\.osm\.pbf', destination: maps/raw, budget_bytes: 4000000000}
   - {id: france-osm, family: maps, kind: index_latest, required: true, index_url: "https://download.geofabrik.de/europe/france.html", href_regex: 'france-[0-9]{6}\.osm\.pbf', destination: maps/raw, budget_bytes: 12000000000}
@@ -117,7 +119,6 @@ artifacts:
 containers:
   - {id: kiwix, image: "ghcr.io/kiwix/kiwix-serve:3.8.2", required: true}
   - {id: llama-server, image: "ghcr.io/ggml-org/llama.cpp:server", required: true}
-  - {id: whisper-server, image: "ghcr.io/ggml-org/whisper.cpp:main", required: true}
   - {id: syncthing, image: "ghcr.io/syncthing/syncthing:2.1.5", required: true}
   - {id: forgejo, image: "codeberg.org/forgejo/forgejo:15.0.9", required: true}
   - {id: qdrant, image: "qdrant/qdrant:v1.19.1", required: true}

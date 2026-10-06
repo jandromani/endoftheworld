@@ -26,7 +26,10 @@ load_image(){ local id="$1" image rel tar; image="$(lock_field containers "$id" 
 
 KIWIX_IMAGE="$(load_image kiwix)" || exit 2
 LLAMA_IMAGE="$(load_image llama-server)" || exit 2
-WHISPER_IMAGE="$(load_image whisper-server)" || exit 2
+WHISPER_IMAGE=""
+if [[ ! -x /usr/local/bin/whisper-server-portable ]]; then
+  WHISPER_IMAGE="$(load_image whisper-server)" || exit 2
+fi
 docker rm -f endworld-kiwix endworld-ai endworld-embed endworld-whisper endworld-syncthing endworld-forgejo endworld-qdrant endworld-code-server endworld-nomad-admin endworld-nomad-mysql endworld-nomad-redis >/dev/null 2>&1 || true
 
 mapfile -t ZIMS < <(find "$VAULT/knowledge/zim" -maxdepth 1 -type f -name '*.zim' -printf '%f\n' | sort)
@@ -48,7 +51,11 @@ if [[ -n "$EMBED_MODEL" && -f "$EMBED_MODEL" ]]; then
 fi
 
 WHISPER_ID="${ENDWORLD_WHISPER_MODEL_ID:-whisper-small}"; WHISPER_MODEL="$(artifact_path "$WHISPER_ID")" || exit 2
-docker run -d --name endworld-whisper --restart unless-stopped --network host -v "$VAULT/ai/models:/models:ro" --entrypoint whisper-server "$WHISPER_IMAGE" --host 0.0.0.0 --port 8083 -m "/models/$(basename "$WHISPER_MODEL")" -l "${ENDWORLD_WHISPER_LANGUAGE:-auto}" >/dev/null
+if [[ -x /usr/local/bin/whisper-server-portable ]]; then
+  systemctl restart endworld-whisper.service
+else
+  docker run -d --name endworld-whisper --restart unless-stopped --network host -v "$VAULT/ai/models:/models:ro" --entrypoint whisper-server "$WHISPER_IMAGE" --host 0.0.0.0 --port 8083 --convert -m "/models/$(basename "$WHISPER_MODEL")" -l "${ENDWORLD_WHISPER_LANGUAGE:-auto}" >/dev/null
+fi
 
 if [[ "${ENDWORLD_ENABLE_SYNCTHING:-0}" == "1" ]]; then
   I="$(load_image syncthing)" || exit 2; mkdir -p "$VAULT/state/syncthing"; chown 1000:1000 "$VAULT/state/syncthing" 2>/dev/null || true

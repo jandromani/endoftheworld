@@ -100,7 +100,7 @@ Software shipped on the roadmap branch:
 - release material verification and public-key fingerprints;
 - signed offline update bundles with enforced verification;
 - `ark-clone` for human-approved offline Ark-to-Ark disk replication;
-- NANO distribution image reduced to 58 GB while preserving the previous 52 GB usable payload envelope;
+- NANO distribution image reduced to 62 GB while preserving the previous 52 GB usable payload envelope;
 - first-boot DATA expand-to-fill.
 
 These are software gates. **Physical field proof remains unclaimed** until real

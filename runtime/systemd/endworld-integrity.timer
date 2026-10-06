@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodically scrub THE ARK frozen vault
+
+[Timer]
+OnBootSec=1h
+OnUnitActiveSec=7d
+AccuracySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -3,8 +3,8 @@ schema: 1
 profile:
   id: nano
   title: ENDWORLD NANO
-  target_bytes: 58000000000
-  reserve_bytes: 6000000000
+  target_bytes: 62000000000
+  reserve_bytes: 10000000000
   acquisition_headroom_bytes: 2500000000
   root_partition_mib: 8192
   description: >
@@ -68,6 +68,15 @@ artifacts:
     filename: ggml-small.bin
     destination: ai/models
     budget_bytes: 700000000
+
+  - id: whisper-cpp-source
+    family: ai
+    kind: github_snapshot
+    required: true
+    repo: ggml-org/whisper.cpp
+    ref: latest-release
+    destination: source/ai
+    budget_bytes: 150000000
 
   - id: spain-osm
     family: maps
@@ -300,9 +309,6 @@ containers:
     image: ghcr.io/ggml-org/llama.cpp:server
     required: true
 
-  - id: whisper-server
-    image: ghcr.io/ggml-org/whisper.cpp:main
-    required: true
 
 policy:
   fail_if_required_missing: true
