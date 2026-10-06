@@ -73,8 +73,10 @@ jobs:
       - name: Build portable Whisper server from source
         run: |
           git clone --depth 1 https://github.com/ggml-org/whisper.cpp /tmp/whisper-src
-          cmake -S /tmp/whisper-src -B /tmp/whisper-build \
-            -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DBUILD_SHARED_LIBS=OFF
+          SOURCE_DATE_EPOCH=1 cmake -S /tmp/whisper-src -B /tmp/whisper-build \
+            -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DBUILD_SHARED_LIBS=OFF \
+            -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DGGML_F16C=OFF -DGGML_BMI2=OFF \
+            -DGGML_AVX512=OFF -DGGML_AMX_TILE=OFF -DGGML_AMX_INT8=OFF -DGGML_AMX_BF16=OFF
           cmake --build /tmp/whisper-build --target whisper-server --parallel 2
           test -x /tmp/whisper-build/bin/whisper-server
 
