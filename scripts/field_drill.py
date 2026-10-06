@@ -39,6 +39,30 @@ def http_ok(url: str) -> bool:
     except Exception:
         return False
 
+def json_get(url: str):
+    try:
+        with urllib.request.urlopen(url, timeout=3) as r:
+            return json.load(r)
+    except Exception:
+        return None
+
+def whisper_inference_ok() -> bool:
+    import tempfile,wave,struct,math
+    try:
+        with tempfile.TemporaryDirectory(prefix="ark-field-voice-") as td:
+            wav=pathlib.Path(td)/"tone.wav"
+            rate=16000
+            with wave.open(str(wav),"wb") as w:
+                w.setnchannels(1);w.setsampwidth(2);w.setframerate(rate)
+                w.writeframes(b"".join(struct.pack("<h",int(1000*math.sin(2*math.pi*440*i/rate))) for i in range(rate//2)))
+            p=subprocess.run(["curl","-fsS","-X","POST","http://127.0.0.1:8080/api/transcribe","-F",f"file=@{wav}"],
+                             text=True,capture_output=True,timeout=120)
+            if p.returncode:return False
+            d=json.loads(p.stdout)
+            return isinstance(d,dict) and "text" in d
+    except Exception:
+        return False
+
 
 def wan_reachable() -> bool:
     try:
@@ -111,6 +135,8 @@ def gpus():
 
 def collect(profile: str) -> dict:
     dmi = pathlib.Path("/sys/class/dmi/id")
+    maps=json_get("http://127.0.0.1:8080/api/maps") or {}
+    secure=(command(["mokutil","--sb-state"]) or "").lower()
     return {
         "profile": profile,
         "hardware": {
@@ -133,12 +159,18 @@ def collect(profile: str) -> dict:
             "uptime_seconds": float((text(pathlib.Path("/proc/uptime")) or "0").split()[0]),
             "docker": command(["docker", "--version"]),
             "reticulum": command(["rnstatus", "--version"]) or ("installed" if shutil.which("rnstatus") else None),
+            "firstboot_complete": pathlib.Path("/var/lib/endworld/firstboot.done").is_file(),
+            "data_expanded": pathlib.Path("/var/lib/endworld/data-expanded").is_file(),
+            "secure_boot": "enabled" in secure,
         },
         "checks": {
             "portal": http_ok("http://127.0.0.1/health"),
             "kiwix": http_ok("http://127.0.0.1:8081/"),
             "ai": http_ok("http://127.0.0.1:8082/health"),
             "voice": http_ok("http://127.0.0.1:8083/"),
+            "voice_inference": whisper_inference_ok(),
+            "maps": bool(maps.get("ready")),
+            "reticulum": command(["systemctl","is-active","endworld-reticulum.service"])=="active",
             "wan_reachable": wan_reachable(),
         },
     }
@@ -169,13 +201,26 @@ def vault_verify(profile: str, vault: pathlib.Path) -> dict:
     return {"ok": p.returncode == 0, "returncode": p.returncode, "output": (p.stdout + p.stderr)[-4000:]}
 
 
-def assess(report: dict, expect_offline: bool, require_cold: bool, require_agent: bool) -> list[str]:
+def assess(report: dict, expect_offline: bool, require_cold: bool, require_agent: bool, require_secure_boot: bool) -> list[str]:
     failures = []
     checks = report.get("checks") or {}
     if not checks.get("portal"):
         failures.append("portal not reachable")
     if not checks.get("kiwix"):
         failures.append("Kiwix not reachable")
+    if not checks.get("ai"):
+        failures.append("local AI not healthy")
+    if not checks.get("voice") or not checks.get("voice_inference"):
+        failures.append("local Whisper transcription not functional")
+    if not checks.get("maps"):
+        failures.append("offline map is not ready")
+    if not checks.get("reticulum"):
+        failures.append("Reticulum service not active")
+    runtime=report.get("runtime") or {}
+    if not runtime.get("firstboot_complete"):
+        failures.append("first-boot provisioning is incomplete")
+    if require_secure_boot and not runtime.get("secure_boot"):
+        failures.append("Secure Boot is not enabled")
     if expect_offline and checks.get("wan_reachable"):
         failures.append("WAN is still reachable during offline drill")
     if require_cold and not report.get("operator_assertions", {}).get("cold_boot"):
@@ -211,7 +256,12 @@ def markdown(report: dict) -> str:
 - Portal: {c.get('portal')}
 - Kiwix: {c.get('kiwix')}
 - AI: {c.get('ai')}
-- Voice: {c.get('voice')}
+- Voice service: {c.get('voice')}
+- Voice inference: {c.get('voice_inference')}
+- Maps ready: {c.get('maps')}
+- Reticulum active: {c.get('reticulum')}
+- First boot complete: {(report.get('runtime') or {}).get('firstboot_complete')}
+- Secure Boot: {(report.get('runtime') or {}).get('secure_boot')}
 - Agent smoke: {(report.get('agent_smoke') or {}).get('ok', 'not requested')}
 
 ## Failures
@@ -233,6 +283,7 @@ def main() -> int:
     ap.add_argument("--require-cold-boot", action="store_true")
     ap.add_argument("--verify-vault", action="store_true")
     ap.add_argument("--agent-smoke", action="store_true")
+    ap.add_argument("--require-secure-boot", action="store_true")
     ap.add_argument("--fixture")
     args = ap.parse_args()
 
@@ -255,7 +306,7 @@ def main() -> int:
         report["vault_verification"] = vault_verify(args.profile, pathlib.Path(args.vault))
     if args.agent_smoke and not args.fixture:
         report["agent_smoke"] = agent_smoke(args.profile, pathlib.Path(args.vault))
-    failures = assess(report, args.expect_offline, args.require_cold_boot, args.agent_smoke)
+    failures = assess(report, args.expect_offline, args.require_cold_boot, args.agent_smoke, args.require_secure_boot)
     report["failures"] = failures
     report["passed"] = not failures
 
