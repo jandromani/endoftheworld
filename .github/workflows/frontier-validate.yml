@@ -260,10 +260,10 @@ jobs:
         run: |
           mkdir -p /tmp/reports
           cat > /tmp/field-fixture.json <<'EOF'
-          {"profile":"nano","hardware":{"system_vendor":"CI","product_name":"fixture","board_name":"A","bios_vendor":"fixture","bios_version":"1","boot_mode":"UEFI","cpu":"fixture CPU","memory_bytes":8589934592,"disks":[],"gpus":[],"wifi_ap_capable":true},"runtime":{"boot_id":"ci-fixture","kernel":"fixture"},"checks":{"portal":true,"kiwix":true,"ai":true,"voice":true,"wan_reachable":false}}
+          {"profile":"nano","hardware":{"system_vendor":"CI","product_name":"fixture","board_name":"A","bios_vendor":"fixture","bios_version":"1","boot_mode":"UEFI","cpu":"fixture CPU","memory_bytes":8589934592,"disks":[],"gpus":[],"wifi_ap_capable":true},"runtime":{"boot_id":"ci-fixture","kernel":"fixture","firstboot_complete":true,"secure_boot":true},"checks":{"portal":true,"kiwix":true,"ai":true,"voice":true,"voice_inference":true,"maps":true,"reticulum":true,"wan_reachable":false}}
           EOF
           cat > /tmp/field-fixture-2.json <<'EOF'
-          {"profile":"nano","hardware":{"system_vendor":"CI2","product_name":"fixture2","board_name":"B","bios_vendor":"fixture","bios_version":"2","boot_mode":"BIOS","cpu":"fixture CPU 2","memory_bytes":8589934592,"disks":[],"gpus":[],"wifi_ap_capable":true},"runtime":{"boot_id":"ci-fixture-2","kernel":"fixture"},"checks":{"portal":true,"kiwix":true,"ai":true,"voice":true,"wan_reachable":false}}
+          {"profile":"nano","hardware":{"system_vendor":"CI2","product_name":"fixture2","board_name":"B","bios_vendor":"fixture","bios_version":"2","boot_mode":"BIOS","cpu":"fixture CPU 2","memory_bytes":8589934592,"disks":[],"gpus":[],"wifi_ap_capable":true},"runtime":{"boot_id":"ci-fixture-2","kernel":"fixture","firstboot_complete":true,"secure_boot":false},"checks":{"portal":true,"kiwix":true,"ai":true,"voice":true,"voice_inference":true,"maps":true,"reticulum":true,"wan_reachable":false}}
           EOF
           python scripts/field_drill.py --fixture /tmp/field-fixture.json --profile nano --expect-offline --cold-boot-asserted --require-cold-boot --out /tmp/reports/ci.json
           python scripts/field_drill.py --fixture /tmp/field-fixture-2.json --profile nano --expect-offline --cold-boot-asserted --require-cold-boot --out /tmp/reports/ci2.json
