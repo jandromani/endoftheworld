@@ -45,6 +45,15 @@ def console_password():
         if len(a)<12:print("Use at least 12 characters.");continue
         return a
 
+def secret_password(label,min_len=12,max_len=128):
+    while True:
+        a=getpass.getpass(f"{label} (min {min_len} chars): ")
+        b=getpass.getpass("Repeat: ")
+        if a!=b:print("Passwords do not match.");continue
+        if not min_len<=len(a)<=max_len:print(f"Use {min_len}-{max_len} characters.");continue
+        if any(ord(c)<32 or ord(c)>126 for c in a):print("Use printable ASCII for maximum compatibility.");continue
+        return a
+
 def wifi_password():
     while True:
         a=getpass.getpass("Wi-Fi password (8-63 chars): ")
@@ -84,7 +93,10 @@ def main():
     country=ask("Wi-Fi country code",env.get("ENDWORLD_WIFI_COUNTRY","ES")).upper()
     if not re.fullmatch(r"[A-Z]{2}",country):raise SystemExit("Wi-Fi country must be a two-letter code.")
     wifi=wifi_password();console=console_password()
-    update_env({"ENDWORLD_WIFI_SSID":ssid,"ENDWORLD_WIFI_PASSWORD":wifi,"ENDWORLD_WIFI_COUNTRY":country,"ENDWORLD_KEYMAP":keymap})
+    changes={"ENDWORLD_WIFI_SSID":ssid,"ENDWORLD_WIFI_PASSWORD":wifi,"ENDWORLD_WIFI_COUNTRY":country,"ENDWORLD_KEYMAP":keymap}
+    if env.get("ENDWORLD_ENABLE_CODE_SERVER","0")=="1":
+        changes["ENDWORLD_CODE_PASSWORD"]=secret_password("Private code-server password")
+    update_env(changes)
     subprocess.run(["chpasswd"],input="endworld:"+console+"\n",text=True,check=True)
     pathlib.Path("/etc/hostname").write_text(host+"\n",encoding="utf-8");update_hosts(host)
     subprocess.run(["hostnamectl","set-hostname",host],check=False)
