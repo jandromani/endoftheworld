@@ -190,8 +190,10 @@ if [[ -n "$WHISPER_SOURCE_REL" && -f "$VAULT/$WHISPER_SOURCE_REL" ]]; then
   echo "Building portable whisper-server from frozen source (GGML_NATIVE=OFF)..."
   mkdir -p "$ROOTFS/tmp/whisper-src"
   tar -xf "$VAULT/$WHISPER_SOURCE_REL" -C "$ROOTFS/tmp/whisper-src" --strip-components=1
-  chroot "$ROOTFS" cmake -S /tmp/whisper-src -B /tmp/whisper-build \
-    -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DBUILD_SHARED_LIBS=OFF
+  chroot "$ROOTFS" env SOURCE_DATE_EPOCH=1 cmake -S /tmp/whisper-src -B /tmp/whisper-build \
+    -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DBUILD_SHARED_LIBS=OFF \
+    -DGGML_AVX=OFF -DGGML_AVX2=OFF -DGGML_FMA=OFF -DGGML_F16C=OFF -DGGML_BMI2=OFF \
+    -DGGML_AVX512=OFF -DGGML_AMX_TILE=OFF -DGGML_AMX_INT8=OFF -DGGML_AMX_BF16=OFF
   chroot "$ROOTFS" cmake --build /tmp/whisper-build --target whisper-server --parallel 2
   install -m 0755 "$ROOTFS/tmp/whisper-build/bin/whisper-server" "$ROOTFS/usr/local/bin/whisper-server-portable"
   rm -rf "$ROOTFS/tmp/whisper-src" "$ROOTFS/tmp/whisper-build"
