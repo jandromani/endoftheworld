@@ -129,7 +129,7 @@ mount --bind /run "$ROOTFS/run"
 echo "[4/9] Installing appliance OS packages..."
 export DEBIAN_FRONTEND=noninteractive
 chroot "$ROOTFS" apt-get update
-chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub-efi-amd64-signed shim-signed grub2-common efibootmgr mokutil sbsigntool   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial   docker.io docker-cli hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client rtl-sdr parted gdisk e2fsprogs   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros firmware-mediatek firmware-amd-graphics firmware-nvidia-graphics esptool unzip
+chroot "$ROOTFS" apt-get install -y --no-install-recommends   linux-image-amd64 grub-pc-bin grub-efi-amd64-bin grub-efi-amd64-signed shim-signed grub2-common efibootmgr mokutil sbsigntool   systemd-sysv systemd-resolved sudo ca-certificates curl jq python3 python3-pip python3-yaml python3-setuptools python3-wheel python3-cryptography python3-serial build-essential cmake ffmpeg   docker.io docker-cli hostapd dnsmasq iw rfkill avahi-daemon   iproute2 iputils-ping net-tools rsync less nano kbd pciutils smartmontools nut-client rtl-sdr parted gdisk e2fsprogs   firmware-linux-free firmware-iwlwifi firmware-realtek firmware-atheros firmware-mediatek firmware-amd-graphics firmware-nvidia-graphics esptool unzip
 
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   echo "Installing rebuild-and-create developer toolchain..."
@@ -176,6 +176,26 @@ install -m 0600 "$REPO/config/$PROFILE.env" "$ROOTFS/etc/endworld/profile.env"
 rsync -aH --info=progress2 "$VAULT/" "$ROOTFS/srv/endworld/"
 mkdir -p "$ROOTFS/srv/endworld/state/agent/tasks" "$ROOTFS/srv/endworld/state/agent/workspace"
 chroot "$ROOTFS" chown -R endworld:endworld /srv/endworld/state/agent
+
+WHISPER_SOURCE_REL="$(python3 - "$VAULT/lock/$PROFILE.lock.json" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1],encoding="utf-8"))
+for r in d.get("artifacts",[]):
+    if r.get("id")=="whisper-cpp-source":
+        print(r.get("path") or "")
+        break
+PY
+)"
+if [[ -n "$WHISPER_SOURCE_REL" && -f "$VAULT/$WHISPER_SOURCE_REL" ]]; then
+  echo "Building portable whisper-server from frozen source (GGML_NATIVE=OFF)..."
+  mkdir -p "$ROOTFS/tmp/whisper-src"
+  tar -xf "$VAULT/$WHISPER_SOURCE_REL" -C "$ROOTFS/tmp/whisper-src" --strip-components=1
+  chroot "$ROOTFS" cmake -S /tmp/whisper-src -B /tmp/whisper-build \
+    -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DBUILD_SHARED_LIBS=OFF
+  chroot "$ROOTFS" cmake --build /tmp/whisper-build --target whisper-server --parallel 2
+  install -m 0755 "$ROOTFS/tmp/whisper-build/bin/whisper-server" "$ROOTFS/usr/local/bin/whisper-server-portable"
+  rm -rf "$ROOTFS/tmp/whisper-src" "$ROOTFS/tmp/whisper-build"
+fi
 
 chmod +x "$ROOTFS"/opt/endworld/runtime/*.sh "$ROOTFS"/opt/endworld/runtime/network/*.sh "$ROOTFS"/opt/endworld/scripts/*.sh 2>/dev/null || true
 cat > "$ROOTFS/usr/local/bin/endworld" <<'EOF'
@@ -266,6 +286,9 @@ chroot "$ROOTFS" systemctl disable hostapd.service dnsmasq.service 2>/dev/null |
 chroot "$ROOTFS" systemctl enable docker.service avahi-daemon.service systemd-networkd.service systemd-resolved.service
 chroot "$ROOTFS" systemctl disable systemd-networkd-wait-online.service 2>/dev/null || true
 chroot "$ROOTFS" systemctl enable endworld-network.service endworld-expand-data.service endworld-reticulum.service endworld-portal.service endworld-stack.service endworld-health.timer endworld-integrity.timer endworld-power.timer endworld-agent-scheduler.timer
+if [[ -x "$ROOTFS/usr/local/bin/whisper-server-portable" ]]; then
+  chroot "$ROOTFS" systemctl enable endworld-whisper.service
+fi
 if [[ "$PROFILE" == "nomad" || "$PROFILE" == "civilization" ]]; then
   chroot "$ROOTFS" systemctl enable endworld-vector-index.service
 fi
