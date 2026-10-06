@@ -20,7 +20,7 @@ This document separates four different meanings of "works":
 | Retrieval | FTS5, code symbols, Kiwix-grounded RAG | WIRED + CI | full corpus latency/quality |
 | AI | Qwen3-4B Q4 via llama.cpp | WIRED; exact-model real-runtime gate | target-PC speed/RAM |
 | Agent | bounded planner/tool loop + audit/workspace | WIRED + no-NIC QEMU | real-model/full-vault tasks |
-| Voice | Whisper-small local transcription | WIRED; exact-model + format-conversion gate | microphone/device UX |
+| Voice | Whisper-small local transcription | WIRED; frozen-source portable CPU build + exact-model/format gate | microphone/device UX |
 | Maps | Spain OSM → PMTiles viewer + labels | WIRED; real Planetiler small-extract gate | full Spain build/runtime measurement |
 | Navigation | route planning / geocoder / turn-by-turn | NOT IMPLEMENTED | optional future capability |
 | Comms | Reticulum AutoInterface shared daemon | WIRED + boot-service gate | real LAN/radio peer |
